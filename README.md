@@ -1,2 +1,2 @@
 # CapstoneAudyTisouk
-Capstone Project for me Software Class
+Capstone Project for my Software Class
