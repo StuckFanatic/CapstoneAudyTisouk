@@ -22,10 +22,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int maxMovement = 4;
     private int movementLeft = 4;
     
+    //Turn/DayCounter
+    private int day = 1;
+    
     
     Player player;
-
     Thread gameThread;
+    
     //Over world Map
     Tile[][] worldMap;
     
@@ -79,7 +82,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	TileType tile = worldMap[player.col][player.row].getType();
     	
-    	System.out.println("Exploring tile: " + tile);
+    	System.out.println("Day "+ day + " Exploring tile: " + tile);
     	
     	if (tile ==TileType.GRASS) {
     		System.out.println("You found nothing but grass");
@@ -96,7 +99,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //run out of movement ends turn
     private void endTurn() {
+    	day++;
     	movementLeft = maxMovement;
+    	
+    	System.out.println("---- End of Day ----");
     }
     
     
@@ -125,8 +131,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-
-        g.setColor(Color.WHITE);
         
         //Grid Tiles lines here
         //Updated with the new TileTypes
@@ -149,6 +153,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	}
         	
         }
+        
+        g.setColor(Color.WHITE);
+        g.drawString("Day: " + day, 10, 20);
+        g.drawString("Movement Left:" + movementLeft, 10, 40);
         
         player.draw(g);
         
@@ -195,15 +203,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     player.col = newCol;
                     player.row = newRow;
                     movementLeft--;
-
-                    // Auto explore if out of movement
-                    if (movementLeft == 0) {
-                        exploreTile();
                     }
                 }
             }
-        }
-    	
+    	repaint();
     }
     
     @Override
