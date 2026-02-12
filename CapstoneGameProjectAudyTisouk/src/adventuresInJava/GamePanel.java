@@ -138,6 +138,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		int y = row * tileSize;
 
         		worldMap[col][row].draw(g, x, y, tileSize);
+        		
+        		//Will calculate if distance is within players current movement then highlight it
+        		int distance = Math.abs(col - player.col) + Math.abs(row - player.row);
+        		
+        		if (distance <= movementLeft && worldMap[col][row].isPassable()) {
+        			g.setColor(new Color(100, 100, 100, 170)); //Darker Green. Will change later?
+        			g.fillRect(x, y, tileSize, tileSize);
+        		}
         	}
         	
         }
