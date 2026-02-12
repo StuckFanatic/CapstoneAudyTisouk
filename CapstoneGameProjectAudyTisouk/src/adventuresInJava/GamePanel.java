@@ -8,7 +8,7 @@ import java.awt.Color;
 
 
 
-public class GamePanel extends JPanel implements Runnable {
+public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyListener {
 
     // Screen settings for the black box
     final int tileSize = 48;
@@ -29,6 +29,8 @@ public class GamePanel extends JPanel implements Runnable {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.black);
         this.setDoubleBuffered(true);
+        this.setFocusable(true);
+        this.addKeyListener(this);
         
         player = new Player(tileSize);
         
@@ -63,12 +65,15 @@ public class GamePanel extends JPanel implements Runnable {
     	}	
     	
     }
+    
     //Game Logic goes here
+    //Start
     public void startGameThread() {
         gameThread = new Thread(this);
         gameThread.start();
     }
 
+    //Runs 
     @Override
     public void run() {
 
@@ -81,7 +86,7 @@ public class GamePanel extends JPanel implements Runnable {
     public void update() {
     }
 
-    
+    //This is where the tile lines start
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -106,4 +111,50 @@ public class GamePanel extends JPanel implements Runnable {
         
         g.dispose();
     }
+    
+    
+    //keys need to be pressed for movement
+    @Override
+    public void keyPressed(java.awt.event.KeyEvent e) {
+    	
+    	int code = e.getKeyCode();
+    	
+    	int newCol = player.col;
+    	int newRow = player.row;
+    	
+    	if(code ==java.awt.event.KeyEvent.VK_UP) {
+    		newRow--;
+    	}
+    	
+    	if(code ==java.awt.event.KeyEvent.VK_DOWN) {
+    		 newRow++;
+    	}
+    	
+    	if(code ==java.awt.event.KeyEvent.VK_LEFT) {
+    		newCol--;
+    	}
+    	
+    	if(code ==java.awt.event.KeyEvent.VK_RIGHT) {
+    		newCol++;
+    	}
+    	
+    	//checks the boundaries of the screen
+    	if(newCol >= 0 && newCol < maxScreenCol &&
+    			newRow >= 0 && newRow <maxScreenRow) {
+    		
+    		//Checks if terrain is passable
+    		if(worldMap[newCol][newRow].isPassable()) {
+    			player.col = newCol;
+    			player.row = newRow;
+    		}
+    	}
+    	
+    }
+    
+    @Override
+    public void keyReleased(java.awt.event.KeyEvent e) {}
+    
+    @Override
+    public void keyTyped(java.awt.event.KeyEvent e) {}
+    
 }
