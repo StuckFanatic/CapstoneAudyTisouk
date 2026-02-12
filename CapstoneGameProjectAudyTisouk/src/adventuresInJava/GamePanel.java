@@ -3,6 +3,7 @@ package adventuresInJava;
 import javax.swing.JPanel;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
 import java.awt.Color;
 
 
@@ -17,11 +18,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     final int screenWidth = tileSize * maxScreenCol;
     final int screenHeight = tileSize * maxScreenRow;
     
+    //Movement of the player
+    private int maxMovement = 4;
+    private int movementLeft = 4;
+    
+    
     Player player;
 
     Thread gameThread;
-    
+    //Over world Map
     Tile[][] worldMap;
+    
     
 
     public GamePanel() {
@@ -65,6 +72,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}	
     	
     }
+    
+    //Explore tiles method- will add more?
+    
+    private void exploreTile() {
+    	
+    	TileType tile = worldMap[player.col][player.row].getType();
+    	
+    	System.out.println("Exploring tile: " + tile);
+    	
+    	if (tile ==TileType.GRASS) {
+    		System.out.println("You found nothing but grass");
+    	}
+    	else if (tile ==TileType.HILL) {
+    		System.out.println("You found treasure hidden in the hills!");
+    		
+    	}
+    	
+    	endTurn();
+    	
+    	
+    }
+    
+    //run out of movement ends turn
+    private void endTurn() {
+    	movementLeft = maxMovement;
+    }
+    
+    
     
     //Game Logic goes here
     //Start
@@ -115,39 +150,51 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //keys need to be pressed for movement
     @Override
-    public void keyPressed(java.awt.event.KeyEvent e) {
+    public void keyPressed(KeyEvent e) {
+
+        int code = e.getKeyCode();
+
+        int newCol = player.col;
+        int newRow = player.row;
+
+        // Direction input
+        if (code == KeyEvent.VK_UP) {
+            newRow--;
+        }
+        if (code == KeyEvent.VK_DOWN) {
+            newRow++;
+        }
+        if (code == KeyEvent.VK_LEFT) {
+            newCol--;
+        }
+        if (code == KeyEvent.VK_RIGHT) {
+            newCol++;
+        }
     	
-    	int code = e.getKeyCode();
-    	
-    	int newCol = player.col;
-    	int newRow = player.row;
-    	
-    	if(code ==java.awt.event.KeyEvent.VK_UP) {
-    		newRow--;
+    	if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+    		exploreTile();
     	}
     	
-    	if(code ==java.awt.event.KeyEvent.VK_DOWN) {
-    		 newRow++;
-    	}
-    	
-    	if(code ==java.awt.event.KeyEvent.VK_LEFT) {
-    		newCol--;
-    	}
-    	
-    	if(code ==java.awt.event.KeyEvent.VK_RIGHT) {
-    		newCol++;
-    	}
-    	
-    	//checks the boundaries of the screen
-    	if(newCol >= 0 && newCol < maxScreenCol &&
-    			newRow >= 0 && newRow <maxScreenRow) {
-    		
-    		//Checks if terrain is passable
-    		if(worldMap[newCol][newRow].isPassable()) {
-    			player.col = newCol;
-    			player.row = newRow;
-    		}
-    	}
+    	if (movementLeft > 0) {
+
+            // Check bounds
+            if (newCol >= 0 && newCol < maxScreenCol &&
+                newRow >= 0 && newRow < maxScreenRow) {
+
+                // Check passable terrain
+                if (worldMap[newCol][newRow].isPassable()) {
+
+                    player.col = newCol;
+                    player.row = newRow;
+                    movementLeft--;
+
+                    // Auto explore if out of movement
+                    if (movementLeft == 0) {
+                        exploreTile();
+                    }
+                }
+            }
+        }
     	
     }
     

@@ -61,6 +61,10 @@ public class Tile {
 		return passable;
 		
 	}
+
+	public TileType getType() {
+		return type;
+	}
 	
 	
 	
