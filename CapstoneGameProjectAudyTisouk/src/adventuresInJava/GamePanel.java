@@ -52,20 +52,40 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //For now we will randomly generate the world with tiles to see it visually
     //The plan will be to generate the world with a text file or hard code it
+    //Replace generate world with a hand crafted map
     public void generateWorld() {
     	
+    	int[][] mapLayout = {
+    			
+    			{0,0,0,0,1,1,0,0,2,2},
+    			{0,0,0,0,1,1,0,0,2,2},
+    			{0,0,0,0,1,1,0,0,0,0},
+    			{2,2,0,0,1,1,0,1,1,1},
+    			{2,2,0,0,0,0,0,0,0,0},
+    			{0,0,0,1,1,1,2,2,2,0},
+    			{0,1,1,1,0,0,2,0,0,0},
+    			{0,0,0,1,0,0,2,0,1,0},
+    			{2,2,0,0,0,0,0,0,1,0},
+    			{2,2,0,1,1,0,0,0,0,0},
+    	};
+    	
+    	
+    	
+    	//replace the old map with the above hand made one. Still stuck on if-then vs switch values
     	for(int col = 0; col < maxScreenCol; col++) {
     		for( int row = 0; row <maxScreenRow; row++) {
     			
+    			int tileValue = mapLayout[row][col];
     			
-    			if((col + row) % 7 == 0) {
+    			
+    			if(tileValue == 0) {
+    				worldMap[col][row] = new Tile(TileType.GRASS);
+    				
+    			}else if (tileValue == 1) {
     				worldMap[col][row] = new Tile(TileType.WATER);
     				
-    			}else if((col + row) % 5 == 0) {
+    			}else if (tileValue == 2){
     				worldMap[col][row] = new Tile(TileType.HILL);
-    				
-    			}else {
-    				worldMap[col][row] = new Tile(TileType.GRASS);
     				
     			}	
     			
