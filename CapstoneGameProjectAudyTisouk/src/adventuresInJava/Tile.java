@@ -16,7 +16,7 @@ public class Tile {
 		
 		this.type = type;
 		
-		//Water should not be passable
+		//Water should NOT be passable
 		switch(type) {
 		
 		case WATER:
@@ -31,22 +31,35 @@ public class Tile {
 	}
 
 	//Instead of black tiles this will color in tiles as placeholder to what they are
+	//Changing the switch values to current types (grass,hill,water) to improve visual clarity for the future
 	public void draw(Graphics g, int x, int y, int tileSize) {
 		
-		
-		switch(type) {
-		
-		case GRASS:
-			g.setColor(Color.green);
-			break;
-		case WATER:
-			g.setColor(Color.blue);
-			break;
-		case HILL:
-			g.setColor(Color.gray);
-			break;
+		if(type == TileType.GRASS) {
 			
+			//Base Grass look?
+			g.setColor(new Color(34, 139, 34));
+			g.fillRect(x, y, tileSize, tileSize);
+				
+
+			
+		}
 		
+		else if (type == TileType.WATER) {
+			
+			//Base water look
+			g.setColor(new Color(30, 144, 255));
+			g.fillRect(x, y, tileSize, tileSize);
+			
+			
+			
+		}
+		
+		else if (type == TileType.HILL) {
+			
+			//Base Hill look
+			g.setColor(new Color(139, 69, 19));
+			g.fillRect(x, y, tileSize, tileSize);
+			
 		}
 		
 		g.fillRect(x, y, tileSize, tileSize);
