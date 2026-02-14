@@ -3,6 +3,7 @@ package adventuresInJava;
 import javax.swing.JPanel;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.Color;
 
@@ -15,8 +16,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     final int tileSize = 48;
     final int maxScreenCol = 10;
     final int maxScreenRow = 10;
-    final int screenWidth = tileSize * maxScreenCol;
-    final int screenHeight = tileSize * maxScreenRow;
+    //final int screenWidth = tileSize * maxScreenCol;
+   // final int screenHeight = tileSize * maxScreenRow;
+    
+    //Screen Width and height
+    private int screenWidth = 800;
+    private int screenHeight = 600;
     
     //Movement of the player
     private int maxMovement = 4;
@@ -25,6 +30,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Turn/DayCounter
     private int day = 1;
     
+    //Game Banner: Will add to UI but for now add here
+    private int dayBannerTimer = 0;
+    private final int DAY_BANNER_DURATION = 120; 
     
     Player player;
     Thread gameThread;
@@ -119,7 +127,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //run out of movement ends turn
     private void endTurn() {
+    	//Day
     	day++;
+    	dayBannerTimer = DAY_BANNER_DURATION;
+    	//Movement
     	movementLeft = maxMovement;
     	
     	System.out.println("---- End of Day ----");
@@ -138,13 +149,33 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     @Override
     public void run() {
 
+        double drawInterval = 1000000000 / 60; 
+        double delta = 0;
+        long lastTime = System.nanoTime();
+        long currentTime;
+
         while(gameThread != null) {
-            update();
-            repaint();
+
+            currentTime = System.nanoTime();
+
+            delta += (currentTime - lastTime) / drawInterval;
+            lastTime = currentTime;
+
+            if(delta >= 1) {
+                update();
+                repaint();
+                delta--;
+            }
         }
     }
 
+
     public void update() {
+    	
+        //Timer each time an end turn occurs the banner will appear and 
+        if(dayBannerTimer > 0) {
+        	dayBannerTimer--;
+        }
     }
 
     //This is where the tile lines start
@@ -167,13 +198,39 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		int distance = Math.abs(col - player.col) + Math.abs(row - player.row);
         		
         		if (distance <= movementLeft && worldMap[col][row].isPassable()) {
-        			g.setColor(new Color(100, 100, 100, 170)); //Darker Green. Will change later?
+        			g.setColor(new Color(100, 100, 100, 170)); //Darker. Will change later?
         			g.fillRect(x, y, tileSize, tileSize);
         		}
         	}
         	
         }
         
+        //Banner Day Overlay
+        if(dayBannerTimer > 0) {
+        	
+        	Graphics2D g2 = (Graphics2D) g;
+        	
+        	float progress = 1f - (dayBannerTimer / (float) DAY_BANNER_DURATION);
+
+        	// Smooth curve
+        	int alpha = (int)(255 * Math.sin(progress * Math.PI));
+        	
+        	g2.setColor(new Color(0, 0, 0, alpha / 2));
+        	g2.fillRect(0, 0, getWidth(), getHeight());
+        	
+        	g2.setColor(new Color(255, 255, 255, alpha));
+        	g2.setFont(g2.getFont().deriveFont(36f));
+        	
+        	String text = "Day " + day;
+        	
+        	int textWidth = g2.getFontMetrics().stringWidth(text);
+        	int x = (screenWidth - textWidth) / 2;
+        	int y = screenHeight / 2;
+        	
+        	g2.drawString(text, x, y);
+        }
+        
+
         g.setColor(Color.WHITE);
         g.drawString("Day: " + day, 10, 20);
         g.drawString("Movement Left:" + movementLeft, 10, 40);
@@ -209,6 +266,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if(e.getKeyCode() == KeyEvent.VK_ENTER) {
     		exploreTile();
+    		repaint();
+    	    return;
     	}
     	
     	if (movementLeft > 0) {
