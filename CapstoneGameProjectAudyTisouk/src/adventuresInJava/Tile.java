@@ -62,8 +62,7 @@ public class Tile {
 			
 		}
 		
-		g.fillRect(x, y, tileSize, tileSize);
-		g.setColor(Color.black);
+		g.setColor(new Color(0, 0, 0, 100));
 		g.drawRect(x, y, tileSize, tileSize);
 		
 
