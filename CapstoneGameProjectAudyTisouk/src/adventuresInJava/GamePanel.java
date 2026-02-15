@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.Color;
+import java.awt.Font;
 
 
 
@@ -269,7 +270,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	
         	Graphics2D g2 = (Graphics2D) g;
         	
-        	
+        	//Saves the font
+        	Font originalFont = g2.getFont();
         	
         	float progress = 1f - (dayBannerTimer / (float) DAY_BANNER_DURATION);
 
@@ -289,6 +291,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	int y = screenHeight / 2;
         	
         	g2.drawString(text, x, y);
+        	
+        	g2.setFont(originalFont);
         }
         
 
