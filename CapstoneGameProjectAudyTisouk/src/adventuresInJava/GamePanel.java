@@ -16,12 +16,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     final int tileSize = 48;
     final int maxScreenCol = 10;
     final int maxScreenRow = 10;
-    //final int screenWidth = tileSize * maxScreenCol;
-   // final int screenHeight = tileSize * maxScreenRow;
+
     
     //Screen Width and height
     private int screenWidth = 800;
     private int screenHeight = 600;
+    
+    //UI Bottom Panel for info?
+    private int uiPanelHeight = 120;
     
     //Movement of the player
     private int maxMovement = 4;
@@ -58,6 +60,56 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
        
     }
     
+    //This will be the start of the UI panels that will used 
+    
+    private void drawUI(Graphics g) {
+    	
+    	int panelY = getHeight() - uiPanelHeight;
+    	
+    	//panel background color for now use a default color
+    	g.setColor(new Color(20,20,20));
+    	g.fillRect(0, panelY, getWidth(), uiPanelHeight);
+    	
+    	
+    	//Border Color with main game window
+    	g.setColor(Color.DARK_GRAY);
+    	g.drawLine(0, panelY, getWidth(), panelY);
+    	
+    	//text color
+    	g.setColor(Color.WHITE);
+    	
+    	//Information panel will hold information
+    	TileType currentTile = worldMap[player.col][player.row].getType();
+    	
+    	String tileName = "Tile: " + currentTile;
+    	String tileDescription = getTileDescription(currentTile);
+    	
+    	g.drawString(tileName, 20, panelY + 30);
+    	g.drawString(tileDescription, 20, panelY + 55);
+    	
+    	g.drawString("Day: " + day, 500, panelY +30);
+    	g.drawString("Movement: " + movementLeft + "/" + maxMovement, 500, panelY + 55);
+    	
+    	
+    }
+    
+    //This will be the tile descriptions that the UI calls
+    private String getTileDescription(TileType type) {
+    	
+    	if(type == TileType.GRASS) {
+    		
+    		return "An open field of grass as the eye can see.";
+    	}
+    	else if(type == TileType.WATER) {
+    		return "How are you standing on this tile? Cheater.";
+    	}
+    	else if(type == TileType.HILL) {
+    		return "Rocky mounds of earth";
+    	}
+    	return "";
+    	
+    }
+    
     //For now we will randomly generate the world with tiles to see it visually
     //The plan will be to generate the world with a text file or hard code it
     //Replace generate world with a hand crafted map
@@ -65,16 +117,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	int[][] mapLayout = {
     			
-    			{0,0,0,0,1,1,0,0,2,2},
-    			{0,0,0,0,1,1,0,0,2,2},
+    			{0,0,0,0,1,1,2,0,2,2},
     			{0,0,0,0,1,1,0,0,0,0},
-    			{2,2,0,0,1,1,0,1,1,1},
-    			{2,2,0,0,0,0,0,0,0,0},
+    			{0,0,0,0,1,1,0,0,2,2},
+    			{0,0,0,0,1,1,0,1,1,1},
+    			{0,0,0,0,0,0,0,0,0,0},
     			{0,0,0,1,1,1,2,2,2,0},
     			{0,1,1,1,0,0,2,0,0,0},
     			{0,0,0,1,0,0,2,0,1,0},
-    			{2,2,0,0,0,0,0,0,1,0},
-    			{2,2,0,1,1,0,0,0,0,0},
+    			{0,0,0,0,0,0,0,0,1,0},
+    			{2,0,0,1,1,0,0,0,0,0},
     	};
     	
     	
@@ -125,6 +177,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    
+    
     //run out of movement ends turn
     private void endTurn() {
     	//Day
@@ -135,6 +189,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	System.out.println("---- End of Day ----");
     }
+    
     
     
     
@@ -203,12 +258,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		}
         	}
         	
+        	 
         }
+       
+        
+        
         
         //Banner Day Overlay
         if(dayBannerTimer > 0) {
         	
         	Graphics2D g2 = (Graphics2D) g;
+        	
+        	
         	
         	float progress = 1f - (dayBannerTimer / (float) DAY_BANNER_DURATION);
 
@@ -235,8 +296,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.drawString("Day: " + day, 10, 20);
         g.drawString("Movement Left:" + movementLeft, 10, 40);
         
+        //draws panel
+        drawUI(g);
+        
+        //draw player
         player.draw(g);
         
+        
+       
         g.dispose();
     }
     
