@@ -43,9 +43,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Over world Map
     Tile[][] worldMap;
     
+    //Current State of Game
+    private GameState currentState = GameState.OVERWORLD;
+    
+    //Temp Home for a enum
+	private enum GameState {
+		OVERWORLD,
+		TOWN,
+		BATTLE,
+		DIALOGUE
+	}
+    
     
 
-    public GamePanel() {
+    public GamePanel() {    	
 
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.black);
@@ -57,7 +68,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         worldMap = new Tile[maxScreenCol][maxScreenRow];
         generateWorld();
-        
        
     }
     
@@ -190,7 +200,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	}
     	else if (tile ==TileType.TOWN) {
+    		currentState = GameState.TOWN;
     		System.out.println("You enter the town...");
+    		return;
     		
     	}
     	
@@ -198,8 +210,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	
     }
-    
-    
     
     //run out of movement ends turn
     private void endTurn() {
@@ -211,9 +221,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	System.out.println("---- End of Day ----");
     }
-    
-    
-    
     
     //Game Logic goes here
     //Start
@@ -246,13 +253,54 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     }
 
-
     public void update() {
     	
-        //Timer each time an end turn occurs the banner will appear and 
+    	//Separating the logic by current states the game is in
+    	switch(currentState) {
+    	
+    	case OVERWORLD:
+    		updateOverworld();
+    		break;
+    		
+    	case TOWN:
+    		updateTown();
+    		break;
+    	
+    	case BATTLE:
+    		updateBattle();
+    		break;
+    	
+    	case DIALOGUE:
+    		updateDialogue();
+    		break;
+    		
+    		
+    		
+
+    	}
+
+    	
+    }
+    
+    private void updateOverworld() {
+    	
+    	//Timer each time an end turn occurs the banner will appear 
         if(dayBannerTimer > 0) {
         	dayBannerTimer--;
         }
+    	
+    }
+    
+    private void updateTown() {
+    	
+    }
+    
+    private void updateBattle() {
+    	
+    }
+    
+    private void updateDialogue() {
+    	
     }
 
     //This is where the tile lines start
@@ -283,9 +331,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	 
         }
        
-        
-        
-        
         //Banner Day Overlay
         if(dayBannerTimer > 0) {
         	
@@ -316,7 +361,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	g2.setFont(originalFont);
         }
         
-
         g.setColor(Color.WHITE);
         g.drawString("Day: " + day, 10, 20);
         g.drawString("Movement Left:" + movementLeft, 10, 40);
@@ -326,8 +370,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         //draw player
         player.draw(g);
-        
-        
        
         g.dispose();
     }
@@ -357,18 +399,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     	
     	if(e.getKeyCode() == KeyEvent.VK_ENTER) {
-    		exploreTile();
-    		repaint();
+    		if(currentState == GameState.OVERWORLD) {
+    			exploreTile();
+    			repaint();
+    		}
+    		
     	    return;
     	}
     	
-    	if (movementLeft > 0) {
+    	if (currentState == GameState.OVERWORLD && movementLeft > 0) {
 
             // Check bounds
             if (newCol >= 0 && newCol < maxScreenCol &&
                 newRow >= 0 && newRow < maxScreenRow) {
 
-                // Check passable terrain
+                // Check passing terrain
                 if (worldMap[newCol][newRow].isPassable()) {
 
                     player.col = newCol;
