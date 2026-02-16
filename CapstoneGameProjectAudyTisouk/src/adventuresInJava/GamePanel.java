@@ -98,15 +98,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private String getTileDescription(TileType type) {
     	
     	if(type == TileType.GRASS) {
-    		
+    		//Grass
     		return "An open field of grass as the eye can see.";
     	}
+    	//Water
     	else if(type == TileType.WATER) {
     		return "How are you standing on this tile? Cheater.";
     	}
+    	//Hills
     	else if(type == TileType.HILL) {
     		return "Rocky mounds of earth";
     	}
+    	//Town
+    	else if (type == TileType.TOWN) {
+    		return "A peaceful and lively town with open gates.";
+    	}
+    	
     	return "";
     	
     }
@@ -123,7 +130,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			{0,0,0,0,1,1,0,0,2,2},
     			{0,0,0,0,1,1,0,1,1,1},
     			{0,0,0,0,0,0,0,0,0,0},
-    			{0,0,0,1,1,1,2,2,2,0},
+    			{0,0,3,1,1,1,2,2,2,0},
     			{0,1,1,1,0,0,2,0,0,0},
     			{0,0,0,1,0,0,2,0,1,0},
     			{0,0,0,0,0,0,0,0,1,0},
@@ -142,13 +149,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			if(tileValue == 0) {
     				worldMap[col][row] = new Tile(TileType.GRASS);
     				
-    			}else if (tileValue == 1) {
+    			}
+    			else if (tileValue == 1) {
     				worldMap[col][row] = new Tile(TileType.WATER);
     				
-    			}else if (tileValue == 2){
+    			}
+    			else if (tileValue == 2){
     				worldMap[col][row] = new Tile(TileType.HILL);
     				
-    			}	
+    			}
+    			else if (tileValue == 3) {
+    				worldMap[col][row] = new Tile(TileType.TOWN);
+    				
+    				
+    			}
+    				
+    					
+    			
     			
     		}
     		
@@ -170,6 +187,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	else if (tile ==TileType.HILL) {
     		System.out.println("You found treasure hidden in the hills!");
+    		
+    	}
+    	else if (tile ==TileType.TOWN) {
+    		System.out.println("You enter the town...");
     		
     	}
     	

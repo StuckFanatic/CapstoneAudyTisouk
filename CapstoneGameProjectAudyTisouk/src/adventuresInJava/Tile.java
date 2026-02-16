@@ -62,6 +62,21 @@ public class Tile {
 			
 		}
 		
+		else if (type == TileType.TOWN) {
+			
+			//base Town look
+			g.setColor(new Color(150, 75, 0));
+			g.fillRect(x, y, tileSize, tileSize);
+			
+			g.setColor(Color.YELLOW);
+			g.fillOval(x + 10, y + 10, tileSize - 20, tileSize - 20);
+			
+		}
+		
+		
+		
+		
+		
 		g.setColor(new Color(0, 0, 0, 100));
 		g.drawRect(x, y, tileSize, tileSize);
 		
