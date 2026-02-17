@@ -71,38 +71,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
        
     }
     
-    //This will be the start of the UI panels that will used 
-    
-    private void drawUI(Graphics g) {
-    	
-    	int panelY = getHeight() - uiPanelHeight;
-    	
-    	//panel background color for now use a default color
-    	g.setColor(new Color(20,20,20));
-    	g.fillRect(0, panelY, getWidth(), uiPanelHeight);
-    	
-    	
-    	//Border Color with main game window
-    	g.setColor(Color.DARK_GRAY);
-    	g.drawLine(0, panelY, getWidth(), panelY);
-    	
-    	//text color
-    	g.setColor(Color.WHITE);
-    	
-    	//Information panel will hold information
-    	TileType currentTile = worldMap[player.col][player.row].getType();
-    	
-    	String tileName = "Tile: " + currentTile;
-    	String tileDescription = getTileDescription(currentTile);
-    	
-    	g.drawString(tileName, 20, panelY + 30);
-    	g.drawString(tileDescription, 20, panelY + 55);
-    	
-    	g.drawString("Day: " + day, 500, panelY +30);
-    	g.drawString("Movement: " + movementLeft + "/" + maxMovement, 500, panelY + 55);
-    	
-    	
-    }
+
     
     //This will be the tile descriptions that the UI calls
     private String getTileDescription(TileType type) {
@@ -328,11 +297,74 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		break;
         
         }
-        
+        drawGlobalUI(g);
         
     }
     
-    private void drawOverworld(Graphics g) {
+    //Changed the panel to be able to match current state of player
+    private void drawGlobalUI(Graphics g) {
+		
+    	int panelY = getHeight() - uiPanelHeight;
+
+        // Panel background
+        g.setColor(new Color(20,20,20));
+        g.fillRect(0, panelY, getWidth(), uiPanelHeight);
+
+        // Border line
+        g.setColor(Color.DARK_GRAY);
+        g.drawLine(0, panelY, getWidth(), panelY);
+
+        // Text color
+        g.setColor(Color.WHITE);
+
+        switch(currentState) {
+
+            case OVERWORLD:
+
+                TileType currentTile = worldMap[player.col][player.row].getType();
+
+                String tileName = "Tile: " + currentTile;
+                String tileDescription = getTileDescription(currentTile);
+
+                g.drawString(tileName, 20, panelY + 30);
+                g.drawString(tileDescription, 20, panelY + 55);
+
+                g.drawString("Day: " + day, 500, panelY + 30);
+                g.drawString("Movement: " + movementLeft + "/" + maxMovement, 500, panelY + 55);
+
+                break;
+
+            case TOWN:
+
+                g.drawString("Town of ???", 20, panelY + 30);
+                g.drawString("Visit shops or talk to NPCs", 20, panelY + 55);
+
+                g.drawString("Gold: 0", 500, panelY + 30);
+                g.drawString("Press ESC to leave", 500, panelY + 55);
+
+                break;
+
+            case BATTLE:
+
+                g.drawString("Battle Mode", 20, panelY + 30);
+                g.drawString("Select a unit to act", 20, panelY + 55);
+
+                g.drawString("Turn: Player", 500, panelY + 30);
+                g.drawString("Units Remaining: ?", 500, panelY + 55);
+
+                break;
+
+            case DIALOGUE:
+
+                g.drawString("Dialogue", 20, panelY + 30);
+                g.drawString("Press ENTER to continue...", 20, panelY + 55);
+
+                break;
+        }
+    	
+	}
+
+	private void drawOverworld(Graphics g) {
     	
     	//Draw Tiles
         for(int col = 0; col <maxScreenCol; col++) {
@@ -389,8 +421,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.drawString("Day: " + day, 10, 20);
         g.drawString("Movement Left:" + movementLeft, 10, 40);
         
+        
         //draws panel
-        drawUI(g);
+        drawGlobalUI(g);
         //draw player
         player.draw(g);
        
