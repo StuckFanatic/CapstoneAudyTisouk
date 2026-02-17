@@ -308,8 +308,33 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         
-        //Grid Tiles lines here
-        //Updated with the new TileTypes
+        //Switch for the different states
+        switch(currentState) {
+        
+        case OVERWORLD:
+    		drawOverworld(g);
+    		break;
+    		
+    	case TOWN:
+    		drawTown(g);
+    		break;
+    	
+    	case BATTLE:
+    		drawBattle(g);
+    		break;
+    	
+    	case DIALOGUE:
+    		drawDialogue(g);
+    		break;
+        
+        }
+        
+        
+    }
+    
+    private void drawOverworld(Graphics g) {
+    	
+    	//Draw Tiles
         for(int col = 0; col <maxScreenCol; col++) {
         	
         	for( int row = 0; row <maxScreenRow; row++) {
@@ -327,11 +352,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			g.fillRect(x, y, tileSize, tileSize);
         		}
         	}
-        	
-        	 
         }
        
-        //Banner Day Overlay
+        //Draw Banner
         if(dayBannerTimer > 0) {
         	
         	Graphics2D g2 = (Graphics2D) g;
@@ -361,18 +384,43 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	g2.setFont(originalFont);
         }
         
+        
         g.setColor(Color.WHITE);
         g.drawString("Day: " + day, 10, 20);
         g.drawString("Movement Left:" + movementLeft, 10, 40);
         
         //draws panel
         drawUI(g);
-        
         //draw player
         player.draw(g);
        
         g.dispose();
     }
+    
+    private void drawTown(Graphics g) {
+    	
+    	g.setColor(Color.DARK_GRAY);
+    	g.fillRect(0, 0, getWidth(), getHeight());
+    	
+    	g.setColor(Color.WHITE);
+    	g.drawString("Town Map Placeholder", 300, 300);
+    }
+    
+    private void drawBattle(Graphics g) {
+    	
+    	g.setColor(Color.RED);
+    	g.fillRect(0, 0, getWidth(), getHeight());
+    	
+    	g.setColor(Color.WHITE);
+    	g.drawString("Battle Screen Placeholder", 300, 300);
+    	
+    }
+    
+    private void drawDialogue(Graphics g) {
+    	
+    	drawOverworld(g); //Dialogue is displayed over the over world for now
+    }
+    
     
     
     //keys need to be pressed for movement
