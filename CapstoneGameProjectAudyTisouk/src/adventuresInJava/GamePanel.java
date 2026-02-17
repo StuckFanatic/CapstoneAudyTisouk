@@ -40,6 +40,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Adds in Dialogue Manager to the game Panel Class
     private DialogueManager dialogueManager = new DialogueManager();
     private GameState previousState;
+    private GameState nextState;
     
     Player player;
     Thread gameThread;
@@ -72,6 +73,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         worldMap = new Tile[maxScreenCol][maxScreenRow];
         generateWorld();
+        
        
     }
     
@@ -172,16 +174,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		System.out.println("You found treasure hidden in the hills!");
     		
     	}
-    	else if (tile ==TileType.TOWN) {
-    		currentState = GameState.TOWN;
-    		System.out.println("You enter the town...");
-    		return;
-    		
+    	else if (tile == TileType.TOWN) {
+
+    	    startDialogue(new String[] {
+    	        "Welcome to the town.",
+    	        "We appreciate your stay"
+    	    });
+    	    
+    	    return;
     	}
     	
     	endTurn();
-    	
-    	
     }
     
     //run out of movement ends turn
@@ -244,12 +247,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		break;
     	
     	case DIALOGUE:
-    		updateDialogue();
+    		dialogueManager.update();
     		break;
-    		
-    		
-    		
-
     	}
 
     	
@@ -302,6 +301,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         }
         drawGlobalUI(g);
+        
+        if(currentState == GameState.DIALOGUE) {
+            dialogueManager.draw(g, screenWidth, screenHeight);
+        }
         
     }
     
@@ -367,6 +370,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     	
 	}
+    
+    private void startDialogue(String[] lines) {
+    	
+    	previousState = currentState; 
+        currentState = GameState.DIALOGUE;
+
+        dialogueManager.startDialogue(lines);
+    }
+    
+    
 
 	private void drawOverworld(Graphics g) {
     	
@@ -427,11 +440,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         
         //draws panel
-        drawGlobalUI(g);
+        //drawGlobalUI(g);
         //draw player
         player.draw(g);
        
-        g.dispose();
+        //g.dispose();
     }
     
     private void drawTown(Graphics g) {
@@ -466,48 +479,48 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         int code = e.getKeyCode();
 
-        int newCol = player.col;
-        int newRow = player.row;
+        if (currentState == GameState.DIALOGUE) {
 
-        // Direction input
-        if (code == KeyEvent.VK_UP) {
-            newRow--;
-        }
-        if (code == KeyEvent.VK_DOWN) {
-            newRow++;
-        }
-        if (code == KeyEvent.VK_LEFT) {
-            newCol--;
-        }
-        if (code == KeyEvent.VK_RIGHT) {
-            newCol++;
-        }
-    	
-    	if(e.getKeyCode() == KeyEvent.VK_ENTER) {
-    		if(currentState == GameState.OVERWORLD) {
-    			exploreTile();
-    			repaint();
-    		}
-    		
-    	    return;
-    	}
-    	
-    	if (currentState == GameState.OVERWORLD && movementLeft > 0) {
+            if (code == KeyEvent.VK_ENTER) {
+                dialogueManager.nextLine();
 
-            // Check bounds
-            if (newCol >= 0 && newCol < maxScreenCol &&
-                newRow >= 0 && newRow < maxScreenRow) {
-
-                // Check passing terrain
-                if (worldMap[newCol][newRow].isPassable()) {
-
-                    player.col = newCol;
-                    player.row = newRow;
-                    movementLeft--;
-                    }
+                if (!dialogueManager.isActive()) {
+                    currentState = previousState;
                 }
             }
-    	repaint();
+
+            return;
+        }
+
+        if (code == KeyEvent.VK_ENTER) {
+            if (currentState == GameState.OVERWORLD) {
+                exploreTile();
+                repaint();
+            }
+            return;
+        }
+
+        if (currentState == GameState.OVERWORLD && movementLeft > 0) {
+
+            int newCol = player.col;
+            int newRow = player.row;
+
+            if (code == KeyEvent.VK_UP) newRow--;
+            if (code == KeyEvent.VK_DOWN) newRow++;
+            if (code == KeyEvent.VK_LEFT) newCol--;
+            if (code == KeyEvent.VK_RIGHT) newCol++;
+
+            if (newCol >= 0 && newCol < maxScreenCol &&
+                newRow >= 0 && newRow < maxScreenRow &&
+                worldMap[newCol][newRow].isPassable()) {
+
+                player.col = newCol;
+                player.row = newRow;
+                movementLeft--;
+            }
+        }
+
+        repaint();
     }
     
     @Override
