@@ -37,6 +37,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int dayBannerTimer = 0;
     private final int DAY_BANNER_DURATION = 120; 
     
+    //Adds in Dialogue Manager to the game Panel Class
+    private DialogueManager dialogueManager = new DialogueManager();
+    private GameState previousState;
+    
     Player player;
     Thread gameThread;
     
