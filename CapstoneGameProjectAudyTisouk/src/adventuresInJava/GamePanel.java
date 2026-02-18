@@ -48,6 +48,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Over world Map
     Tile[][] worldMap;
     
+    //Current Map
+    private Tile[][] currentMap;
+    
+    //Town Map
+    private Tile[][] townMap;
+    
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
     
@@ -108,6 +114,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Replace generate world with a hand crafted map
     public void generateWorld() {
     	
+    	currentMap = worldMap;
+    	
     	int[][] mapLayout = {
     			
     			{0,0,0,0,1,1,2,0,2,2},
@@ -163,7 +171,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void exploreTile() {
     	
-    	TileType tile = worldMap[player.col][player.row].getType();
+    	TileType tile = currentMap[player.col][player.row].getType();
     	
     	System.out.println("Day "+ day + " Exploring tile: " + tile);
     	
@@ -391,12 +399,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		int x = col * tileSize;
         		int y = row * tileSize;
 
-        		worldMap[col][row].draw(g, x, y, tileSize);
+        		currentMap[col][row].draw(g, x, y, tileSize);
         		
         		//Will calculate if distance is within players current movement then highlight it
         		int distance = Math.abs(col - player.col) + Math.abs(row - player.row);
         		
-        		if (distance <= movementLeft && worldMap[col][row].isPassable()) {
+        		if (distance <= movementLeft && currentMap[col][row].isPassable()) {
         			g.setColor(new Color(100, 100, 100, 170)); //Darker. Will change later?
         			g.fillRect(x, y, tileSize, tileSize);
         		}
@@ -512,7 +520,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (newCol >= 0 && newCol < maxScreenCol &&
                 newRow >= 0 && newRow < maxScreenRow &&
-                worldMap[newCol][newRow].isPassable()) {
+                currentMap[newCol][newRow].isPassable()) {
 
                 player.col = newCol;
                 player.row = newRow;
