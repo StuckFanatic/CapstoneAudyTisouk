@@ -179,7 +179,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    startDialogue(new String[] {
     	        "Welcome to the town.",
     	        "We appreciate your stay"
-    	    });
+    	    }, GameState.TOWN);
     	    
     	    return;
     	}
@@ -371,9 +371,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
 	}
     
-    private void startDialogue(String[] lines) {
+    private void startDialogue(String[] lines, GameState nextState) {
     	
-    	previousState = currentState; 
+    	previousState = nextState; 
         currentState = GameState.DIALOGUE;
 
         dialogueManager.startDialogue(lines);
