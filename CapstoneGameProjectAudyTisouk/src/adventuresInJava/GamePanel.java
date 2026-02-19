@@ -48,11 +48,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Over world Map
     Tile[][] worldMap;
     
+    
     //Current Map
     private GameMap currentMap;
     
     //Town Map
     private Tile[][] townMap;
+    
+    private GameMap overworldGameMap;
+    private GameMap townGameMap;
     
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
@@ -156,15 +160,56 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				
     				
     			}
-    				
-    					
+    			//Generates the Town method
+    			generateTown();		
     			
     			
     		}
-    		
+    		overworldGameMap = new GameMap(worldMap, "Overworld");
+    		townGameMap = new GameMap(townMap, "Town");
+
+    		currentMap = overworldGameMap;
     		
     	}	
     	
+    }
+    
+    //Map for Town
+    private void generateTown() {
+    	
+    	townMap = new Tile[10][10];
+    	
+    	int[][] layout = {
+
+    	        {1,1,1,1,1,1,1,1,1,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,1,1,1,1,1,1,1,1,1}
+    	    };
+    	
+    	for(int col = 0; col < 10; col++) {
+    		for( int row = 0; row < 10; row++) {
+    			
+    			int value = layout[row][col];
+    			
+    			
+    			if(value == 0) {
+    				townMap[col][row] = new Tile(TileType.GRASS);
+    				
+    			}
+    			else if (value == 1) {
+    				townMap[col][row] = new Tile(TileType.WATER);
+    			
+    			}
+    			
+    		}
+    	}
     }
     
     //Explore tiles method- will add more?
@@ -258,16 +303,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		dialogueManager.update();
     		break;
     	}
+    	
+    	//Timer each time an end turn occurs the banner will appear 
+    	if(dayBannerTimer > 0) {
+    	    dayBannerTimer--;
+    	}
 
     	
     }
     
     private void updateOverworld() {
     	
-    	//Timer each time an end turn occurs the banner will appear 
-        if(dayBannerTimer > 0) {
-        	dayBannerTimer--;
-        }
     	
     }
     
@@ -306,7 +352,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case DIALOGUE:
     		drawDialogue(g);
     		break;
-        
+
         }
         drawGlobalUI(g);
         
@@ -387,11 +433,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         dialogueManager.startDialogue(lines);
     }
     
-    
+ 
 
 	private void drawOverworld(Graphics g) {
     	
-    	//Draw Tiles
+		//Draw Tiles
         for(int col = 0; col <maxScreenCol; col++) {
         	
         	for( int row = 0; row <maxScreenRow; row++) {
@@ -457,11 +503,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void drawTown(Graphics g) {
     	
-    	g.setColor(Color.DARK_GRAY);
-    	g.fillRect(0, 0, getWidth(), getHeight());
-    	
-    	g.setColor(Color.WHITE);
-    	g.drawString("Town Map Placeholder", 300, 300);
+    	for(int col = 0; col < maxScreenCol; col++) {
+            for(int row = 0; row < maxScreenRow; row++) {
+
+                int x = col * tileSize;
+                int y = row * tileSize;
+
+                currentMap.getTiles()[col][row].draw(g, x, y, tileSize);
+            }
+        }
+
+        player.draw(g);
     }
     
     private void drawBattle(Graphics g) {
@@ -480,6 +532,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     
+    private boolean canMove() {
+
+        switch (currentState) {
+
+            case OVERWORLD:
+                return movementLeft > 0;
+
+            case TOWN:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+    
     
     //keys need to be pressed for movement
     @Override
@@ -493,7 +560,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 dialogueManager.nextLine();
 
                 if (!dialogueManager.isActive()) {
+
                     currentState = previousState;
+
+                    if(currentState == GameState.TOWN) {
+                        currentMap = townGameMap;
+
+                        player.col = 5;   
+                        player.row = 8;
+                    }
                 }
             }
 
@@ -508,7 +583,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
 
-        if (currentState == GameState.OVERWORLD && movementLeft > 0) {
+        if ((currentState == GameState.OVERWORLD || currentState == GameState.TOWN)
+                && canMove()) {
 
             int newCol = player.col;
             int newRow = player.row;
@@ -524,7 +600,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 player.col = newCol;
                 player.row = newRow;
-                movementLeft--;
+                
+            }
+            if (currentState == GameState.OVERWORLD) {
+            	movementLeft--;
             }
         }
 
