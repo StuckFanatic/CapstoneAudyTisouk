@@ -500,7 +500,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
        
         //g.dispose();
     }
+	
+	private void drawMap(Graphics g) {
+		
+	}
+	
+	private void drawMovementRange(Graphics g) {
+		
+	}
     
+	private void drawDayBanner(Graphics g) {
+		
+	}
+	
+	private void drawPlayer(Graphics g) {
+		
+		
+	}
     private void drawTown(Graphics g) {
     	
     	for(int col = 0; col < maxScreenCol; col++) {
