@@ -523,17 +523,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 	
     private void drawTown(Graphics g) {
     	
-    	for(int col = 0; col < maxScreenCol; col++) {
-            for(int row = 0; row < maxScreenRow; row++) {
-
-                int x = col * tileSize;
-                int y = row * tileSize;
-
-                currentMap.getTiles()[col][row].draw(g, x, y, tileSize);
-            }
-        }
-
-        player.draw(g);
+    	drawMap(g);
+        drawPlayer(g);
     }
     
     private void drawBattle(Graphics g) {
@@ -548,7 +539,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void drawDialogue(Graphics g) {
     	
-    	drawOverworld(g); //Dialogue is displayed over the over world for now
+    	drawMap(g);
+        drawPlayer(g);
     }
     
     
