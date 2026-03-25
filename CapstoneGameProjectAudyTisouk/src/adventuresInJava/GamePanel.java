@@ -436,7 +436,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
  
 
 	private void drawOverworld(Graphics g) {
-    	
+		drawMap(g);
+		drawMovementRange(g);
+		drawPlayer(g);
+		drawDayBanner(g);
+    }
+	
+	private void drawMap(Graphics g) {
 		//Draw Tiles
         for(int col = 0; col <maxScreenCol; col++) {
         	
@@ -447,17 +453,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         		currentMap.getTiles()[col][row].draw(g, x, y, tileSize);
         		
-        		//Will calculate if distance is within players current movement then highlight it
-        		int distance = Math.abs(col - player.col) + Math.abs(row - player.row);
-        		
-        		if (distance <= movementLeft && currentMap.getTiles()[col][row].isPassable()) {
-        			g.setColor(new Color(100, 100, 100, 170)); //Darker. Will change later?
-        			g.fillRect(x, y, tileSize, tileSize);
-        		}
         	}
         }
-       
-        //Draw Banner
+	}
+		
+	
+	private void drawMovementRange(Graphics g) {
+		
+		//Draw Tiles
+        for(int col = 0; col <maxScreenCol; col++) {
+        	
+        	for( int row = 0; row <maxScreenRow; row++) {
+        		
+        		int x = col * tileSize;
+        		int y = row * tileSize;
+        		
+		//Will calculate if distance is within players current movement then highlight it
+		int distance = Math.abs(col - player.col) + Math.abs(row - player.row);
+		
+		if (distance <= movementLeft && currentMap.getTiles()[col][row].isPassable()) {
+			g.setColor(new Color(100, 100, 100, 170)); //Darker. Will change later?
+			g.fillRect(x, y, tileSize, tileSize);
+			
+				}
+        	}
+		}
+	}
+    
+	private void drawDayBanner(Graphics g) {
+		
+		//Draw Banner
         if(dayBannerTimer > 0) {
         	
         	Graphics2D g2 = (Graphics2D) g;
@@ -486,37 +511,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	
         	g2.setFont(originalFont);
         }
-        
-        
-        g.setColor(Color.WHITE);
-        g.drawString("Day: " + day, 10, 20);
-        g.drawString("Movement Left:" + movementLeft, 10, 40);
-        
-        
-        //draws panel
-        //drawGlobalUI(g);
-        //draw player
-        player.draw(g);
-       
-        //g.dispose();
-    }
-	
-	private void drawMap(Graphics g) {
-		
-	}
-	
-	private void drawMovementRange(Graphics g) {
-		
-	}
-    
-	private void drawDayBanner(Graphics g) {
 		
 	}
 	
 	private void drawPlayer(Graphics g) {
 		
+		player.draw(g);;
 		
 	}
+	
+	
     private void drawTown(Graphics g) {
     	
     	for(int col = 0; col < maxScreenCol; col++) {
