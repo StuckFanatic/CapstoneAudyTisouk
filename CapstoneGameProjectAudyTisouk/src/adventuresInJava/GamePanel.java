@@ -42,6 +42,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private GameState previousState;
     private GameState nextState;
     
+    //Town Dialogue manager
+    private GameMap dialogueNextMap = null;
+    private int dialogueNextCol = -1;
+    private int dialogueNextRow = -1;
+    
     Player player;
     Thread gameThread;
     
@@ -110,6 +115,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	else if (type == TileType.EXIT) {
     		return "Exit town and retrun to world map.";
+    	}
+    	else if (type == TileType.NPC) {
+    		return "A townsperson. Press ENTER to talk.";
     	}
     	
     	return "";
@@ -187,7 +195,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        {1,1,1,1,1,1,1,1,1,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,0,0,0,0,0,0,0,0,1},
+    	        {1,0,0,0,0,3,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
@@ -213,6 +221,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			else if (value == 2) {
     				townMap[col][row] = new Tile(TileType.EXIT);
     			}
+    			else if (value == 3) {
+    				townMap[col][row] = new Tile(TileType.NPC);
+    			}
     			
     		}
     	}
@@ -235,10 +246,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	else if (tile == TileType.TOWN) {
 
-    	    startDialogue(new String[] {
-    	        "Welcome to the town.",
-    	        "We appreciate your stay"
-    	    }, GameState.TOWN);
+    		startDialogue(new String[] {
+    			    "Welcome to the town.",
+    			    "We appreciate your stay."
+    			}, GameState.TOWN, townGameMap, 5, 8);
     	    
     	    return;
     	}
@@ -276,6 +287,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		return; 
     		
     	}
+    	
+    	if (tile == TileType.NPC) {
+    		startDialogue(new String[] {
+    			    "Welcome, traveler.",
+    			    "The roads ahead can be dangerous."
+    			}, GameState.TOWN);
+    		return;
+    	}
+    	
     	if (tile == TileType.GRASS) {
     		System.out.println("There is nothing here.");
     	}
@@ -468,10 +488,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
 	}
     
+    //Two Start Dialogues, Simple and Full
     private void startDialogue(String[] lines, GameState nextState) {
-    	
-    	previousState = nextState; 
+        startDialogue(lines, nextState, null, -1, -1);
+    }
+    
+    private void startDialogue(String[] lines, GameState nextState, GameMap nextMap, int nextCol, int nextRow) {
+
+        previousState = nextState;
         currentState = GameState.DIALOGUE;
+
+        dialogueNextMap = nextMap;
+        dialogueNextCol = nextCol;
+        dialogueNextRow = nextRow;
 
         dialogueManager.startDialogue(lines);
     }
@@ -618,12 +647,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                     currentState = previousState;
 
-                    if(currentState == GameState.TOWN) {
-                        currentMap = townGameMap;
-
-                        player.col = 5;   
-                        player.row = 8;
+                    if (dialogueNextMap != null) {
+                        currentMap = dialogueNextMap;
+                        player.col = dialogueNextCol;
+                        player.row = dialogueNextRow;
                     }
+
+                    dialogueNextMap = null;
+                    dialogueNextCol = -1;
+                    dialogueNextRow = -1;
                 }
             }
 

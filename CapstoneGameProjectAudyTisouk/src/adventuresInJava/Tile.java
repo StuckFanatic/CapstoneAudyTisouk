@@ -80,6 +80,15 @@ public class Tile {
 			g.fillRect(x, y, tileSize, tileSize);
 		}
 		
+		else if (type == TileType.NPC) {
+			
+			//Npc
+			g.setColor(new Color(160, 82, 45));
+			g.fillRect(x, y, tileSize, tileSize);
+			
+			g.setColor(Color.WHITE);
+		    g.fillOval(x + 12, y + 8, 24, 24);
+		}
 		
 		
 		

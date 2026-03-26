@@ -6,7 +6,8 @@ public enum TileType {
 	WATER,
 	HILL,
 	TOWN,
-	EXIT
+	EXIT,
+	NPC
 	
 	
 	
