@@ -16,7 +16,7 @@ public class Tile {
 		
 		this.type = type;
 		
-		//Water should NOT be passable
+		//Water should NOT be able to be passed
 		switch(type) {
 		
 		case WATER:
@@ -71,6 +71,13 @@ public class Tile {
 			g.setColor(Color.YELLOW);
 			g.fillOval(x + 10, y + 10, tileSize - 20, tileSize - 20);
 			
+		}
+		
+		else if (type == TileType.EXIT) {
+			
+			//exit town/shop etc.
+			g.setColor(new Color(180, 180, 60));
+			g.fillRect(x, y, tileSize, tileSize);
 		}
 		
 		

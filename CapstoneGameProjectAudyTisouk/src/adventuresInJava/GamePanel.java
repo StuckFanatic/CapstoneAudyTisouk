@@ -108,6 +108,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	else if (type == TileType.TOWN) {
     		return "A peaceful and lively town with open gates.";
     	}
+    	else if (type == TileType.EXIT) {
+    		return "Exit town and retrun to world map.";
+    	}
     	
     	return "";
     	
@@ -190,7 +193,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,1,1,1,1,1,1,1,1,1}
+    	        {1,1,1,1,2,2,1,1,1,1}
     	    };
     	
     	for(int col = 0; col < 10; col++) {
@@ -206,6 +209,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			else if (value == 1) {
     				townMap[col][row] = new Tile(TileType.WATER);
     			
+    			}
+    			else if (value == 2) {
+    				townMap[col][row] = new Tile(TileType.EXIT);
     			}
     			
     		}
@@ -238,6 +244,41 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	endTurn();
+    }
+    
+    //This make the enter key behave different depending on the GameState
+    private void interactWithTile() {
+    	
+    	TileType tile = currentMap.getTiles()[player.col][player.row].getType();
+    	
+    	if (currentState == GameState.OVERWORLD) {
+    		exploreTile();
+    		return;
+    	}
+    	
+    	if (currentState == GameState.TOWN) {
+    		interactInTown(tile);
+    		return;
+    	}
+
+    }
+    
+    private void interactInTown(TileType tile) {
+    	
+    	if (tile == TileType.EXIT) {
+    		currentMap = overworldGameMap;
+    		currentState = GameState.OVERWORLD;
+    		
+    		//Temporary return location
+    		player.col = 2;
+    		player.row = 5;
+    		
+    		return; 
+    		
+    	}
+    	if (tile == TileType.GRASS) {
+    		System.out.println("There is nothing here.");
+    	}
     }
     
     //run out of movement ends turn
@@ -397,11 +438,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             case TOWN:
 
+            	TileType currentTownTile = currentMap.getTiles()[player.col][player.row].getType();
+
                 g.drawString("Town of ???", 20, panelY + 30);
-                g.drawString("Visit shops or talk to NPCs", 20, panelY + 55);
+                g.drawString(getTileDescription(currentTownTile), 20, panelY + 55);
 
                 g.drawString("Gold: 0", 500, panelY + 30);
-                g.drawString("Press ESC to leave", 500, panelY + 55);
+                g.drawString("Press ENTER to interact", 500, panelY + 55);
 
                 break;
 
@@ -588,8 +631,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         if (code == KeyEvent.VK_ENTER) {
-            if (currentState == GameState.OVERWORLD) {
-                exploreTile();
+            if (currentState == GameState.OVERWORLD || currentState == GameState.TOWN) {
+                interactWithTile();
                 repaint();
             }
             return;
