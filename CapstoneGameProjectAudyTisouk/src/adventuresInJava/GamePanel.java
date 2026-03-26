@@ -71,7 +71,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		OVERWORLD,
 		TOWN,
 		BATTLE,
-		DIALOGUE
+		DIALOGUE,
+		SHOP
 	}
     
     
@@ -118,6 +119,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	else if (type == TileType.NPC) {
     		return "A townsperson. Press ENTER to talk.";
+    	}
+    	else if (type == TileType.SHOP) {
+    		return "A Shop. Press ENTER to browse.";
     	}
     	
     	return "";
@@ -195,7 +199,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        {1,1,1,1,1,1,1,1,1,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,0,0,0,0,3,0,0,0,1},
+    	        {1,0,0,0,0,3,4,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
@@ -224,6 +228,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			else if (value == 3) {
     				townMap[col][row] = new Tile(TileType.NPC);
     			}
+    			else if (value == 4) {
+    				townMap[col][row] = new Tile(TileType.SHOP);
+    			}
     			
     		}
     	}
@@ -244,7 +251,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		System.out.println("You found treasure hidden in the hills!");
     		
     	}
-    	else if (tile == TileType.TOWN) {
+    	if (tile == TileType.TOWN) {
 
     		startDialogue(new String[] {
     			    "Welcome to the town.",
@@ -295,6 +302,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			}, GameState.TOWN);
     		return;
     	}
+    	
+    	if (tile == TileType.SHOP) {
+            currentState = GameState.SHOP;
+            return;
+        }
     	
     	if (tile == TileType.GRASS) {
     		System.out.println("There is nothing here.");
@@ -363,6 +375,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case DIALOGUE:
     		dialogueManager.update();
     		break;
+    	
+    	case SHOP:
+    		updateShop();
+    		break;
     	}
     	
     	//Timer each time an end turn occurs the banner will appear 
@@ -373,6 +389,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+
+    
     private void updateOverworld() {
     	
     	
@@ -380,6 +398,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void updateTown() {
     	
+    }
+    
+    private void updateShop() {
+
     }
     
     private void updateBattle() {
@@ -412,6 +434,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	case DIALOGUE:
     		drawDialogue(g);
+    		break;
+    	
+    	case SHOP:
+    		drawShop(g);
     		break;
 
         }
@@ -482,6 +508,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 g.drawString("Dialogue", 20, panelY + 30);
                 g.drawString("Press ENTER to continue...", 20, panelY + 55);
+
+                break;
+                
+            case SHOP:
+
+                g.drawString("Shop", 20, panelY + 30);
+                g.drawString("Browse goods or leave.", 20, panelY + 55);
+
+                g.drawString("Gold: 0", 500, panelY + 30);
+                g.drawString("ESC to exit shop", 500, panelY + 55);
 
                 break;
         }
@@ -599,6 +635,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         drawPlayer(g);
     }
     
+    private void drawShop(Graphics g) {
+
+        g.setColor(new Color(60, 40, 20));
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        g.setColor(Color.WHITE);
+        g.drawString("Town Shop", 320, 180);
+        g.drawString("Welcome! Nothing is for sale yet.", 250, 240);
+        g.drawString("Press ESC to return to town.", 250, 280);
+    }
+    
     private void drawBattle(Graphics g) {
     	
     	g.setColor(Color.RED);
@@ -668,6 +715,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 repaint();
             }
             return;
+        }
+        
+        if (code == KeyEvent.VK_ESCAPE) {
+
+            if (currentState == GameState.SHOP) {
+                currentState = GameState.TOWN;
+                repaint();
+                return;
+            }
         }
 
         if ((currentState == GameState.OVERWORLD || currentState == GameState.TOWN)

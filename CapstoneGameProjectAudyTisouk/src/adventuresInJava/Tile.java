@@ -90,6 +90,14 @@ public class Tile {
 		    g.fillOval(x + 12, y + 8, 24, 24);
 		}
 		
+		else if (type == TileType.SHOP) {
+		    g.setColor(new Color(184, 134, 11));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(Color.BLACK);
+		    g.drawRect(x + 10, y + 10, 28, 20);
+		}
+		
 		
 		
 		
