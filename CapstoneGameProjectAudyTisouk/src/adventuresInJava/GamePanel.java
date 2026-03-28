@@ -63,6 +63,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private GameMap overworldGameMap;
     private GameMap townGameMap;
     
+    private Tile[][] battleMap;
+    private GameMap battleGameMap;
+    
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
     
@@ -146,7 +149,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			{0,1,1,1,0,0,2,0,0,0},
     			{0,0,0,1,0,0,2,0,1,0},
     			{0,0,0,0,0,0,0,0,1,0},
-    			{2,0,0,1,1,0,0,0,0,0},
+    			{2,0,4,1,1,0,0,0,0,0},
     	};
     	
     	
@@ -172,16 +175,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			}
     			else if (tileValue == 3) {
     				worldMap[col][row] = new Tile(TileType.TOWN);
+    			}
+    			else if (tileValue == 4) {
+    				worldMap[col][row] = new Tile(TileType.ENEMY);
     				
     				
     			}
     			//Generates the Town method
-    			generateTown();		
+    			generateTown();
+    			
+    			//Generates the BattleMap
+    			generateBattle();
     			
     			
     		}
     		overworldGameMap = new GameMap(worldMap, "Overworld");
     		townGameMap = new GameMap(townMap, "Town");
+    		battleGameMap = new GameMap(battleMap, "Battle");
 
     		currentMap = overworldGameMap;
     		
@@ -236,6 +246,55 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    //BattleMap1?
+    
+    private void generateBattle() {
+    	
+    	battleMap = new Tile[10][10];
+    	
+    	int[][] layout = {
+    			
+    	{1,1,1,1,1,1,1,1,1,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,0,0,2,2,2,2,0,0,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,1,1,1,1,1,1,1,1,1}
+    	
+    	};
+    	
+    	for (int col = 0; col < 10; col++) {
+    		for (int row = 0; row <10; row++) {
+    			
+     			int value = layout[row][col];
+    			
+    			if (value == 0) {
+    				battleMap[col][row] = new Tile(TileType.GRASS);
+    				
+    			}
+    			
+    			else if (value == 1) {
+    				battleMap[col][row] = new Tile(TileType.WATER);
+    				
+    			}
+    			
+    			else if (value == 2) {
+    				battleMap[col][row] = new Tile(TileType.HILL);
+    				
+    			}
+    			
+    			
+    		}
+    	}
+    	
+    }
+    
+    
+    
     //Explore tiles method- will add more?
     
     private void exploreTile() {
@@ -259,6 +318,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			}, GameState.TOWN, townGameMap, 5, 8);
     	    
     	    return;
+    	}
+    	
+    	else if (tile == TileType.ENEMY) {
+    		
+    		currentMap = battleGameMap;
+    		currentState = GameState.BATTLE;
+    		
+    		player.col = 1;
+    		player.row = 1;
+    		
+    		return;
+    		
     	}
     	
     	endTurn();
@@ -312,6 +383,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		System.out.println("There is nothing here.");
     	}
     }
+    
     
     //run out of movement ends turn
     private void endTurn() {
@@ -482,6 +554,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 break;
 
+                
             case TOWN:
 
             	TileType currentTownTile = currentMap.getTiles()[player.col][player.row].getType();
@@ -493,16 +566,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("Press ENTER to interact", 500, panelY + 55);
 
                 break;
-
+                
+                
             case BATTLE:
+            	
+            	g.drawString("Battlefield", 20, panelY + 30);
+                g.drawString("Move into position.", 20, panelY + 55);
 
-                g.drawString("Battle Mode", 20, panelY + 30);
-                g.drawString("Select a unit to act", 20, panelY + 55);
-
-                g.drawString("Turn: Player", 500, panelY + 30);
-                g.drawString("Units Remaining: ?", 500, panelY + 55);
-
+                g.drawString("Phase: Player", 500, panelY + 30);
+                g.drawString("Press ESC to retreat", 500, panelY + 55);
+                
                 break;
+
 
             case DIALOGUE:
 
@@ -511,15 +586,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 break;
                 
+                
             case SHOP:
 
                 g.drawString("Shop", 20, panelY + 30);
-                g.drawString("Browse goods or leave.", 20, panelY + 55);
+                g.drawString("Browse goods or sell your items!", 20, panelY + 55);
 
                 g.drawString("Gold: 0", 500, panelY + 30);
                 g.drawString("ESC to exit shop", 500, panelY + 55);
 
                 break;
+                
+   	
+            	
         }
     	
 	}
@@ -648,11 +727,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void drawBattle(Graphics g) {
     	
-    	g.setColor(Color.RED);
-    	g.fillRect(0, 0, getWidth(), getHeight());
-    	
-    	g.setColor(Color.WHITE);
-    	g.drawString("Battle Screen Placeholder", 300, 300);
+    	drawMap(g);
+		drawPlayer(g);
+		drawMovementRange(g);
     	
     }
     
@@ -662,7 +739,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         drawPlayer(g);
     }
     
-    
+    //Allows freedom of movement
     private boolean canMove() {
 
         switch (currentState) {
@@ -672,6 +749,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             case TOWN:
                 return true;
+                
+            //battle will be based on turns and unit type later
+            case BATTLE:
+            	return true;
 
             default:
                 return false;
@@ -724,9 +805,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 repaint();
                 return;
             }
+            
+            if (currentState == GameState.BATTLE) {
+            	currentMap = overworldGameMap;
+            	currentState = GameState.OVERWORLD;
+            	
+            	player.col = 3;
+            	player.row = 1;
+            	
+            	repaint();
+            	return;
+            }
+            	
         }
 
-        if ((currentState == GameState.OVERWORLD || currentState == GameState.TOWN)
+        if ((currentState == GameState.OVERWORLD 
+        		|| currentState == GameState.TOWN
+        		|| currentState == GameState.BATTLE)
                 && canMove()) {
 
             int newCol = player.col;

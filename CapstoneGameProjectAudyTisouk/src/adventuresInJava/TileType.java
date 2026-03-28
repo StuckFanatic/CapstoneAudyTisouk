@@ -8,7 +8,8 @@ public enum TileType {
 	TOWN,
 	EXIT,
 	NPC,
-	SHOP
+	SHOP,
+	ENEMY
 	
 	
 	

@@ -98,6 +98,14 @@ public class Tile {
 		    g.drawRect(x + 10, y + 10, 28, 20);
 		}
 		
+		else if (type == TileType.ENEMY) {
+		    g.setColor(new Color(120, 0, 0));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(Color.WHITE);
+		    g.drawRect(x + 10, y + 10, 28, 20);
+		}
+		
 		
 		
 		
