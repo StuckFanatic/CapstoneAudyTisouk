@@ -72,6 +72,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean battleUnitSelected = false;
     private int battleCursorCol = 0;
     private int battleCursorRow = 0;
+    private int selectedUnitStartCol = -1;
+    private int selectedUnitStartRow = -1;
     
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
@@ -589,15 +591,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 if (!battleUnitSelected || selectedBattleUnit == null) {
                 	
                 	g.drawString("Phase: Player", 500, panelY + 30);
-                	g.drawString("Move cursor and press ENTER on a unit", 500, panelY + 55);
-                	
-                } else {
-                	
-                	g.drawString("Selected: " + selectedBattleUnit.getName(), 500, panelY + 30);
-                	g.drawString("Move unit. ESC to cancel", 500, panelY + 55);
-                	
+                	g.drawString("Move cursor and press ENTER on your unit", 500, panelY + 55);
+                } else { 
+                	g.drawString("Selected " + selectedBattleUnit.getName(), 500, panelY + 30);
+                	g.drawString("Choose destination. ENTER confirm, ESC cancel", 500, panelY + 55);
                 }
-
                 
                 break;
 
@@ -779,7 +777,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			int x = col * tileSize;
     			int y = row * tileSize;
     			
-    			int distance = Math.abs(col - selectedBattleUnit.getCol()) + Math.abs(row - selectedBattleUnit.getRow());
+    			int distance = Math.abs(col - selectedUnitStartCol) + Math.abs(row - selectedUnitStartRow);
     			
     			if (distance <= movementRange && currentMap.getTiles()[col][row].isPassable()) {
     				g.setColor(new Color(100, 100, 100, 170));
@@ -885,10 +883,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			
         			if (playerBattleUnit != null &&
         					battleCursorCol == playerBattleUnit.getCol() &&
-        					battleCursorRow == playerBattleUnit.getRow()) {
+        					battleCursorRow == playerBattleUnit.getRow() &&
+        					!playerBattleUnit.hasMoved()) {
+        				
         				
         				selectedBattleUnit = playerBattleUnit;
         				battleUnitSelected = true;
+        				
+        				selectedUnitStartCol = selectedBattleUnit.getCol();
+        				selectedUnitStartRow = selectedBattleUnit.getRow();
+        				
+        				battleCursorCol = selectedBattleUnit.getCol();
+        				battleCursorCol = selectedBattleUnit.getRow();
         			}
         			
         			repaint();
@@ -943,34 +949,71 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	//move only if a unit was selected
         	if (battleUnitSelected && selectedBattleUnit != null) {
         		
-        		int newCol = selectedBattleUnit.getCol();
-        		int newRow = selectedBattleUnit.getRow();
+        		//Enter confirms movement
+        		if (code == KeyEvent.VK_ENTER) {
+        			
+        			int distance = Math.abs(battleCursorCol - selectedUnitStartCol)
+        					+ Math.abs(battleCursorRow - selectedUnitStartRow);
+        			
+        			if (distance <= 4 &&
+        					currentMap.getTiles()[battleCursorCol][battleCursorRow].isPassable() &&
+        					!(enemyBattleUnit != null &&
+        					enemyBattleUnit.getCol() == battleCursorCol &&
+        					enemyBattleUnit.getRow() == battleCursorCol)) {
+        				
+        				selectedBattleUnit.setPosition(battleCursorCol, battleCursorRow);
+        				selectedBattleUnit.setHasMoved(true);
+        				
+        				selectedBattleUnit = null;
+        				battleUnitSelected = false;
+        				
+        				selectedUnitStartCol = -1;
+        				selectedUnitStartRow = -1;
+        			}
+        			
+        			repaint();
+        			return;
+        			
+        		}
         		
-        		if (code == KeyEvent.VK_UP) newRow--;
-                if (code == KeyEvent.VK_DOWN) newRow++;
-                if (code == KeyEvent.VK_LEFT) newCol--;
-                if (code == KeyEvent.VK_RIGHT) newCol++;
-
-                if (newCol >= 0 && newCol < maxScreenCol &&
-                    newRow >= 0 && newRow < maxScreenRow &&
-                    currentMap.getTiles()[newCol][newRow].isPassable()) {
-                	
-                	if (!(enemyBattleUnit != null &&
-                			enemyBattleUnit.getCol() == newCol &&
-                			enemyBattleUnit.getRow() == newRow)) {
-                		
-                		selectedBattleUnit.setPosition(newCol, newRow);
-                		
-                		selectedBattleUnit.setPosition(newCol, newRow);
-                		battleCursorCol = newCol;
-                		battleCursorRow = newRow;
-                		
-                	}
-                }
+        		//ESC cancels selection
+        		if (code == KeyEvent.VK_ESCAPE) {
+        			
+        			selectedBattleUnit = null;
+        			battleUnitSelected = false;
+        			
+        			battleCursorCol = playerBattleUnit.getCol();
+        			battleCursorRow = playerBattleUnit.getRow();
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		//ArrowKeys move cursor only
+        		int newCursorCol = battleCursorCol;
+        		int newCursorRow = battleCursorRow;
+        		
+        		if (code == KeyEvent.VK_UP) newCursorRow--;
+                if (code == KeyEvent.VK_DOWN) newCursorRow++;
+                if (code == KeyEvent.VK_LEFT) newCursorCol--;
+                if (code == KeyEvent.VK_RIGHT) newCursorCol++;
                 
-                repaint();
-                return;          
+                int distance = Math.abs(newCursorCol - selectedUnitStartCol)
+    					+ Math.abs(newCursorRow - selectedUnitStartRow);
+                
+                if (newCursorCol >= 0 && newCursorCol < maxScreenCol &&
+                		newCursorRow >= 0 && newCursorRow <maxScreenRow &&
+                		distance <=4 &&
+                		currentMap.getTiles()[newCursorCol][newCursorRow].isPassable()) {
+                	
+                	battleCursorCol = newCursorCol;
+                	battleCursorRow = newCursorRow;
+                }
+        		         
         	}
+        	
+        	repaint();
+        	return;
         	
         }
         
