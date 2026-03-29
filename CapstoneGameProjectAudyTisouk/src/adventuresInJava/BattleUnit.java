@@ -6,6 +6,7 @@ import java.awt.Graphics;
 //This class will track unit movement and position and any other combat related actions
 public class BattleUnit {
 
+	//name, positioning, acting and moving are separated
 	private String name;
 	private int col;
 	private int row;

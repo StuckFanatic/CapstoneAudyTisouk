@@ -66,10 +66,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] battleMap;
     private GameMap battleGameMap;
     
+    private BattleUnit playerBattleUnit;
+    private BattleUnit enemyBattleUnit;
+    
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
     
-    //Temp Home for a enum
+    //Temporary
 	private enum GameState {
 		OVERWORLD,
 		TOWN,
@@ -325,8 +328,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		currentMap = battleGameMap;
     		currentState = GameState.BATTLE;
     		
-    		player.col = 1;
-    		player.row = 1;
+    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false);
+    		enemyBattleUnit = new BattleUnit("Bandit", 6, 6, true);
     		
     		return;
     		
@@ -571,10 +574,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case BATTLE:
             	
             	g.drawString("Battlefield", 20, panelY + 30);
-                g.drawString("Move into position.", 20, panelY + 55);
+                g.drawString("Move your units into position.", 20, panelY + 55);
 
-                g.drawString("Phase: Player", 500, panelY + 30);
-                g.drawString("Press ESC to retreat", 500, panelY + 55);
+                g.drawString("Player:" + (playerBattleUnit != null ? playerBattleUnit.getName() : "-"), 500, panelY + 30);
+                g.drawString("Enemy:" + (enemyBattleUnit != null ? enemyBattleUnit.getName() : "-"), 500, panelY + 55);
                 
                 break;
 
@@ -725,11 +728,46 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.drawString("Press ESC to return to town.", 250, 280);
     }
     
+    //Battle will use battle specific units not over world logic
     private void drawBattle(Graphics g) {
     	
     	drawMap(g);
-		drawPlayer(g);
-		drawMovementRange(g);
+		drawBattleMovementRange(g);
+		
+		if (playerBattleUnit != null) {
+			playerBattleUnit.draw(g, tileSize);
+		}
+		
+		if (enemyBattleUnit != null) {
+			enemyBattleUnit.draw(g, tileSize);
+		}
+    	
+    }
+    
+    //Unique battle Movement highlights for battles
+    private void drawBattleMovementRange(Graphics g) {
+    	
+    	if (playerBattleUnit == null) return;
+    	
+    	int movementRange = 4;
+    	
+    	for (int col = 0; col < maxScreenCol; col++) {
+    		for (int row = 0; row < maxScreenRow; row++) {
+    			
+    			int x = col * tileSize;
+    			int y = row * tileSize;
+    			
+    			int distance = Math.abs(col - playerBattleUnit.getCol()) + Math.abs(row - playerBattleUnit.getRow());
+    			
+    			if (distance <= movementRange && currentMap.getTiles()[col][row].isPassable()) {
+    				g.setColor(new Color(100, 100, 100, 170));
+    				g.fillRect(x, y, tileSize, tileSize);
+    				
+    			}
+    			
+    		}
+    	}
+    	
     	
     }
     
@@ -818,6 +856,39 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }
             	
         }
+        
+        if (currentState == GameState.BATTLE && canMove()) {
+        	
+        	int newCol = playerBattleUnit.getCol();
+        	int newRow = playerBattleUnit.getRow();
+        	
+        	if (code == KeyEvent.VK_UP) newRow--;
+            if (code == KeyEvent.VK_DOWN) newRow++;
+            if (code == KeyEvent.VK_LEFT) newCol--;
+            if (code == KeyEvent.VK_RIGHT) newCol++;
+
+            if (newCol >= 0 && newCol < maxScreenCol &&
+                newRow >= 0 && newRow < maxScreenRow &&
+                currentMap.getTiles()[newCol][newRow].isPassable()) {
+            	
+            	
+            	//prevent from stepping into occupied tiles from enemies
+            	if (!(enemyBattleUnit != null &&
+            			enemyBattleUnit.getCol() == newCol &&
+            			enemyBattleUnit.getRow() == newRow)) {
+            		
+            		playerBattleUnit.setPosition(newCol, newRow);
+            	}
+            	
+            	
+            }
+        	
+        	repaint();
+        	return;
+        	
+        	
+        }
+        
 
         if ((currentState == GameState.OVERWORLD 
         		|| currentState == GameState.TOWN
