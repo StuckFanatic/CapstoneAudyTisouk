@@ -70,6 +70,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private BattleUnit enemyBattleUnit;
     private BattleUnit selectedBattleUnit;
     private boolean battleUnitSelected = false;
+    private int battleCursorCol = 0;
+    private int battleCursorRow = 0;
     
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
@@ -332,8 +334,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		playerBattleUnit = new BattleUnit("Leader", 1, 1, false);
     		enemyBattleUnit = new BattleUnit("Bandit", 6, 6, true);
+    		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
+    		
+    		battleCursorCol = playerBattleUnit.getCol();
+    		battleCursorRow = playerBattleUnit.getRow();
     		
     		return;
     		
@@ -583,11 +589,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 if (!battleUnitSelected || selectedBattleUnit == null) {
                 	
                 	g.drawString("Phase: Player", 500, panelY + 30);
-                	g.drawString("Press ENTER to select your unit", 500, panelY + 55);
+                	g.drawString("Move cursor and press ENTER on a unit", 500, panelY + 55);
+                	
                 } else {
                 	
                 	g.drawString("Selected: " + selectedBattleUnit.getName(), 500, panelY + 30);
-                	g.drawString("ESC to cancel selection", 500, panelY + 55);
+                	g.drawString("Move unit. ESC to cancel", 500, panelY + 55);
                 	
                 }
 
@@ -754,6 +761,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		if (enemyBattleUnit != null) {
 			enemyBattleUnit.draw(g, tileSize);
 		}
+		
+		drawBattleCursor(g);
     	
     }
     
@@ -780,7 +789,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		}
     	}
     	
+    }
+    
+    //Cursor in battle is a yellow select box
+    private void drawBattleCursor(Graphics g) {
     	
+    	if (currentState != GameState.BATTLE) return;
+    	
+    	g.setColor(Color.YELLOW);
+    	g.drawRect(battleCursorCol * tileSize, battleCursorRow * tileSize, tileSize, tileSize);
+    	g.drawRect(battleCursorCol * tileSize + 1, battleCursorRow * tileSize + 1, tileSize - 2, tileSize - 2);
     }
     
     private void drawDialogue(Graphics g) {
@@ -844,8 +862,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             if (currentState == GameState.OVERWORLD || currentState == GameState.TOWN) {
                 interactWithTile();
                 repaint();
+                return;
             }
-            return;
+            
         }
         
         if (code == KeyEvent.VK_ESCAPE) {
@@ -874,8 +893,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	//Enter selects the unit if none are already selected
         	if (code == KeyEvent.VK_ENTER) {
         		if (!battleUnitSelected) {
-        			selectedBattleUnit = playerBattleUnit;
-        			battleUnitSelected = true;
+        			
+        			if (playerBattleUnit != null &&
+        					battleCursorCol == playerBattleUnit.getCol() &&
+        					battleCursorRow == playerBattleUnit.getRow()) {
+        				
+        				selectedBattleUnit = playerBattleUnit;
+        				battleUnitSelected = true;
+        			}
         			
         			repaint();
         			return;
@@ -884,7 +909,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	
         	//ESC cancels the current unit selected
         	if (code == KeyEvent.VK_ESCAPE) {
-        		if (!battleUnitSelected) {
+        		if (battleUnitSelected) {
         			selectedBattleUnit = null;
         			battleUnitSelected = false;
         			
@@ -903,6 +928,29 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		}
         	}
         	
+        	//Cursor movement before selected unit
+        	if (!battleUnitSelected) {
+        		
+        		int newCursorCol = battleCursorCol;
+        		int newCursorRow = battleCursorRow;
+        		
+        		if (code == KeyEvent.VK_UP) newCursorRow--;
+                if (code == KeyEvent.VK_DOWN) newCursorRow++;
+                if (code == KeyEvent.VK_LEFT) newCursorCol--;
+                if (code == KeyEvent.VK_RIGHT) newCursorCol++;
+        		
+                if (newCursorCol >= 0 && newCursorCol < maxScreenCol &&
+                		newCursorRow >= 0 && newCursorRow < maxScreenRow) {
+                	
+                	battleCursorCol = newCursorCol;
+                	battleCursorRow = newCursorRow;
+                }
+                
+                repaint();
+                return;
+        		
+        	}
+        	
         	//move only if a unit was selected
         	if (battleUnitSelected && selectedBattleUnit != null) {
         		
@@ -919,10 +967,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     currentMap.getTiles()[newCol][newRow].isPassable()) {
                 	
                 	if (!(enemyBattleUnit != null &&
-                			enemyBattleUnit.getRow() == newCol &&
-                			enemyBattleUnit.getCol() == newRow)) {
+                			enemyBattleUnit.getCol() == newCol &&
+                			enemyBattleUnit.getRow() == newRow)) {
                 		
                 		selectedBattleUnit.setPosition(newCol, newRow);
+                		
+                		selectedBattleUnit.setPosition(newCol, newRow);
+                		battleCursorCol = newCol;
+                		battleCursorRow = newRow;
                 		
                 	}
                 }
@@ -935,8 +987,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
 
         if ((currentState == GameState.OVERWORLD 
-        		|| currentState == GameState.TOWN
-        		|| currentState == GameState.BATTLE)
+        		|| currentState == GameState.TOWN)
                 && canMove()) {
 
             int newCol = player.col;
