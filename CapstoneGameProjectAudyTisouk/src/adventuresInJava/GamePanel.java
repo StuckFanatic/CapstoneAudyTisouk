@@ -874,17 +874,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 repaint();
                 return;
             }
-            
-            if (currentState == GameState.BATTLE) {
-            	currentMap = overworldGameMap;
-            	currentState = GameState.OVERWORLD;
-            	
-            	player.col = 3;
-            	player.row = 1;
-            	
-            	repaint();
-            	return;
-            }
             	
         }
         
