@@ -68,6 +68,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private BattleUnit playerBattleUnit;
     private BattleUnit enemyBattleUnit;
+    private BattleUnit selectedBattleUnit;
+    private boolean battleUnitSelected = false;
     
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
@@ -330,6 +332,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		playerBattleUnit = new BattleUnit("Leader", 1, 1, false);
     		enemyBattleUnit = new BattleUnit("Bandit", 6, 6, true);
+    		selectedBattleUnit = null;
+    		battleUnitSelected= false;
     		
     		return;
     		
@@ -574,10 +578,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case BATTLE:
             	
             	g.drawString("Battlefield", 20, panelY + 30);
-                g.drawString("Move your units into position.", 20, panelY + 55);
+                g.drawString("Objective: Deafeat all enemies", 20, panelY + 55);
+                
+                if (!battleUnitSelected || selectedBattleUnit == null) {
+                	
+                	g.drawString("Phase: Player", 500, panelY + 30);
+                	g.drawString("Press ENTER to select your unit", 500, panelY + 55);
+                } else {
+                	
+                	g.drawString("Selected: " + selectedBattleUnit.getName(), 500, panelY + 30);
+                	g.drawString("ESC to cancel selection", 500, panelY + 55);
+                	
+                }
 
-                g.drawString("Player:" + (playerBattleUnit != null ? playerBattleUnit.getName() : "-"), 500, panelY + 30);
-                g.drawString("Enemy:" + (enemyBattleUnit != null ? enemyBattleUnit.getName() : "-"), 500, panelY + 55);
                 
                 break;
 
@@ -747,7 +760,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Unique battle Movement highlights for battles
     private void drawBattleMovementRange(Graphics g) {
     	
-    	if (playerBattleUnit == null) return;
+    	if (!battleUnitSelected || selectedBattleUnit == null) return;
     	
     	int movementRange = 4;
     	
@@ -757,12 +770,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			int x = col * tileSize;
     			int y = row * tileSize;
     			
-    			int distance = Math.abs(col - playerBattleUnit.getCol()) + Math.abs(row - playerBattleUnit.getRow());
+    			int distance = Math.abs(col - selectedBattleUnit.getCol()) + Math.abs(row - selectedBattleUnit.getRow());
     			
     			if (distance <= movementRange && currentMap.getTiles()[col][row].isPassable()) {
     				g.setColor(new Color(100, 100, 100, 170));
     				g.fillRect(x, y, tileSize, tileSize);
-    				
     			}
     			
     		}
@@ -857,35 +869,67 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	
         }
         
-        if (currentState == GameState.BATTLE && canMove()) {
+        if (currentState == GameState.BATTLE) {
         	
-        	int newCol = playerBattleUnit.getCol();
-        	int newRow = playerBattleUnit.getRow();
+        	//Enter selects the unit if none are already selected
+        	if (code == KeyEvent.VK_ENTER) {
+        		if (!battleUnitSelected) {
+        			selectedBattleUnit = playerBattleUnit;
+        			battleUnitSelected = true;
+        			
+        			repaint();
+        			return;
+        		}
+        	}
         	
-        	if (code == KeyEvent.VK_UP) newRow--;
-            if (code == KeyEvent.VK_DOWN) newRow++;
-            if (code == KeyEvent.VK_LEFT) newCol--;
-            if (code == KeyEvent.VK_RIGHT) newCol++;
+        	//ESC cancels the current unit selected
+        	if (code == KeyEvent.VK_ESCAPE) {
+        		if (!battleUnitSelected) {
+        			selectedBattleUnit = null;
+        			battleUnitSelected = false;
+        			
+        			repaint();
+        			return;
+        			
+        		} else {
+        			currentMap = overworldGameMap;
+        			currentState = GameState.OVERWORLD;
+        			
+        			player.col = 3; //temporary return spot
+        			player.row = 1;
+        			
+        			repaint();
+        			return;
+        		}
+        	}
+        	
+        	//move only if a unit was selected
+        	if (battleUnitSelected && selectedBattleUnit != null) {
+        		
+        		int newCol = selectedBattleUnit.getCol();
+        		int newRow = selectedBattleUnit.getRow();
+        		
+        		if (code == KeyEvent.VK_UP) newRow--;
+                if (code == KeyEvent.VK_DOWN) newRow++;
+                if (code == KeyEvent.VK_LEFT) newCol--;
+                if (code == KeyEvent.VK_RIGHT) newCol++;
 
-            if (newCol >= 0 && newCol < maxScreenCol &&
-                newRow >= 0 && newRow < maxScreenRow &&
-                currentMap.getTiles()[newCol][newRow].isPassable()) {
-            	
-            	
-            	//prevent from stepping into occupied tiles from enemies
-            	if (!(enemyBattleUnit != null &&
-            			enemyBattleUnit.getCol() == newCol &&
-            			enemyBattleUnit.getRow() == newRow)) {
-            		
-            		playerBattleUnit.setPosition(newCol, newRow);
-            	}
-            	
-            	
-            }
-        	
-        	repaint();
-        	return;
-        	
+                if (newCol >= 0 && newCol < maxScreenCol &&
+                    newRow >= 0 && newRow < maxScreenRow &&
+                    currentMap.getTiles()[newCol][newRow].isPassable()) {
+                	
+                	if (!(enemyBattleUnit != null &&
+                			enemyBattleUnit.getRow() == newCol &&
+                			enemyBattleUnit.getCol() == newRow)) {
+                		
+                		selectedBattleUnit.setPosition(newCol, newRow);
+                		
+                	}
+                }
+                
+                repaint();
+                return;          
+        	}
         	
         }
         
