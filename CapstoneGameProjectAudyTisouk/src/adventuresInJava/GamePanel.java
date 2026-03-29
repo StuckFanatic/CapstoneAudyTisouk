@@ -60,20 +60,44 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Town Map
     private Tile[][] townMap;
     
+    //Over world and Town maps
     private GameMap overworldGameMap;
     private GameMap townGameMap;
     
+    /*
+     * 
+     * BATTLE FIELDS
+     * 
+     */
+    
+    //Battle Maps
     private Tile[][] battleMap;
     private GameMap battleGameMap;
     
+    //Battle UX for Units
+    //unit selected
     private BattleUnit playerBattleUnit;
     private BattleUnit enemyBattleUnit;
     private BattleUnit selectedBattleUnit;
     private boolean battleUnitSelected = false;
+    
+    //Battle Cursor
     private int battleCursorCol = 0;
     private int battleCursorRow = 0;
+    
+    //Selected unit location
     private int selectedUnitStartCol = -1;
     private int selectedUnitStartRow = -1;
+    
+    //Battle Menu
+    private boolean battleActionMenuOpen = false;
+    private String[]battleMenuOptions = {"Attack", "Wait"};
+    private int battleMenuIndex = 0;
+    
+    
+    /*
+     * GAMESTATES
+     */
     
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
