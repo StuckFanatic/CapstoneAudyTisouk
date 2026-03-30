@@ -612,7 +612,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	g.drawString("Battlefield", 20, panelY + 30);
                 g.drawString("Objective: Deafeat all enemies", 20, panelY + 55);
                 
-                if (!battleUnitSelected || selectedBattleUnit == null) {
+                if (battleActionMenuOpen) {
+                	
+                	g.drawString("Action Menu", 500, panelY + 30);
+                	g.drawString("Choose Attack or Wait", 500, panelY + 55);
+                }
+                
+                else if (!battleUnitSelected || selectedBattleUnit == null) {
                 	
                 	g.drawString("Phase: Player", 500, panelY + 30);
                 	g.drawString("Move cursor and press ENTER on your unit", 500, panelY + 55);
@@ -785,6 +791,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		}
 		
 		drawBattleCursor(g);
+		drawBattleActionMenu(g);
     	
     }
     
@@ -812,6 +819,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     }
+    
+    private void drawBattleActionMenu(Graphics g) {
+    	
+    	if (!battleActionMenuOpen) return;
+    	
+    	int menuX = 520;
+    	int menuY = 100;
+    	int menuWidth = 140;
+    	int menuHeight = 80;
+    	
+    	g.setColor(new Color(30, 30, 30, 220));
+    	g.fillRect(menuX, menuY, menuWidth, menuHeight);
+    	
+    	g.setColor(Color.WHITE);
+    	g.drawRect(menuX, menuY, menuWidth, menuHeight);
+    	
+    	for (int i = 0; i < battleMenuOptions.length; i++) {
+    		
+    		if (i == battleMenuIndex) {
+    			g.setColor(Color.YELLOW);
+    			
+    		} else {
+    			g.setColor(Color.WHITE);
+    		}
+    		
+    		g.drawString(battleMenuOptions[i], menuX + 20, menuY + 25 + (i * 25));
+    	}
+    	
+    }
+    
     
     //Cursor in battle is a yellow select box
     private void drawBattleCursor(Graphics g) {
@@ -901,14 +938,85 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (currentState == GameState.BATTLE) {
         	
+        	
+        	//Battle menu movement
+    		if (battleActionMenuOpen) {
+    			
+    			if (code == KeyEvent.VK_UP) {
+    				battleMenuIndex--;
+    				if (battleMenuIndex < 0) {
+    					battleMenuIndex = battleMenuOptions.length - 1;
+    				}
+    				repaint();
+    				return;
+    			}
+    			
+    			if (code == KeyEvent.VK_DOWN) {
+    				battleMenuIndex++;
+    				if (battleMenuIndex >= battleMenuOptions.length) {
+    					battleMenuIndex = 0;
+    				}
+    				repaint();
+    				return;
+    			}
+    			
+    			if (code == KeyEvent.VK_ESCAPE) {
+    				battleActionMenuOpen = false;
+    				
+    				if (selectedBattleUnit != null) {
+    					selectedBattleUnit.setPosition(selectedUnitStartCol, selectedUnitStartRow);
+    					selectedBattleUnit.setHasMoved(false);
+    					
+    					battleCursorCol = selectedUnitStartCol;
+    					battleCursorRow = selectedUnitStartRow;
+    					
+    				}
+    				
+    				//cursor will remain on the unit if backed 
+    				repaint();
+    				return;
+    				
+    			}
+    			
+    			if (code == KeyEvent.VK_ENTER) {
+    				
+    				String selectedOption = battleMenuOptions[battleMenuIndex];
+    				
+    				if (selectedOption.equals("Wait")) {
+    					selectedBattleUnit.setHasActed(true);
+    					selectedBattleUnit.setHasMoved(true);
+    					
+    					battleActionMenuOpen = false;
+    					selectedBattleUnit = null;
+    					battleUnitSelected = false;
+    					
+    					selectedUnitStartCol = -1;
+    					selectedUnitStartRow = -1;
+    					
+    					repaint();
+    					return;
+    				}
+    				
+    				if (selectedOption.equals("Attack")) {
+    					System.out.println("Attack Selected. System coming later");
+    					repaint();
+    					return;
+    				}
+    				
+    			}	
+    			
+    		}
+        	
         	//Enter selects the unit if none are already selected
         	if (code == KeyEvent.VK_ENTER) {
+        		
+        		//unit Selection
         		if (!battleUnitSelected) {
         			
         			if (playerBattleUnit != null &&
         					battleCursorCol == playerBattleUnit.getCol() &&
         					battleCursorRow == playerBattleUnit.getRow() &&
-        					!playerBattleUnit.hasMoved()) {
+        					!playerBattleUnit.hasActed()) {
         				
         				
         				selectedBattleUnit = playerBattleUnit;
@@ -918,7 +1026,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         				selectedUnitStartRow = selectedBattleUnit.getRow();
         				
         				battleCursorCol = selectedBattleUnit.getCol();
-        				battleCursorCol = selectedBattleUnit.getRow();
+        				battleCursorRow = selectedBattleUnit.getRow();
         			}
         			
         			repaint();
@@ -983,16 +1091,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         					currentMap.getTiles()[battleCursorCol][battleCursorRow].isPassable() &&
         					!(enemyBattleUnit != null &&
         					enemyBattleUnit.getCol() == battleCursorCol &&
-        					enemyBattleUnit.getRow() == battleCursorCol)) {
+        					enemyBattleUnit.getRow() == battleCursorRow)) {
         				
         				selectedBattleUnit.setPosition(battleCursorCol, battleCursorRow);
         				selectedBattleUnit.setHasMoved(true);
         				
-        				selectedBattleUnit = null;
-        				battleUnitSelected = false;
+        				battleActionMenuOpen = true;
+        				battleMenuIndex = 0;
         				
-        				selectedUnitStartCol = -1;
-        				selectedUnitStartRow = -1;
         			}
         			
         			repaint();
@@ -1000,11 +1106,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			
         		}
         		
-        		//ESC cancels selection
+        		//ESC cancels battle
         		if (code == KeyEvent.VK_ESCAPE) {
         			
         			selectedBattleUnit = null;
         			battleUnitSelected = false;
+        			selectedUnitStartCol = -1;
+        			selectedUnitStartRow = -1;
         			
         			battleCursorCol = playerBattleUnit.getCol();
         			battleCursorRow = playerBattleUnit.getRow();
