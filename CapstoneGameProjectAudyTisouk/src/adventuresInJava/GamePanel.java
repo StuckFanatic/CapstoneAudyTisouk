@@ -368,8 +368,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		currentMap = battleGameMap;
     		currentState = GameState.BATTLE;
     		
-    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false);
-    		enemyBattleUnit = new BattleUnit("Bandit", 3, 1, true);
+    		//#, #, #, #, #, #,
+    		//minimum range, max range, attack bonus, # of  die, # of sides per die, damage bonus 
+    		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2); 
+    		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1); 
+    		
+    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword);
+    		enemyBattleUnit = new BattleUnit("Bandit", 3, 1, true, banditAxe);
     		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
@@ -628,11 +633,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
                 	g.drawString("Player HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 400, panelY + 30);
                 	g.drawString("Player AC: " + playerBattleUnit.getArmorClass(), 400, panelY + 55);
+                	g.drawString("Player Weapon: " + playerBattleUnit.getWeapon().getName(), 400, panelY + 80);
+                	
                 }
                 
                 if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
                 	g.drawString("Enemy HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 250, panelY + 30);
                 	g.drawString("Enemy AC: " + enemyBattleUnit.getArmorClass(), 250, panelY + 55);
+                	g.drawString("Enemy Weapon: " + enemyBattleUnit.getWeapon().getName(), 250, panelY + 80);
                 }
                 
                 if (battleActionMenuOpen) {
@@ -886,31 +894,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //Attack range adjacency check
-    private boolean isEnemyAdjacent() {
+    private boolean isEnemyInRange(BattleUnit attacker, BattleUnit defender) {
     	
-    	if (selectedBattleUnit == null || enemyBattleUnit == null || !enemyBattleUnit.isAlive()) {
+    	if (attacker == null || defender == null || !defender.isAlive()) {
     		
     		return false;
     	}
     	
-    	int distance = Math.abs(selectedBattleUnit.getCol() - enemyBattleUnit.getCol())
-    			+ Math.abs(selectedBattleUnit.getRow() - enemyBattleUnit.getRow());
+    	int distance = Math.abs(attacker.getCol() - defender.getCol())
+    			+ Math.abs(attacker.getRow() - defender.getRow());
     	
-    	return distance == 1;
-    }
-    
-    //enemy attack checker
-    private boolean isPlayerAdjacentToEnemy() {
+    	Weapon weapon = attacker.getWeapon();
     	
-    	if (playerBattleUnit == null || enemyBattleUnit == null || !enemyBattleUnit.isAlive()) {
-    		
-    		return false;
-    	}
+    	return distance >= weapon.getMinRange() && distance <= weapon.getMaxRange();
     	
-    	int distance = Math.abs(playerBattleUnit.getCol() - enemyBattleUnit.getCol())
-    			+ Math.abs(playerBattleUnit.getRow() - enemyBattleUnit.getRow());
-    	
-    	return distance == 1;
     }
     
     
@@ -962,8 +959,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		battleMessage = "Defeat!";
     		return;
     	}
-    	
-    	if (isPlayerAdjacentToEnemy()) {
+    
+    	if (isEnemyInRange(enemyBattleUnit, playerBattleUnit)) {
     		performAttack(enemyBattleUnit, playerBattleUnit);
     		
     		if (!playerBattleUnit.isAlive()) {
@@ -1016,28 +1013,44 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Damage as well as attack rolls
     private boolean performAttack(BattleUnit attacker, BattleUnit defender) {
     	
+    	Weapon weapon = attacker.getWeapon();
+    	
     	int roll = random.nextInt(20) + 1; //1 through 20
-    	int totalAttack = roll + attacker.getAttackBonus();
+    	int totalAttack = roll + weapon.getAttackBonus();
     	
     	if (totalAttack >= defender.getArmorClass()) {
-    		defender.takeDamage(attacker.getDamage());
     		
-    		battleMessage = attacker.getName() + " rolled " + roll + " + "
-    				+ attacker.getAttackBonus() + " = " + totalAttack
-    				+ " and hit for " + attacker.getDamage() + " damage!";
+    		int damage = rollWeaponDamage(weapon);
+    		defender.takeDamage(damage);
+    		
+    		battleMessage = attacker.getName() + " used " + weapon.getName() 
+    				+ " and rolled " + roll + " + " + weapon.getAttackBonus()
+    				+ " = " + totalAttack + " for " + damage + " damage!";
     		
     		return true;
     		
     	} else {
-    		battleMessage = attacker.getName() + " rolled " + roll + " + "
-    				+ attacker.getAttackBonus() + " = " + totalAttack
-    				+ " and missed!";
+    		battleMessage = attacker.getName() + " used " + weapon.getName()
+    				+ " and rolled " + roll + " + " + weapon.getAttackBonus()
+    				+ " = " + totalAttack + " and missed!";
     		
     		return false;
     	}
     	
     }
     
+    private int rollWeaponDamage(Weapon weapon) {
+    	
+    	int totalDamage = 0;
+    	
+    	for (int i = 0; i < weapon.getDamageDiceCount(); i++) {
+    		totalDamage += random.nextInt(weapon.getDamageDiceSides()) + 1;
+    	}
+    	
+    	totalDamage += weapon.getDamageBonus();
+    	
+    	return totalDamage;
+    }
     
     private void drawDialogue(Graphics g) {
     	
@@ -1183,7 +1196,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				
     				if (selectedOption.equals("Attack")) {
     					
-    					if (isEnemyAdjacent()) {
+    					if (isEnemyInRange(selectedBattleUnit, enemyBattleUnit)) {
     						performAttack(selectedBattleUnit, enemyBattleUnit);
     						
     						selectedBattleUnit.setHasActed(true);
