@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.Color;
 import java.awt.Font;
+import java.util.Random;
 
 
 
@@ -99,6 +100,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Turn Phases
     private String battlePhase = "PLAYER";
+    
+    //Random Rolls
+    private Random random = new Random();
     
     
     /*
@@ -619,17 +623,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case BATTLE:
             	
             	g.drawString("Battlefield", 20, panelY + 30);
-                g.drawString("Objective: Deafeat all enemies", 20, panelY + 55);
+                g.drawString("Objective: Defeat all enemies", 20, panelY + 55);
                 
                 if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
-                	g.drawString("Player HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 250, panelY + 55);
+                	g.drawString("Player HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 400, panelY + 30);
+                	g.drawString("Player AC: " + playerBattleUnit.getArmorClass(), 400, panelY + 55);
                 }
                 
                 if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
                 	g.drawString("Enemy HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 250, panelY + 30);
+                	g.drawString("Enemy AC: " + enemyBattleUnit.getArmorClass(), 250, panelY + 55);
                 }
-                
-                
                 
                 if (battleActionMenuOpen) {
                 	
@@ -960,8 +964,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (isPlayerAdjacentToEnemy()) {
-    		playerBattleUnit.takeDamage(3);
-    		battleMessage = enemyBattleUnit.getName() + " attacked for 3 damage!";
+    		performAttack(enemyBattleUnit, playerBattleUnit);
     		
     		if (!playerBattleUnit.isAlive()) {
     			
@@ -1008,6 +1011,31 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			battleMessage = enemyBattleUnit.getName() + " moved closer!";
     		}
     	}
+    }
+    
+    //Damage as well as attack rolls
+    private boolean performAttack(BattleUnit attacker, BattleUnit defender) {
+    	
+    	int roll = random.nextInt(20) + 1; //1 through 20
+    	int totalAttack = roll + attacker.getAttackBonus();
+    	
+    	if (totalAttack >= defender.getArmorClass()) {
+    		defender.takeDamage(attacker.getDamage());
+    		
+    		battleMessage = attacker.getName() + " rolled " + roll + " + "
+    				+ attacker.getAttackBonus() + " = " + totalAttack
+    				+ " and hit for " + attacker.getDamage() + " damage!";
+    		
+    		return true;
+    		
+    	} else {
+    		battleMessage = attacker.getName() + " rolled " + roll + " + "
+    				+ attacker.getAttackBonus() + " = " + totalAttack
+    				+ " and missed!";
+    		
+    		return false;
+    	}
+    	
     }
     
     
@@ -1156,7 +1184,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				if (selectedOption.equals("Attack")) {
     					
     					if (isEnemyAdjacent()) {
-    						enemyBattleUnit.takeDamage(5);
+    						performAttack(selectedBattleUnit, enemyBattleUnit);
+    						
     						selectedBattleUnit.setHasActed(true);
     						
     						if (!enemyBattleUnit.isAlive()) {
@@ -1172,9 +1201,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     							repaint();
     							checkBattleEnd();
     							return;
-    						} else {
-    							battleMessage = enemyBattleUnit.getName() + " took 5 damage!";
-    						}
+    							
+    						} 
     						
     						battleActionMenuOpen = false;
 							selectedBattleUnit = null;

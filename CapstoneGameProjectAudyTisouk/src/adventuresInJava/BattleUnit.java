@@ -6,16 +6,18 @@ import java.awt.Graphics;
 //This class will track unit movement and position and any other combat related actions
 public class BattleUnit {
 
-	//name, positioning, acting and moving are separated
 	private String name;
 	private int col;
 	private int row;
 	private boolean enemy;
 	private boolean hasMoved;
 	private boolean hasActed;
+	
 	private int hp;
 	private int maxHp;
-	
+	private int armorClass;
+	private int attackBonus;
+	private int damage;
 	
 	public BattleUnit(String name, int col, int row, boolean enemy) {
 		
@@ -28,6 +30,18 @@ public class BattleUnit {
 		
 		this.maxHp = 10;
 		this.hp = 10;
+		
+		if (enemy) {
+			this.armorClass = 10;
+			this.attackBonus = 2;
+			this.damage = 3;
+			
+		} else {
+			this.armorClass = 12;
+			this.attackBonus = 3;
+			this.damage = 4;
+		}
+		
 		
 	}
 	
@@ -123,5 +137,31 @@ public class BattleUnit {
 		
 		return hp > 0;
 	}
+	
+	public int getArmorClass() {
+		
+		return armorClass;
+	}
+	
+	public int getAttackBonus() {
+		
+		return attackBonus;
+	}
+	
+	public int getDamage() {
+		
+		return damage;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 }
