@@ -82,7 +82,7 @@ public class Tile {
 		
 		else if (type == TileType.NPC) {
 			
-			//Npc
+			//Non-pc
 			g.setColor(new Color(160, 82, 45));
 			g.fillRect(x, y, tileSize, tileSize);
 			
