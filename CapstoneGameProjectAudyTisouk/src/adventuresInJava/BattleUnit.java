@@ -13,6 +13,9 @@ public class BattleUnit {
 	private boolean enemy;
 	private boolean hasMoved;
 	private boolean hasActed;
+	private int hp;
+	private int maxHp;
+	
 	
 	public BattleUnit(String name, int col, int row, boolean enemy) {
 		
@@ -23,6 +26,8 @@ public class BattleUnit {
 		this.hasMoved = false;
 		this.hasActed = false;
 		
+		this.maxHp = 10;
+		this.hp = 10;
 		
 	}
 	
@@ -91,5 +96,32 @@ public class BattleUnit {
 		hasActed = false;
 	}
 	
+	public int getHp() {
+		
+		return hp;
+	}
+	
+	public int getMaxHp() {
+		
+		return maxHp;
+	}
+	
+	public void setHp(int hp) {
+		
+		this.hp = hp;
+	}
+	
+	public void takeDamage(int damage) {
+		
+		hp -= damage;
+		if (hp < 0) {
+			hp = 0;
+		}
+	}
+	
+	public boolean isAlive() {
+		
+		return hp > 0;
+	}
 	
 }
