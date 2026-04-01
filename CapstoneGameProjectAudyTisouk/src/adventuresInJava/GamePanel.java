@@ -8,6 +8,8 @@ import java.awt.event.KeyEvent;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -25,7 +27,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int screenHeight = 600;
     
     //UI Bottom Panel for info?
-    private int uiPanelHeight = 120;
+    private int uiPanelHeight = 160;
     
     //Movement of the player
     private int maxMovement = 4;
@@ -95,14 +97,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private String[]battleMenuOptions = {"Attack", "Wait"};
     private int battleMenuIndex = 0;
     
-    //Battle Attacks
-    private String battleMessage = "";
+    //Combat Log
+    private List<String> battleLog = new ArrayList<>();
     
     //Turn Phases
     private String battlePhase = "PLAYER";
     
     //Random Rolls
     private Random random = new Random();
+    
+    //Battle Pause timer to pace the combat
+    private int battlePauseTimer = 0;
     
     
     /*
@@ -383,7 +388,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		battleCursorRow = playerBattleUnit.getRow();
     		
     		battlePhase = "PLAYER";
-    		battleMessage = "Player Phase";
+    		clearBattleLog();
+    		addBattleMessage("Player Phase");
     		
     		return;
     		
@@ -513,6 +519,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//Timer each time an end turn occurs the banner will appear 
     	if(dayBannerTimer > 0) {
     	    dayBannerTimer--;
+    	}
+    	
+    	//Battle Time pacer
+    	if (battlePauseTimer > 0) {
+    		battlePauseTimer--;
     	}
 
     	
@@ -658,7 +669,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	g.drawString("Choose destination. ENTER confirm, ESC cancel", 500, panelY + 55);
                 }
                 
-                g.drawString(battleMessage, 20, panelY + 80);
+                int logY = panelY + 80;
+                
+                g.drawString("Battle Log", 20, logY);
+                
+                for (int i = 0; i < battleLog.size(); i++) {
+                	g.drawString(battleLog.get(i), 20, logY + 20 + (i * 18));
+                }
                 
                 break;
 
@@ -910,12 +927,35 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Battle logs will heap with players seeing actions done on screen
+    private void addBattleMessage(String message) {
+    	
+    	battleLog.add(message);
+    	
+    	//Keeps only the most recent 5 messages in the log
+    	if (battleLog.size() > 5) {
+    		battleLog.remove(0);
+    	}
+    }
+    
+    //Battle Timer 
+    private void startBattlePause(int frames) {
+    	
+    	battlePauseTimer = frames;
+    }
+    
+    //helper to help clear battle messages
+    private void clearBattleLog() {
+    	
+    	battleLog.clear();
+    }
+    
     
     //Checks if the battle as concluded its objective
     private void checkBattleEnd() {
     	
     	if (enemyBattleUnit == null || !enemyBattleUnit.isAlive()) {
-    		battleMessage = "Victory! Returning to the overworld...";
+    		addBattleMessage("Victory! Returning to the overworld...");
     		
     		currentMap =  overworldGameMap;
     		currentState = GameState.OVERWORLD;
@@ -929,7 +969,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void startPlayerPhase() {
     	
     	battlePhase = "PLAYER";
-    	battleMessage = "Player Phase";
+    	addBattleMessage("Player Phase");
     	
     	if (playerBattleUnit != null) {
     		playerBattleUnit.setHasMoved(false);
@@ -940,7 +980,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //helps end the player phase
     private void endPlayerPhase() {
     	battlePhase = "ENEMY";
-    	battleMessage = "Enemy Phase";
+    	addBattleMessage("Enemy Phase");
     	
     	enemyTurn();
     }
@@ -956,7 +996,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if (playerBattleUnit == null || !playerBattleUnit.isAlive()) {
     		
-    		battleMessage = "Defeat!";
+    		addBattleMessage("Defeat!");
     		return;
     	}
     
@@ -965,11 +1005,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		if (!playerBattleUnit.isAlive()) {
     			
-    			battleMessage = playerBattleUnit.getName() + " was defeated!";
+    			addBattleMessage(playerBattleUnit.getName() + " was defeated!");
     			return;
     		}
+    		
+    		startBattlePause(45);
+    		
     	} else {
     		moveEnemyTowardPlayer();
+    		startBattlePause(45);
     	}
     	
     	startPlayerPhase();
@@ -1005,7 +1049,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		if (!(playerBattleUnit.getCol() == newCol && playerBattleUnit.getRow() == newRow)) {
     			
     			enemyBattleUnit.setPosition(newCol, newRow);
-    			battleMessage = enemyBattleUnit.getName() + " moved closer!";
+    			addBattleMessage(enemyBattleUnit.getName() + " moved closer!");
     		}
     	}
     }
@@ -1018,21 +1062,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	int roll = random.nextInt(20) + 1; //1 through 20
     	int totalAttack = roll + weapon.getAttackBonus();
     	
+    	addBattleMessage(attacker.getName() + " used " + weapon.getName() + ".");
+    	
     	if (totalAttack >= defender.getArmorClass()) {
     		
     		int damage = rollWeaponDamage(weapon);
     		defender.takeDamage(damage);
     		
-    		battleMessage = attacker.getName() + " used " + weapon.getName() 
-    				+ " and rolled " + roll + " + " + weapon.getAttackBonus()
-    				+ " = " + totalAttack + " for " + damage + " damage!";
+    		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
+    				+ " = " + totalAttack + " vs AC " + defender.getArmorClass() + " -> HIT!");
+    		addBattleMessage(defender.getName() + " took " + damage + " damage.");
     		
     		return true;
     		
     	} else {
-    		battleMessage = attacker.getName() + " used " + weapon.getName()
-    				+ " and rolled " + roll + " + " + weapon.getAttackBonus()
-    				+ " = " + totalAttack + " and missed!";
+    		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
+    				+ " = " + totalAttack + " vs AC " + defender.getArmorClass() + " -> MISS!");
     		
     		return false;
     	}
@@ -1134,6 +1179,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		return;
         	}
         	
+        	if (battlePauseTimer > 0) {
+        		return;
+        	}
+        	
         	
         	//Battle menu movement
     		if (battleActionMenuOpen) {
@@ -1202,7 +1251,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     						selectedBattleUnit.setHasActed(true);
     						
     						if (!enemyBattleUnit.isAlive()) {
-    							battleMessage = enemyBattleUnit.getName() + " was defeated!";
+    							addBattleMessage(enemyBattleUnit.getName() + " was defeated!");
     							
     							battleActionMenuOpen = false;
     							selectedBattleUnit = null;
@@ -1229,7 +1278,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 							return;
     						
     					} else {
-    						battleMessage = "No enemy in range.";
+    						addBattleMessage("No enemy in range.");
     						repaint();
     						return;
     					}
