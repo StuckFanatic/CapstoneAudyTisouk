@@ -23,11 +23,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
     //UI Bottom Panel for info
     private int mapHeight = maxScreenRow * tileSize; //480
-    private int uiPanelHeight = 160;
+    private int mapWidth = maxScreenCol * tileSize;
+    
+    private int rightPanelWidth = 220;
+    private int bottomPanelHeight = 120;
     
     //Screen Width and height
-    private int screenWidth = maxScreenCol * tileSize;
-    private int screenHeight = mapHeight + uiPanelHeight; //640
+    private int screenWidth = mapWidth + rightPanelWidth;
+    private int screenHeight = mapHeight + bottomPanelHeight;
     
     
     
@@ -594,267 +597,217 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Changed the panel to be able to match current state of player
     private void drawGlobalUI(Graphics g) {
     	
-    	int panelY = mapHeight;
-
-        // Panel background
-        g.setColor(new Color(20, 20, 20));
-        g.fillRect(0, panelY, screenWidth, uiPanelHeight);
-
-        //Top Border
-        g.setColor(Color.DARK_GRAY);
-        g.drawLine(0, panelY, screenWidth, panelY);
-        
-        //Vertical dividers
-        g.drawLine(160, panelY, 160, screenHeight);
-        g.drawLine(330, panelY, 330, screenHeight);
-
-        // Text color
-        g.setColor(Color.WHITE);
-        
-        drawLeftPanel(g, panelY);
-        drawCenterPanel(g, panelY);
-        drawRightPanel(g, panelY);
+    	drawRightPanel(g);
+        drawBottomPanel(g);
     	
     }
     
-    //General Information and Game State Changes
-    private void drawLeftPanel(Graphics g, int panelY) {
+    //Wrapper for the text to hit the limit and move on and fix bleeding into borders
+    private void drawWrappedText(Graphics g, String text, int x, int y, int maxWidth, int lineHeight) {
     	
-    	switch(currentState) {
+    	java.awt.FontMetrics fm = g.getFontMetrics();
+    	String[] words = text.split(" ");
+    	String line = "";
     	
-    	case OVERWORLD:
-    		g.drawString("Day: " + day, 20, panelY + 25);
-    		g.drawString("Movement: " + movementLeft + "/" + maxMovement, 20, panelY + 45);
-    		g.drawString("State: Overworld", 20, panelY + 65);
+    	for (String word : words) {
+    		String testLine = line.isEmpty() ? word : line + " " + word;
     		
-    		break;
-    		
-    	case TOWN:
-    		g.drawString("State: Town", 20, panelY + 25);
-    		g.drawString("Explore and interact", 20, panelY + 45);
-    		g.drawString("Press ENTER to interact", 20, panelY + 65);
-    		
-    		break;
-    		
-    	case SHOP:
-    		g.drawString("State: Shop", 20, panelY + 25);
-    		g.drawString("Browse for goods", 20, panelY + 45);
-    		g.drawString("Press ESC to leave", 20, panelY + 65);
-    		
-    		break;
-    		
-    	case BATTLE:
-    		g.drawString("Phase: " + battlePhase, 20, panelY + 25);
-    		g.drawString("Objective:", 20, panelY + 45);
-    		g.drawString("Defeat all enemies", 20, panelY + 65);
-    		
-    		break;
-    		
-    	case DIALOGUE:
-    		g.drawString("Dialogue", 20, panelY + 25);
-    		g.drawString("Press ENTER to continue", 20, panelY + 45);
-    		
-    		break;
-
+    		if (fm.stringWidth(testLine) > maxWidth) {
+    			g.drawString(line, x, y);
+    			y += lineHeight;
+    			line = word;
+    		} else {
+    			line = testLine;
+    		}
+    	}
+    	
+    	if (!line.isEmpty()) {
+    		g.drawString(line, x, y);
     	}
     	
     }
+    
     
     //Detailed Information Selection
-    private void drawCenterPanel(Graphics g, int panelY) {
-    	
-    	switch(currentState) {
-    	
-    	case OVERWORLD:
-    		
-    	
-    		
-    	case TOWN:
-    		TileType currentTile = currentMap.getTiles()[player.col][player.row].getType();
-            g.drawString("Tile: " + currentTile, 180, panelY + 25);
-            g.drawString(getTileDescription(currentTile), 180, panelY + 45);
+    private void drawBottomPanel(Graphics g) {
+
+        int panelX = 0;
+        int panelY = mapHeight;
+        int panelWidth = screenWidth;
+        int panelHeight = bottomPanelHeight;
+
+        // background
+        g.setColor(new Color(20, 20, 20));
+        g.fillRect(panelX, panelY, panelWidth, panelHeight);
+
+        // border
+        g.setColor(Color.DARK_GRAY);
+        g.drawLine(0, panelY, screenWidth, panelY);
+
+        // vertical split
+        g.drawLine(260, panelY, 260, screenHeight);
+        g.drawLine(500, panelY, 500, screenHeight);
+
+        g.setColor(Color.WHITE);
+
+        // left section
+        switch(currentState) {
+
+            case OVERWORLD:
+                g.drawString("Day: " + day, 20, panelY + 25);
+                g.drawString("Movement: " + movementLeft + "/" + maxMovement, 20, panelY + 50);
+                g.drawString("State: Overworld", 20, panelY + 75);
+                break;
+
+            case TOWN:
+                g.drawString("State: Town", 20, panelY + 25);
+                g.drawString("Press ENTER to interact.", 20, panelY + 50);
+                g.drawString("Explore the town.", 20, panelY + 75);
+                break;
+
+            case SHOP:
+                g.drawString("State: Shop", 20, panelY + 25);
+                g.drawString("Browse goods.", 20, panelY + 50);
+                g.drawString("ESC to return.", 20, panelY + 75);
+                break;
+
+            case DIALOGUE:
+                g.drawString("Dialogue", 20, panelY + 25);
+                g.drawString("ENTER to continue.", 20, panelY + 50);
+                break;
+
+            case BATTLE:
+                g.drawString("Objective:", 20, panelY + 25);
+                g.drawString("Defeat all enemies", 20, panelY + 50);
+
+                if (!battleUnitSelected || selectedBattleUnit == null) {
+                    g.drawString("Select a unit.", 20, panelY + 75);
+                } else if (battleActionMenuOpen) {
+                    g.drawString("Choose an action.", 20, panelY + 75);
+                } else {
+                    g.drawString("Choose destination.", 20, panelY + 75);
+                }
+                break;
+        }
+
+        // center section
+        switch(currentState) {
+
+            case OVERWORLD:
+            	
+            case TOWN:
+                TileType currentTile = currentMap.getTiles()[player.col][player.row].getType();
+                g.drawString("Tile: " + currentTile, 280, panelY + 25);
+                drawWrappedText(g, getTileDescription(currentTile), 280, panelY + 50, 200, 18);
+                break;
+                
+            case SHOP:
+            	
+            case DIALOGUE:
+
+            case BATTLE:
+                if (playerBattleUnit != null) {
+                    g.drawString("Player: " + playerBattleUnit.getName(), 280, panelY + 25);
+                    g.drawString("HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 280, panelY + 45);
+                    g.drawString("AC: " + playerBattleUnit.getArmorClass(), 280, panelY + 65);
+                    g.drawString("Weapon: " + playerBattleUnit.getWeapon().getName(), 280, panelY + 85);
+                }
+                break;
+        }
+
+        // right section
+        switch(currentState) {
+
+
+            case OVERWORLD:
+            	
+            case TOWN:
+                g.drawString("Prompt", 520, panelY + 25);
+                g.drawString("Move with arrows", 520, panelY + 45);
+                g.drawString("ENTER to interact", 520, panelY + 65);
+                break;
+                
+            case SHOP:
+            	
+            case DIALOGUE:
+            	
+            case BATTLE:
+                if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
+                    g.drawString("Enemy: " + enemyBattleUnit.getName(), 520, panelY + 25);
+                    g.drawString("HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 520, panelY + 45);
+                    g.drawString("AC: " + enemyBattleUnit.getArmorClass(), 520, panelY + 65);
+                    g.drawString("Weapon: " + enemyBattleUnit.getWeapon().getName(), 520, panelY + 85);
+                } else {
+                    g.drawString("Enemy: None", 520, panelY + 25);
+                }
+                break;
+            	
             
-            break;
-        
-    	case SHOP:
-    		g.drawString("Shop", 180, panelY + 25);
-    		g.drawString("Nothing for sale yet", 180, panelY + 45);
-    		
-    		break;
-    	
-    	case BATTLE:
-    		
-    		if (playerBattleUnit != null) {
-    			g.drawString("Player: " + playerBattleUnit.getName(), 180, panelY + 25);
-    			g.drawString("HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 180, panelY + 45);
-            	g.drawString("AC: " + playerBattleUnit.getArmorClass(), 180, panelY + 65);
-            	g.drawString("Weapon: " + playerBattleUnit.getWeapon().getName(), 180, panelY + 85);
-    			
-    		}
-    		
-    		if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
-    			g.drawString("Enemy: " + enemyBattleUnit.getName(), 180, panelY + 110);
-    			g.drawString("Enemy HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 180, panelY + 130);
-    			
-    		}
-    		break;
-    		
-    	case DIALOGUE:
-    		g.drawString("Conversation in progress", 180, panelY + 25);
-    		
-            break;	
-    		
-    	}
-    	  	
+        }
     }
     
     //battle logs and other prompts
-    private void drawRightPanel(Graphics g, int panelY) {
+    private void drawRightPanel(Graphics g) {
     	
-    	switch(currentState) {
-    	
-    	case OVERWORLD:
-    		g.drawString("Prompt", 340, panelY + 25);
-    		g.drawString("Move and press ENTER", 340, panelY + 45);
-    	
-    		break;
-    		
-    		
-    	case TOWN:
-    		g.drawString("Prompt", 340, panelY + 25);
-    		g.drawString("Walk to NPCs, shops or exits", 340, panelY + 45);
-    		
-    		break;
-    		
-    	case SHOP:
-    		g.drawString("Prompt", 340, panelY + 25);
-    		g.drawString("ESC to return to town", 340, panelY + 45);
-    		
-    		break;
-    		
-    	case BATTLE:
-    		g.drawString("Battle Log", 340, panelY + 25);
-    		
-    		int maxVisible = 4;
-    		int start = Math.max(0, battleLog.size() - maxVisible);
-    		
-    		for (int i = 0; i < Math.min(maxVisible, battleLog.size()); i++) {
-    			g.drawString(battleLog.get(start + i), 340, panelY + 50 + (i * 18));
-    		}
-    		
-    		break;
-    		
-    	case DIALOGUE:
-    		g.drawString("Prompt", 340, panelY + 25);
-            g.drawString("ENTER to continue dialogue", 340, panelY + 45);
-            
-            break;
-    		
-    	}
+    	int panelX = mapWidth;
+        int panelY = 0;
+        int panelWidth = rightPanelWidth;
+        int panelHeight = mapHeight;
+
+        // background
+        g.setColor(new Color(20, 20, 20));
+        g.fillRect(panelX, panelY, panelWidth, panelHeight);
+
+        // border
+        g.setColor(Color.DARK_GRAY);
+        g.drawLine(panelX, 0, panelX, mapHeight);
+
+        g.setColor(Color.WHITE);
+
+        switch(currentState) {
+
+            case OVERWORLD:
+                g.drawString("Overworld", panelX + 20, 30);
+                g.drawString("Move and explore.", panelX + 20, 55);
+                break;
+
+            case TOWN:
+                g.drawString("Town", panelX + 20, 30);
+                g.drawString("Talk, shop, or leave.", panelX + 20, 55);
+                break;
+
+            case SHOP:
+                g.drawString("Shop", panelX + 20, 30);
+                g.drawString("Nothing for sale yet.", panelX + 20, 55);
+                g.drawString("ESC to leave.", panelX + 20, 80);
+                break;
+
+            case DIALOGUE:
+                g.drawString("Dialogue", panelX + 20, 30);
+                g.drawString("Press ENTER to continue.", panelX + 20, 55);
+                break;
+
+            case BATTLE:
+                g.drawString("Battle", panelX + 20, 30);
+                g.drawString("Phase: " + battlePhase, panelX + 20, 55);
+
+                int logY = 100;
+                g.drawString("Battle Log", panelX + 20, logY);
+
+                int maxVisible = 12;
+                int start = Math.max(0, battleLog.size() - maxVisible);
+
+                for (int i = 0; i < Math.min(maxVisible, battleLog.size()); i++) {
+                    g.drawString(battleLog.get(start + i), panelX + 20, logY + 25 + (i * 18));
+                }
+                
+        		drawBattleActionMenu(g);
+
+                break;
+        }
     	
     }
     
-    	
-    	
-        /*
-         *  switch(currentState) {
-
-            case OVERWORLD:
-
-                TileType currentTile = worldMap[player.col][player.row].getType();
-
-                String tileName = "Tile: " + currentTile;
-                String tileDescription = getTileDescription(currentTile);
-
-                g.drawString(tileName, 20, panelY + 30);
-                g.drawString(tileDescription, 20, panelY + 55);
-
-                g.drawString("Day: " + day, 500, panelY + 30);
-                g.drawString("Movement: " + movementLeft + "/" + maxMovement, 500, panelY + 55);
-
-                break;
-
-                
-            case TOWN:
-
-            	TileType currentTownTile = currentMap.getTiles()[player.col][player.row].getType();
-
-                g.drawString("Town of ???", 20, panelY + 30);
-                g.drawString(getTileDescription(currentTownTile), 20, panelY + 55);
-
-                g.drawString("Gold: 0", 500, panelY + 30);
-                g.drawString("Press ENTER to interact", 500, panelY + 55);
-
-                break;
-                
-
-            case BATTLE:
-            	
-            	g.drawString("Battlefield", 20, panelY + 30);
-                g.drawString("Objective: Defeat all enemies", 20, panelY + 55);
-                
-                if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
-                	g.drawString("Player HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 400, panelY + 30);
-                	g.drawString("Player AC: " + playerBattleUnit.getArmorClass(), 400, panelY + 55);
-                	g.drawString("Player Weapon: " + playerBattleUnit.getWeapon().getName(), 400, panelY + 80);
-                	
-                }
-                
-                if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
-                	g.drawString("Enemy HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 250, panelY + 30);
-                	g.drawString("Enemy AC: " + enemyBattleUnit.getArmorClass(), 250, panelY + 55);
-                	g.drawString("Enemy Weapon: " + enemyBattleUnit.getWeapon().getName(), 250, panelY + 80);
-                }
-                
-                if (battleActionMenuOpen) {
-                	
-                	g.drawString("Action Menu", 500, panelY + 30);
-                	g.drawString("Choose Attack or Wait", 500, panelY + 55);
-                }
-                
-                else if (!battleUnitSelected || selectedBattleUnit == null) {
-                	
-                	g.drawString("Phase: " + battlePhase, 500, panelY + 30);
-                	g.drawString("Move cursor and press ENTER on your unit", 500, panelY + 55);
-                } else { 
-                	g.drawString("Selected " + selectedBattleUnit.getName(), 500, panelY + 30);
-                	g.drawString("Choose destination. ENTER confirm, ESC cancel", 500, panelY + 55);
-                }
-                
-                int logY = panelY + 80;
-                
-                g.drawString("Battle Log", 20, logY);
-                
-                for (int i = 0; i < battleLog.size(); i++) {
-                	g.drawString(battleLog.get(i), 20, logY + 20 + (i * 18));
-                }
-                
-                break;
-
-
-            case DIALOGUE:
-
-                g.drawString("Dialogue", 20, panelY + 30);
-                g.drawString("Press ENTER to continue...", 20, panelY + 55);
-
-                break;
-                
-                
-            case SHOP:
-
-                g.drawString("Shop", 20, panelY + 30);
-                g.drawString("Browse goods or sell your items!", 20, panelY + 55);
-
-                g.drawString("Gold: 0", 500, panelY + 30);
-                g.drawString("ESC to exit shop", 500, panelY + 55);
-
-                break;
-         *  
-         */
-    
-    
-    
-       
     
     //Two Start Dialogues, Simple and Full
     private void startDialogue(String[] lines, GameState nextState) {
@@ -993,7 +946,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		}
 		
 		drawBattleCursor(g);
-		drawBattleActionMenu(g);
     	
     }
     
@@ -1026,9 +978,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if (!battleActionMenuOpen) return;
     	
-    	int menuX = 520;
-    	int menuY = 100;
-    	int menuWidth = 140;
+    	int menuX = mapWidth + 20;
+    	int menuY = mapHeight - 120;
+    	int menuWidth = rightPanelWidth - 40;
     	int menuHeight = 80;
     	
     	g.setColor(new Color(30, 30, 30, 220));
@@ -1046,7 +998,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			g.setColor(Color.WHITE);
     		}
     		
-    		g.drawString(battleMenuOptions[i], menuX + 20, menuY + 25 + (i * 25));
+    		g.drawString(battleMenuOptions[i], menuX + 15, menuY + 25 + (i * 25));
     	}
     	
     }
