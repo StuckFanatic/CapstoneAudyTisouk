@@ -85,6 +85,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Battle UX for Units
     //unit selected
     private BattleUnit playerBattleUnit;
+    private BattleUnit allyBattleUnit;
     private BattleUnit enemyBattleUnit;
     private BattleUnit selectedBattleUnit;
     private boolean battleUnitSelected = false;
@@ -113,6 +114,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Battle Pause timer to pace the combat
     private int battlePauseTimer = 0;
+    
     
     
     /*
@@ -379,12 +381,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		currentState = GameState.BATTLE;
     		
     		//#, #, #, #, #, #,
-    		//minimum range, max range, attack bonus, # of  die, # of sides per die, damage bonus 
+    		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus 
     		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2); 
-    		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1); 
+    		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1);
+    		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1);
     		
-    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword);
-    		enemyBattleUnit = new BattleUnit("Bandit", 3, 1, true, banditAxe);
+    		//Class Name, Max HP, Armor Class, Movement Range
+    		CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
+    		CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
+    		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
+    		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
+    		
+    		//Name, Spawn column, Spawn row, Enemy or not, Weapon name, Class name
+    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass);
+    		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass);
+    		enemyBattleUnit = new BattleUnit("Bandit", 6, 6, true, banditAxe, banditClass);
     		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
@@ -706,11 +717,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case DIALOGUE:
 
             case BATTLE:
-                if (playerBattleUnit != null) {
-                    g.drawString("Player: " + playerBattleUnit.getName(), 280, panelY + 25);
-                    g.drawString("HP: " + playerBattleUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 280, panelY + 45);
-                    g.drawString("AC: " + playerBattleUnit.getArmorClass(), 280, panelY + 65);
-                    g.drawString("Weapon: " + playerBattleUnit.getWeapon().getName(), 280, panelY + 85);
+            	
+            	BattleUnit displayUnit = selectedBattleUnit != null ? selectedBattleUnit : playerBattleUnit;
+            	
+                if (displayUnit != null) {
+                    g.drawString("Player: " + displayUnit.getName(), 280, panelY + 25);
+                    g.drawString("Class: " + displayUnit.getCharacterClass().getName(), 280, panelY + 45);
+                    g.drawString("HP: " + displayUnit.getHp() + "/" + playerBattleUnit.getMaxHp(), 280, panelY + 65);
+                    g.drawString("AC: " + displayUnit.getArmorClass(), 280, panelY + 85);
+                    g.drawString("Weapon: " + displayUnit.getWeapon().getName(), 280, panelY + 105);
+                    
                 }
                 break;
         }
@@ -734,9 +750,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case BATTLE:
                 if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
                     g.drawString("Enemy: " + enemyBattleUnit.getName(), 520, panelY + 25);
-                    g.drawString("HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 520, panelY + 45);
-                    g.drawString("AC: " + enemyBattleUnit.getArmorClass(), 520, panelY + 65);
-                    g.drawString("Weapon: " + enemyBattleUnit.getWeapon().getName(), 520, panelY + 85);
+                    g.drawString("Class: " + enemyBattleUnit.getCharacterClass().getName(), 520, panelY + 45);
+                    g.drawString("HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 520, panelY + 65);
+                    g.drawString("AC: " + enemyBattleUnit.getArmorClass(), 520, panelY + 85);
+                    g.drawString("Weapon: " + enemyBattleUnit.getWeapon().getName(), 520, panelY + 105);
+
                 } else {
                     g.drawString("Enemy: None", 520, panelY + 25);
                 }
@@ -941,6 +959,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 			playerBattleUnit.draw(g, tileSize);
 		}
 		
+		if (allyBattleUnit != null) {
+			allyBattleUnit.draw(g, tileSize);
+		}
+		
 		if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
 			enemyBattleUnit.draw(g, tileSize);
 		}
@@ -954,7 +976,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if (!battleUnitSelected || selectedBattleUnit == null) return;
     	
-    	int movementRange = 4;
+    	//uses classes movement range while in battle
+    	int movementRange = selectedBattleUnit.getCharacterClass().getMovementRange();
     	
     	for (int col = 0; col < maxScreenCol; col++) {
     		for (int row = 0; row < maxScreenRow; row++) {
@@ -1079,6 +1102,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		playerBattleUnit.setHasMoved(false);
     		playerBattleUnit.setHasActed(false);
     	}
+    	
+    	if (allyBattleUnit != null) {
+    		allyBattleUnit.setHasMoved(false);
+    		allyBattleUnit.setHasActed(false);
+    	}
+    }
+    
+    //Check helps end player phase after all acted
+    private boolean allPlayerUnitsHaveActed() {
+    	
+    	if (playerBattleUnit != null && !playerBattleUnit.hasActed()) {
+    		return false;
+    	}
+    	
+    	if (allyBattleUnit != null && !allyBattleUnit.hasActed()) {
+    		return false;
+    	}
+    	
+    	return true;
     }
     
     //helps end the player phase
@@ -1087,6 +1129,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	addBattleMessage("Enemy Phase");
     	
     	enemyTurn();
+    }
+    
+    private boolean isTileOccupiedByOtherFriendly(int col, int row, BattleUnit currentUnit) {
+    	
+    	if (playerBattleUnit != null && playerBattleUnit != currentUnit &&
+    			playerBattleUnit.getCol() == col && playerBattleUnit.getRow() == row) {
+    		return true;
+    	}
+    	
+    	if (allyBattleUnit != null && allyBattleUnit != currentUnit &&
+    			allyBattleUnit.getCol() == col && allyBattleUnit.getRow() == row) {
+    		return true;
+    	}
+    	
+    	return false;
     }
     
     //enemy turn
@@ -1125,38 +1182,57 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //enemy that cannot yet attack move towards the player
     private void moveEnemyTowardPlayer() {
-    	
-    	if (enemyBattleUnit == null || playerBattleUnit == null) return;
-    	
-    	int enemyCol = enemyBattleUnit.getCol();
-    	int enemyRow = enemyBattleUnit.getRow();
-    	
-    	int playerCol = playerBattleUnit.getCol();
-    	int playerRow = playerBattleUnit.getRow();
-    	
-    	int newCol = enemyCol;
-    	int newRow = enemyRow;
-    	
-    	if (Math.abs(playerCol - enemyCol) > Math.abs(playerRow - enemyRow)) {
-    		if (playerCol > enemyCol) newCol++;
-    		else if (playerCol < enemyCol) newCol++;
-    	} else {
-    		if (playerRow > enemyRow) newRow++;
-    		else if (playerRow < enemyRow) newRow--;
-    	}
-    	
-    	if (newCol >= 0 && newCol < maxScreenCol &&
-    			newRow >= 0 && newRow < maxScreenRow &&
-    			currentMap.getTiles()[newCol][newRow].isPassable()) {
-    		
-    		//don't move into the player tile
-    		if (!(playerBattleUnit.getCol() == newCol && playerBattleUnit.getRow() == newRow)) {
-    			
-    			enemyBattleUnit.setPosition(newCol, newRow);
-    			addBattleMessage(enemyBattleUnit.getName() + " moved closer!");
-    		}
-    	}
+
+        if (enemyBattleUnit == null || playerBattleUnit == null) return;
+
+        int movement = enemyBattleUnit.getCharacterClass().getMovementRange();
+
+        for (int step = 0; step < movement; step++) {
+
+            // stop if already in attack range
+            if (isEnemyInRange(enemyBattleUnit, playerBattleUnit)) {
+                return;
+            }
+
+            int enemyCol = enemyBattleUnit.getCol();
+            int enemyRow = enemyBattleUnit.getRow();
+
+            int playerCol = playerBattleUnit.getCol();
+            int playerRow = playerBattleUnit.getRow();
+
+            int newCol = enemyCol;
+            int newRow = enemyRow;
+
+            // choose direction
+            if (Math.abs(playerCol - enemyCol) > Math.abs(playerRow - enemyRow)) {
+                if (playerCol > enemyCol) newCol++;
+                else if (playerCol < enemyCol) newCol--;
+            } else {
+                if (playerRow > enemyRow) newRow++;
+                else if (playerRow < enemyRow) newRow--;
+            }
+
+            // check bounds + can pass
+            if (newCol >= 0 && newCol < maxScreenCol &&
+                newRow >= 0 && newRow < maxScreenRow &&
+                currentMap.getTiles()[newCol][newRow].isPassable()) {
+
+                // don't step onto player
+                if (!(playerBattleUnit.getCol() == newCol && playerBattleUnit.getRow() == newRow)) {
+                    enemyBattleUnit.setPosition(newCol, newRow);
+                } else {
+                    return;
+                }
+
+            } else {
+                // can't move further
+                return;
+            }
+        }
+
+        addBattleMessage(enemyBattleUnit.getName() + " moved.");
     }
+    
     
     //Damage as well as attack rolls
     private boolean performAttack(BattleUnit attacker, BattleUnit defender) {
@@ -1343,7 +1419,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     					selectedUnitStartRow = -1;
     					
     					repaint();
-    					endPlayerPhase();
+    					if (allPlayerUnitsHaveActed()) {
+    						endPlayerPhase();
+    					}
     					return;
     				}
     				
@@ -1378,7 +1456,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 							selectedUnitStartRow = -1;
 							
 							repaint();
-							endPlayerPhase();
+							if (allPlayerUnitsHaveActed()) {
+	    						endPlayerPhase();
+	    					}
 							return;
     						
     					} else {
@@ -1395,9 +1475,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	//Enter selects the unit if none are already selected
         	if (code == KeyEvent.VK_ENTER) {
         		
-        		//unit Selection
+        		//unit  Selection
         		if (!battleUnitSelected) {
         			
+        			//Leader
         			if (playerBattleUnit != null &&
         					battleCursorCol == playerBattleUnit.getCol() &&
         					battleCursorRow == playerBattleUnit.getRow() &&
@@ -1412,10 +1493,32 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         				
         				battleCursorCol = selectedBattleUnit.getCol();
         				battleCursorRow = selectedBattleUnit.getRow();
+        				
+        				repaint();
+        				return;
         			}
+        			
+        			//Ally Selection
+        			if (allyBattleUnit != null &&
+        					battleCursorCol == allyBattleUnit.getCol() &&
+        					battleCursorRow == allyBattleUnit.getRow() &&
+        					!allyBattleUnit.hasActed()) {
+        				
+        				
+        				selectedBattleUnit = allyBattleUnit;
+        				battleUnitSelected = true;
+        				
+        				selectedUnitStartCol = selectedBattleUnit.getCol();
+        				selectedUnitStartRow = selectedBattleUnit.getRow();
+        				
+        				battleCursorCol = selectedBattleUnit.getCol();
+        				battleCursorRow = selectedBattleUnit.getRow();
+        			
         			
         			repaint();
         			return;
+        			
+        			}
         		}
         	}
         	
@@ -1472,23 +1575,30 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			int distance = Math.abs(battleCursorCol - selectedUnitStartCol)
         					+ Math.abs(battleCursorRow - selectedUnitStartRow);
         			
-        			if (distance <= 4 &&
+        			if (distance <= selectedBattleUnit.getCharacterClass().getMovementRange() &&
         					currentMap.getTiles()[battleCursorCol][battleCursorRow].isPassable() &&
         					!(enemyBattleUnit != null &&
         					enemyBattleUnit.getCol() == battleCursorCol &&
         					enemyBattleUnit.getRow() == battleCursorRow)) {
         				
+        			if (!isTileOccupiedByOtherFriendly(battleCursorCol, battleCursorRow, selectedBattleUnit)) {
+        				
         				selectedBattleUnit.setPosition(battleCursorCol, battleCursorRow);
         				selectedBattleUnit.setHasMoved(true);
         				
+        				//Open action menu
         				battleActionMenuOpen = true;
         				battleMenuIndex = 0;
         				
-        			}
+        				repaint();
+            			
+        				
+        				}
         			
-        			repaint();
         			return;
         			
+        			}
+
         		}
         		
         		//ESC cancels battle
@@ -1549,12 +1659,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (newCol >= 0 && newCol < maxScreenCol &&
                 newRow >= 0 && newRow < maxScreenRow &&
-                currentMap.getTiles()[newCol][newRow].isPassable()) {
+                currentMap.getTiles()[newCol][newRow].isPassable() &&
+            	!isTileOccupiedByOtherFriendly(newCol, newRow, selectedBattleUnit)) {
+            	
+            	
 
                 player.col = newCol;
                 player.row = newRow;
                 
             }
+            
             if (currentState == GameState.OVERWORLD) {
             	movementLeft--;
             }
