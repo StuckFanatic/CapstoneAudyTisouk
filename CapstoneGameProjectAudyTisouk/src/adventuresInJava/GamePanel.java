@@ -86,7 +86,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //unit selected
     private BattleUnit playerBattleUnit;
     private BattleUnit allyBattleUnit;
-    private BattleUnit enemyBattleUnit;
+    private List<BattleUnit> enemyUnits = new ArrayList<>();
     private BattleUnit selectedBattleUnit;
     private boolean battleUnitSelected = false;
     
@@ -400,7 +400,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		//Name, Spawn column, Spawn row, Enemy or not, Weapon name, Class name
     		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass);
     		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass);
-    		enemyBattleUnit = new BattleUnit("Bandit", 6, 6, true, banditAxe, banditClass);
+    		
+    		//Array for enemy units
+    		enemyUnits.clear();
+    		enemyUnits.add(new BattleUnit("Bandit A", 6, 6, true, banditAxe, banditClass));
+    		enemyUnits.add(new BattleUnit("Bandit b", 7, 4, true, banditAxe, banditClass));
     		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
@@ -760,12 +764,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case DIALOGUE:
             	
             case BATTLE:
-                if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
-                    g.drawString("Enemy: " + enemyBattleUnit.getName(), 520, panelY + 25);
-                    g.drawString("Class: " + enemyBattleUnit.getCharacterClass().getName(), 520, panelY + 45);
-                    g.drawString("HP: " + enemyBattleUnit.getHp() + "/" + enemyBattleUnit.getMaxHp(), 520, panelY + 65);
-                    g.drawString("AC: " + enemyBattleUnit.getArmorClass(), 520, panelY + 85);
-                    g.drawString("Weapon: " + enemyBattleUnit.getWeapon().getName(), 520, panelY + 105);
+            	
+            	BattleUnit displayEnemy = previewDefender;
+            	
+            	if (displayEnemy == null) {
+            		for (BattleUnit enemy : enemyUnits) {
+            			if (enemy != null && enemy.isAlive()) {
+            				displayEnemy = enemy;
+            				break;
+            			}
+            		}
+            	}
+            	
+                if (displayEnemy != null) {
+                    g.drawString("Enemy: " + displayEnemy.getName(), 520, panelY + 25);
+                    g.drawString("HP: " + displayEnemy.getHp() + "/" + displayEnemy.getMaxHp(), 520, panelY + 45);
+                    g.drawString("AC: " + displayEnemy.getArmorClass(), 520, panelY + 65);
+                    g.drawString("Weapon: " + displayEnemy.getWeapon().getName(), 520, panelY + 85);
 
                 } else {
                     g.drawString("Enemy: None", 520, panelY + 25);
@@ -980,8 +995,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 			allyBattleUnit.draw(g, tileSize);
 		}
 		
-		if (enemyBattleUnit != null && enemyBattleUnit.isAlive()) {
-			enemyBattleUnit.draw(g, tileSize);
+		for (BattleUnit enemy : enemyUnits) {
+			if (enemy != null && enemy.isAlive()) {
+				enemy.draw(g, tileSize);
+			}
+			
 		}
 		
 		drawBattleCursor(g);
@@ -1097,6 +1115,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    private BattleUnit getEnemyAtCursor() {
+    	
+    	for (BattleUnit enemy : enemyUnits) {
+    		
+    		if (enemy != null && enemy.isAlive() &&
+    				enemy.getCol() == battleCursorCol &&
+    				enemy.getRow() == battleCursorRow) {
+    			return enemy;
+    		}
+    				
+    	}
+    	
+    	return null;
+    	
+    }
+    
     //Battle logs will heap with players seeing actions done on screen
     private void addBattleMessage(String message) {
     	
@@ -1124,7 +1158,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Checks if the battle as concluded its objective
     private void checkBattleEnd() {
     	
-    	if (enemyBattleUnit == null || !enemyBattleUnit.isAlive()) {
+    	boolean anyEnemyAlive = false;
+    	
+    	for (BattleUnit enemy : enemyUnits) {
+    		if (enemy != null && enemy.isAlive()) {
+    			anyEnemyAlive = true;
+    			break;
+    		}
+    	}
+    	
+    	if (!anyEnemyAlive) {
     		addBattleMessage("Victory! Returning to the overworld...");
     		
     		currentMap =  overworldGameMap;
@@ -1209,58 +1252,100 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return false;
     }
     
+    private boolean isTileOccupiedByEnemy(int col, int row) {
+    	
+    	for (BattleUnit enemy : enemyUnits) {
+    		if (enemy != null && enemy.isAlive() &&
+    				enemy.getCol() == col && enemy.getRow() == row) {
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+    	
+    }
+    
+    //
+    private boolean isTileOccupiedByOtherEnemy(int col, int row, BattleUnit currentEnemy) {
+    	
+    	for (BattleUnit enemy : enemyUnits) {
+    		if (enemy != null && enemy != currentEnemy && enemy.isAlive() &&
+    				enemy.getCol() == col && enemy.getRow() == row) {
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+    	
+    }
+    
+    
+    
     //enemy turn
     private void enemyTurn() {
     	
-    	BattleUnit target = getEnemyTarget();
+    	boolean anyPlayerAlive = false;
     	
-    	if (enemyBattleUnit == null || !enemyBattleUnit.isAlive()) {
-    		
-    		startPlayerPhase();
-    		return;
-    	}
+    	if (playerBattleUnit != null && playerBattleUnit.isAlive()) anyPlayerAlive = true;
+    	if (allyBattleUnit != null && allyBattleUnit.isAlive()) anyPlayerAlive = true;
     	
-    	if (playerBattleUnit == null || !playerBattleUnit.isAlive()) {
-    		
+    	
+    	if (!anyPlayerAlive) {
     		addBattleMessage("Defeat!");
     		return;
     	}
-    
-    	if (isEnemyInRange(enemyBattleUnit, target)) {
-    		performAttack(enemyBattleUnit, target);
+    	
+    	for (BattleUnit enemy : enemyUnits) {
     		
-    		if (!target.isAlive()) {
-    			
-    			addBattleMessage(target.getName() + " was defeated!");
-    			return;
+    		if (enemy == null || !enemy.isAlive()) {
+    			continue;
     		}
     		
-    		startBattlePause(45);
+    		BattleUnit target = getEnemyTarget(enemy);
     		
-    	} else {
-    		moveEnemyTowardTarget(target);
-    		startBattlePause(45);
+    		if (target == null) {
+    			continue;
+    			
+    		}
+    		
+    		if (isEnemyInRange(enemy, target)) {
+        		performAttack(enemy, target);
+        		
+        		if (!target.isAlive()) {
+        			
+        			addBattleMessage(target.getName() + " was defeated!");
+        			return;
+        		}
+        		
+        		startBattlePause(45);
+        		
+        	} else {
+        		moveEnemyTowardTarget(enemy, target);
+        		startBattlePause(45);
+        	}
+        	
+        	startPlayerPhase();
     	}
-    	
-    	startPlayerPhase();
+	
     }
     
+    
     //enemy that cannot yet attack move towards the player
-    private void moveEnemyTowardTarget(BattleUnit target) {
+    private void moveEnemyTowardTarget(BattleUnit actingEnemy, BattleUnit target) {
 
-        if (enemyBattleUnit == null || target == null) return;
+        if (actingEnemy == null || target == null) return;
 
-        int movement = enemyBattleUnit.getCharacterClass().getMovementRange();
+        int movement = actingEnemy.getCharacterClass().getMovementRange();
 
         for (int step = 0; step < movement; step++) {
 
             // stop if already in attack range
-            if (isEnemyInRange(enemyBattleUnit, target)) {
+            if (isEnemyInRange(actingEnemy, target)) {
                 return;
             }
 
-            int enemyCol = enemyBattleUnit.getCol();
-            int enemyRow = enemyBattleUnit.getRow();
+            int enemyCol = actingEnemy.getCol();
+            int enemyRow = actingEnemy.getRow();
 
             int targetCol = target.getCol();
             int targetRow = target.getRow();
@@ -1283,34 +1368,33 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 currentMap.getTiles()[newCol][newRow].isPassable() &&
                 !isTileOccupiedByAnyFriendly(newCol, newRow)) {
             	
-                    enemyBattleUnit.setPosition(newCol, newRow);
+            	actingEnemy.setPosition(newCol, newRow);
                 } else {
                     return;
                 }
         }
 
-        addBattleMessage(enemyBattleUnit.getName() + " moved.");
+        addBattleMessage(actingEnemy.getName() + " moved.");
     }
     
     //Helper for enemies to attack other units not just leader
-    private BattleUnit getEnemyTarget() {
+    private BattleUnit getEnemyTarget(BattleUnit actingEnemy) {
     	
     	BattleUnit target = null;
     	int closestDistance = Integer.MAX_VALUE;
     	
     	if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
-    		int distance = Math.abs(enemyBattleUnit.getCol() - playerBattleUnit.getCol())
-    				+ Math.abs(enemyBattleUnit.getRow() - playerBattleUnit.getRow());
+    		int distance = Math.abs(actingEnemy.getCol() - playerBattleUnit.getCol())
+    				+ Math.abs(actingEnemy.getRow() - playerBattleUnit.getRow());
     		target = playerBattleUnit;
     		closestDistance = distance;
     	}
     	
     	if (allyBattleUnit != null && allyBattleUnit.isAlive()) {
-    		int distance = Math.abs(enemyBattleUnit.getCol() - allyBattleUnit.getCol())
-    				+ Math.abs(enemyBattleUnit.getRow() - allyBattleUnit.getRow());
+    		int distance = Math.abs(actingEnemy.getCol() - allyBattleUnit.getCol())
+    				+ Math.abs(actingEnemy.getRow() - allyBattleUnit.getRow());
     		
     		if (distance < closestDistance) {
-    			
     			target = allyBattleUnit;
         		closestDistance = distance;
     		}
@@ -1319,6 +1403,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	return target;
     }
+    
     
     
     //Damage as well as attack rolls
@@ -1572,23 +1657,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				
     				if (selectedOption.equals("Attack")) {
     					
-    					if (enemyBattleUnit != null && enemyBattleUnit.isAlive() &&
-    							isEnemyInRange(selectedBattleUnit, enemyBattleUnit)) {
-    							
+    					if (selectedBattleUnit != null) {
+    						
+    						BattleUnit target = getEnemyAtCursor();
+    						
+    					if (target != null && isEnemyInRange(selectedBattleUnit, target)) {
+    						
     						previewAttacker = selectedBattleUnit;
-    						previewDefender = enemyBattleUnit;
+    						previewDefender = target;
     						battleAttackPreviewOpen = true;
     						battleActionMenuOpen = false;
-
-    							
+    						
     						repaint();
     						return;
-    							
+
     					} else {
-    						addBattleMessage("No enemy in range.");
+    						addBattleMessage("Move the cursor onto an enemy in range.");
         					repaint();
         					return;
     							
+    					}
+    					
     					}
     				
     				}
@@ -1702,9 +1791,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			
         			if (distance <= selectedBattleUnit.getCharacterClass().getMovementRange() &&
         					currentMap.getTiles()[battleCursorCol][battleCursorRow].isPassable() &&
-        					!(enemyBattleUnit != null &&
-        					enemyBattleUnit.getCol() == battleCursorCol &&
-        					enemyBattleUnit.getRow() == battleCursorRow)) {
+        					!isTileOccupiedByEnemy(battleCursorCol, battleCursorRow)) {
         				
         			if (!isTileOccupiedByOtherFriendly(battleCursorCol, battleCursorRow, selectedBattleUnit)) {
         				
