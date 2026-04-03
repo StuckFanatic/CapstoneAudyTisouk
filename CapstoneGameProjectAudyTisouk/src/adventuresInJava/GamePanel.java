@@ -115,6 +115,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Battle Pause timer to pace the combat
     private int battlePauseTimer = 0;
     
+    //Attack Preview
+    private boolean battleAttackPreviewOpen = false;
+    private BattleUnit previewAttacker = null;
+    private BattleUnit previewDefender = null;
+    
     
     
     /*
@@ -688,17 +693,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 break;
 
             case BATTLE:
-                g.drawString("Objective:", 20, panelY + 25);
-                g.drawString("Defeat all enemies", 20, panelY + 50);
-
-                if (!battleUnitSelected || selectedBattleUnit == null) {
+            	
+            	//if Preview is open do this first
+            	g.drawString("Objective:", 20, panelY + 25);
+            	g.drawString("Defeat all enemies", 20, panelY + 50);
+            	
+            	if (battleAttackPreviewOpen) {
+            		g.drawString("Attack Preview", 20, panelY + 75);
+            		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 95);
+            		
+            	} else if (!battleUnitSelected || selectedBattleUnit == null) {
                     g.drawString("Select a unit.", 20, panelY + 75);
                 } else if (battleActionMenuOpen) {
                     g.drawString("Choose an action.", 20, panelY + 75);
                 } else {
                     g.drawString("Choose destination.", 20, panelY + 75);
                 }
-                break;
+            	
+            	break;
         }
 
         // center section
@@ -819,9 +831,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     g.drawString(battleLog.get(start + i), panelX + 20, logY + 25 + (i * 18));
                 }
                 
-        		drawBattleActionMenu(g);
-
+                if (battleAttackPreviewOpen && previewAttacker != null && previewDefender != null) {
+                	drawAttackPreview(g, panelX, panelY);
+                } else {
+                	drawBattleActionMenu(g);
+                }
+                
                 break;
+                
         }
     	
     }
@@ -995,6 +1012,32 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		}
     	}
     	
+    }
+    
+    //Gives you a complex tactics preview of your actions
+    private void drawAttackPreview(Graphics g, int panelX, int panelY) {
+    	
+    	int boxX = panelX + 20;
+    	int boxY = mapHeight - 140;
+    	int boxWidth = rightPanelWidth - 40;
+    	int boxHeight = 110;
+    	
+    	g.setColor(new Color(30, 30, 30, 230));
+    	g.fillRect(boxX, boxY, boxWidth, boxHeight);
+    	
+    	g.setColor(Color.WHITE);
+    	g.drawRect(boxX, boxY, boxWidth, boxHeight);
+    	
+    	Weapon weapon = previewAttacker.getWeapon();
+    	
+    	g.drawString("Attack Preview", boxX + 15, boxY + 20);
+    	g.drawString(previewAttacker.getName() + " -> " + previewDefender.getName(), boxX + 15, boxY + 40);
+    	g.drawString("Weapon" + weapon.getName(), boxX + 15, boxY + 60);
+    	g.drawString("Hit: d20 + " + weapon.getAttackBonus()
+    		+ " vs AC " + previewDefender.getArmorClass(), boxX + 15, boxY + 80);
+    	g.drawString("Damage: " + weapon.getDamageDiceCount() + "d"
+    			+ weapon.getDamageDiceSides()
+    			+ " + " + weapon.getDamageBonus(), boxX + 15, boxY + 100);
     }
     
     private void drawBattleActionMenu(Graphics g) {
@@ -1403,8 +1446,65 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		return;
         	}
         	
+        	//timer causes delay in attack slamming
         	if (battlePauseTimer > 0) {
         		return;
+        	}
+        	
+        	//Battle Preview Before the actual menu first
+        	if (battleAttackPreviewOpen) {
+        		
+        		if (code == KeyEvent.VK_ESCAPE) {
+        			battleAttackPreviewOpen = false;
+        			battleActionMenuOpen = true;
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		if (code == KeyEvent.VK_ENTER) {
+        			
+        			performAttack(previewAttacker, previewDefender);
+        			
+        			previewAttacker.setHasActed(true);
+        			
+        			if (!previewDefender.isAlive()) {
+        				addBattleMessage(previewDefender.getName() + " was defeated!");
+        				
+        				battleAttackPreviewOpen = false;
+        				previewAttacker = null;
+        				previewDefender = null;
+        				
+        				selectedBattleUnit = null;
+        				battleUnitSelected = false;
+        				
+        				selectedUnitStartCol = -1;
+        				selectedUnitStartRow = -1;
+        				
+        				repaint();
+        				checkBattleEnd();
+        				return;
+        			}
+        			
+        			battleAttackPreviewOpen = false;
+        			previewAttacker = null;
+        			previewDefender = null;
+        			
+        			selectedBattleUnit = null;
+        			battleUnitSelected = false;
+        			
+        			selectedUnitStartCol = -1;
+        			selectedUnitStartRow = -1;
+        			
+        			repaint();
+        			
+        			if (allPlayerUnitsHaveActed()) {
+        				endPlayerPhase();
+        			}
+        			
+        			return;
+        		}
+        		
         	}
         	
         	
@@ -1472,45 +1572,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				
     				if (selectedOption.equals("Attack")) {
     					
-    					if (isEnemyInRange(selectedBattleUnit, enemyBattleUnit)) {
-    						performAttack(selectedBattleUnit, enemyBattleUnit);
-    						
-    						selectedBattleUnit.setHasActed(true);
-    						
-    						if (!enemyBattleUnit.isAlive()) {
-    							addBattleMessage(enemyBattleUnit.getName() + " was defeated!");
+    					if (enemyBattleUnit != null && enemyBattleUnit.isAlive() &&
+    							isEnemyInRange(selectedBattleUnit, enemyBattleUnit)) {
     							
-    							battleActionMenuOpen = false;
-    							selectedBattleUnit = null;
-    							battleUnitSelected = false;
-    							
-    							selectedUnitStartCol = -1;
-    							selectedUnitStartRow = -1;
-    							
-    							repaint();
-    							checkBattleEnd();
-    							return;
-    							
-    						} 
-    						
+    						previewAttacker = selectedBattleUnit;
+    						previewDefender = enemyBattleUnit;
+    						battleAttackPreviewOpen = true;
     						battleActionMenuOpen = false;
-							selectedBattleUnit = null;
-							battleUnitSelected = false;
-							
-							selectedUnitStartCol = -1;
-							selectedUnitStartRow = -1;
-							
-							repaint();
-							if (allPlayerUnitsHaveActed()) {
-	    						endPlayerPhase();
-	    					}
-							return;
-    						
-    					} else {
-    						addBattleMessage("No enemy in range.");
+
+    							
     						repaint();
     						return;
+    							
+    					} else {
+    						addBattleMessage("No enemy in range.");
+        					repaint();
+        					return;
+    							
     					}
+    				
     				}
     				
     			}	
