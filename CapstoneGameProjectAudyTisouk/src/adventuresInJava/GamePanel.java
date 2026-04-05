@@ -25,8 +25,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int mapHeight = maxScreenRow * tileSize; //480
     private int mapWidth = maxScreenCol * tileSize;
     
-    private int rightPanelWidth = 220;
-    private int bottomPanelHeight = 120;
+    private int rightPanelWidth = 260;
+    private int bottomPanelHeight = 140;
     
     //Screen Width and height
     private int screenWidth = mapWidth + rightPanelWidth;
@@ -391,10 +391,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		currentState = GameState.BATTLE;
     		
     		//#, #, #, #, #, #,
-    		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus 
-    		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2); 
-    		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1);
-    		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1);
+    		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
+    		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false); 
+    		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
+    		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1, false);
     		
     		//Class Name, Max HP, Armor Class, Movement Range
     		CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
@@ -402,14 +402,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
     		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
     		
+    		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
+    		UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
+    		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
+    		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
+    		
     		//Name, Spawn column, Spawn row, Enemy or not, Weapon name, Class name
-    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass);
-    		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass);
+    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass, leaderStats);
+    		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass, archerStats);
     		
     		//Array for enemy units
     		enemyUnits.clear();
-    		enemyUnits.add(new BattleUnit("Bandit A", 6, 6, true, banditAxe, banditClass));
-    		enemyUnits.add(new BattleUnit("Bandit B", 7, 4, true, banditAxe, banditClass));
+    		enemyUnits.add(new BattleUnit("Bandit A", 6, 6, true, banditAxe, banditClass, banditStats));
+    		enemyUnits.add(new BattleUnit("Bandit B", 7, 4, true, banditAxe, banditClass, banditStats));
     		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
@@ -751,8 +756,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     g.drawString("Player: " + displayUnit.getName(), 280, panelY + 25);
                     g.drawString("Class: " + displayUnit.getCharacterClass().getName(), 280, panelY + 45);
                     g.drawString("HP: " + displayUnit.getHp() + "/" + displayUnit.getMaxHp(), 280, panelY + 65);
-                    g.drawString("AC: " + displayUnit.getArmorClass(), 280, panelY + 85);
-                    g.drawString("Weapon: " + displayUnit.getWeapon().getName(), 280, panelY + 105);
+                    g.drawString("Weapon: " + displayUnit.getWeapon().getName(), 280, panelY + 85);
+                    g.drawString("AC: " + displayUnit.getArmorClass(), 280, panelY + 105);
+
                     
                 }
                 break;
@@ -1029,7 +1035,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	if (!battleUnitSelected || selectedBattleUnit == null) return;
     	
     	//uses classes movement range while in battle
-    	int movementRange = selectedBattleUnit.getCharacterClass().getMovementRange();
+    	//Can be changed to selectedBattleUnit.getCharacterClass().getMovementRange(); if switching to class movement based
+    	int movementRange = selectedBattleUnit.getStats().getMovement();
     	
     	for (int col = 0; col < maxScreenCol; col++) {
     		for (int row = 0; row < maxScreenRow; row++) {
@@ -1053,9 +1060,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void drawAttackPreview(Graphics g, int panelX, int panelY) {
     	
     	int boxX = panelX + 20;
-    	int boxY = mapHeight - 140;
+    	int boxY = mapHeight - 170;
     	int boxWidth = rightPanelWidth - 40;
-    	int boxHeight = 110;
+    	int boxHeight = 140;
     	
     	g.setColor(new Color(30, 30, 30, 230));
     	g.fillRect(boxX, boxY, boxWidth, boxHeight);
@@ -1065,14 +1072,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	Weapon weapon = previewAttacker.getWeapon();
     	
+    	int hitChance = calculateHitChance(previewAttacker, previewDefender);
+    	int minDamage = calculateMinDamage(previewAttacker, previewDefender);
+    	int maxDamage = calculateMaxDamage(previewAttacker, previewDefender);
+    	boolean counter = canCounterattack(previewAttacker, previewDefender);
+    	
     	g.drawString("Attack Preview", boxX + 15, boxY + 20);
     	g.drawString(previewAttacker.getName() + " -> " + previewDefender.getName(), boxX + 15, boxY + 40);
-    	g.drawString("Weapon" + weapon.getName(), boxX + 15, boxY + 60);
-    	g.drawString("Hit: d20 + " + weapon.getAttackBonus()
-    		+ " vs AC " + previewDefender.getArmorClass(), boxX + 15, boxY + 80);
-    	g.drawString("Damage: " + weapon.getDamageDiceCount() + "d"
-    			+ weapon.getDamageDiceSides()
-    			+ " + " + weapon.getDamageBonus(), boxX + 15, boxY + 100);
+    	g.drawString("Weapon: " + weapon.getName(), boxX + 15, boxY + 60);
+    	g.drawString("Hit: " + hitChance + "%", boxX + 15, boxY + 80);
+    	g.drawString("Damage: " + minDamage + " - " + maxDamage, boxX + 15, boxY + 100);
+    	g.drawString("Counter: " + (counter ? "Yes" : "No"), boxX + 15, boxY + 120);
     }
     
     private void drawBattleActionMenu(Graphics g) {
@@ -1465,30 +1475,89 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	Weapon weapon = attacker.getWeapon();
     	
+    	int statHitBonus = attacker.getStats().getSkill() / 2; //Skill effects hit rating
     	int roll = random.nextInt(20) + 1; //1 through 20
-    	int totalAttack = roll + weapon.getAttackBonus();
+    	int totalAttack = roll + weapon.getAttackBonus() + statHitBonus;
     	
     	addBattleMessage(attacker.getName() + " used " + weapon.getName() + ".");
     	
     	if (totalAttack >= defender.getArmorClass()) {
     		
-    		int damage = rollWeaponDamage(weapon);
+    		int baseDamage = rollWeaponDamage(weapon);
+    		int attackStat = weapon.isMagical() ? attacker.getStats().getMagic() : attacker.getStats().getStrength();
+    		int defenseStat = weapon.isMagical() ? defender.getStats().getResistance() : defender.getStats().getDefense();
+    		
+    		int damage = baseDamage + attackStat - defenseStat;
+    		if (damage < 0) damage = 0;
+    		
     		defender.takeDamage(damage);
     		
     		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
-    				+ " = " + totalAttack + " vs AC " + defender.getArmorClass() + " -> HIT!");
+    				+ " + SKL " + statHitBonus + " = " + totalAttack
+    				+ " vs AC " + defender.getArmorClass() + " -> HIT!");
     		addBattleMessage(defender.getName() + " took " + damage + " damage.");
     		
     		return true;
     		
     	} else {
     		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
-    				+ " = " + totalAttack + " vs AC " + defender.getArmorClass() + " -> MISS!");
+    				+ " + SKL " + statHitBonus + " = " + totalAttack
+    				+ " vs AC " + defender.getArmorClass() + " -> MISS!");
     		
     		return false;
     	}
     	
     }
+    
+    //Forecast for players to read on when attacking and defending
+    private int calculateHitChance(BattleUnit attacker, BattleUnit defender) {
+    	
+    	int hitScore = 50
+    			+ (attacker.getWeapon().getAttackBonus() * 10)
+    			+ ((attacker.getStats().getSkill() / 2) * 10)
+				- ((defender.getArmorClass() - 10) * 5);
+    	if (hitScore < 5) hitScore = 5;
+    	if (hitScore > 95) hitScore = 95;
+    	
+    	return hitScore;
+    }
+    
+    //Minimum damage
+    private int calculateMinDamage(BattleUnit attacker, BattleUnit defender) {
+    	
+    	Weapon weapon = attacker.getWeapon();
+    	
+    	int baseMin = attacker.getWeapon().getDamageDiceCount() + attacker.getWeapon().getDamageBonus();
+    	int attackStat = weapon.isMagical() ? attacker.getStats().getMagic() : attacker.getStats().getStrength();
+    	int defenseStat = weapon.isMagical() ? defender.getStats().getResistance() : defender.getStats().getDefense();
+    	
+    	int total = baseMin + attackStat - defenseStat;
+    	return Math.max(0, total);
+    	
+    	}
+    
+    //Maximum Damage
+    private int calculateMaxDamage(BattleUnit attacker, BattleUnit defender) {
+    	
+    	Weapon weapon = attacker.getWeapon();
+    	
+    	int baseMax = (weapon.getDamageDiceCount() * weapon.getDamageDiceSides() + weapon.getDamageBonus());
+    	int attackStat = weapon.isMagical() ? attacker.getStats().getMagic() : attacker.getStats().getStrength();
+    	int defenseStat = weapon.isMagical() ? defender.getStats().getResistance() : defender.getStats().getDefense();
+    	
+    	int total = baseMax + attackStat - defenseStat;
+    	return Math.max(0, total);
+    	
+    	
+    }
+    
+    //Counter Attack gives defenders chance to hit back
+    private boolean canCounterattack(BattleUnit attacker, BattleUnit defender) {
+    	
+    	return isEnemyInRange(defender, attacker);
+    	
+    }
+    
     
     private int rollWeaponDamage(Weapon weapon) {
     	

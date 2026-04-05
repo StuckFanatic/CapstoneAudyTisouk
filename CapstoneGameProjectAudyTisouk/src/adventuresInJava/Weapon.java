@@ -10,9 +10,10 @@ public class Weapon {
 	private int damageDiceCount;
 	private int damageDiceSides;
 	private int damageBonus;
+	private boolean magical;
 	
 	public Weapon(String name, int minRange, int maxRange, int attackBonus,
-			int damageDiceCount, int damageDiceSides, int damageBonus) {
+			int damageDiceCount, int damageDiceSides, int damageBonus, boolean magical) {
 		
 		this.name = name;
 		this.minRange = minRange;
@@ -21,6 +22,7 @@ public class Weapon {
 		this.damageDiceCount = damageDiceCount;
 		this.damageDiceSides = damageDiceSides;
 		this.damageBonus = damageBonus;
+		this.magical = magical;
 		
 	}
 	
@@ -57,6 +59,11 @@ public class Weapon {
 	public int getDamageBonus() {
 		
 		return damageBonus;
+	}
+	
+	public boolean isMagical() {
+		
+		return magical;
 	}
 	
 	

@@ -15,12 +15,13 @@ public class BattleUnit {
 	
 	private int hp;
 	private int maxHp;
-	private int armorClass;
 	private CharacterClass characterClass;
+	
+	private UnitStats stats;
 	
 	private Weapon weapon;
 	
-	public BattleUnit(String name, int col, int row, boolean enemy, Weapon weapon, CharacterClass characterClass) {
+	public BattleUnit(String name, int col, int row, boolean enemy, Weapon weapon, CharacterClass characterClass, UnitStats stats) {
 		
 		this.name = name;
 		this.col = col;
@@ -28,13 +29,13 @@ public class BattleUnit {
 		this.enemy = enemy; //This will detect friend from foe
 		this.weapon = weapon;
 		this.characterClass = characterClass;
+		this.stats = stats;
 		
 		this.hasMoved = false;
 		this.hasActed = false;
 		
-		this.maxHp = characterClass.getMaxHp();
-		this.hp = characterClass.getMaxHp();
-		this.armorClass = characterClass.getArmorClass();
+		this.maxHp = stats.getMaxHp();
+		this.hp = stats.getMaxHp();
 		
 	}
 	
@@ -85,6 +86,11 @@ public class BattleUnit {
 	public CharacterClass getCharacterClass() {
 		
 		return characterClass;
+	}
+	
+	public UnitStats getStats() {
+		
+		return stats;
 	}
 	
 	public boolean hasMoved() {
@@ -143,7 +149,7 @@ public class BattleUnit {
 	
 	public int getArmorClass() {
 		
-		return armorClass;
+		return 10 + stats.getDefense() + (stats.getSpeed() / 4);
 	}
 	
 	
