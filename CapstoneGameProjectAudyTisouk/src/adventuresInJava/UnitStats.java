@@ -28,6 +28,7 @@ public class UnitStats {
 		this.movement = movement;
 		
 	}
+	//Getters
 	
 	public int getMaxHp() {
 		
@@ -72,6 +73,44 @@ public class UnitStats {
 	public int getMovement() {
 		
 		return movement;
+	}
+	
+	//Setters
+	
+	public void setMaxHp(int maxHp) {
+	    this.maxHp = maxHp;
+	}
+
+	public void setStrength(int strength) {
+	    this.strength = strength;
+	}
+
+	public void setMagic(int magic) {
+	    this.magic = magic;
+	}
+
+	public void setSkill(int skill) {
+	    this.skill = skill;
+	}
+
+	public void setSpeed(int speed) {
+	    this.speed = speed;
+	}
+
+	public void setLuck(int luck) {
+	    this.luck = luck;
+	}
+
+	public void setDefense(int defense) {
+	    this.defense = defense;
+	}
+
+	public void setResistance(int resistance) {
+	    this.resistance = resistance;
+	}
+
+	public void setMovement(int movement) {
+	    this.movement = movement;
 	}
 	
 }

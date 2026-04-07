@@ -125,6 +125,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private List<BattleUnit> availableTargets = new ArrayList<>();
     private int currentTargetIndex = 0;
     
+
     
     
     /*
@@ -407,14 +408,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
     		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
     		
+    		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
+    		GrowthRates leaderGrowth = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
+    		GrowthRates archerGrowth = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
+    		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
+    		
     		//Name, Spawn column, Spawn row, Enemy or not, Weapon name, Class name
-    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass, leaderStats);
-    		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass, archerStats);
+    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass, leaderStats, leaderGrowth);
+    		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass, archerStats, archerGrowth);
     		
     		//Array for enemy units
     		enemyUnits.clear();
-    		enemyUnits.add(new BattleUnit("Bandit A", 6, 6, true, banditAxe, banditClass, banditStats));
-    		enemyUnits.add(new BattleUnit("Bandit B", 7, 4, true, banditAxe, banditClass, banditStats));
+    		enemyUnits.add(new BattleUnit("Bandit A", 6, 6, true, banditAxe, banditClass, banditStats, banditGrowth));
+    		enemyUnits.add(new BattleUnit("Bandit B", 7, 4, true, banditAxe, banditClass, banditStats, banditGrowth));
     		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
@@ -758,7 +764,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     g.drawString("HP: " + displayUnit.getHp() + "/" + displayUnit.getMaxHp(), 280, panelY + 65);
                     g.drawString("Weapon: " + displayUnit.getWeapon().getName(), 280, panelY + 85);
                     g.drawString("AC: " + displayUnit.getArmorClass(), 280, panelY + 105);
-
+                    g.drawString("LV: " + displayUnit.getLevel() + " EXP: " + displayUnit.getExperience(), 280, panelY + 125);
                     
                 }
                 break;
@@ -1572,6 +1578,86 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return totalDamage;
     }
     
+    private void levelUpUnit(BattleUnit unit) {
+    	
+    	addBattleMessage(unit.getName()+ " leveled up!"); 
+    		
+		GrowthRates growths = unit.getGrowthRates();
+		UnitStats stats = unit.getStats();
+		
+		//HP
+		if (random.nextInt(100) < growths.getHp()) {
+	        stats.setMaxHp(stats.getMaxHp() + 1);
+	        unit.setMaxHp(unit.getMaxHp() + 1);
+	        unit.setHp(unit.getHp() + 1);
+	        addBattleMessage("HP +1");
+	    }
+		
+		//STR
+		if (random.nextInt(100) < growths.getStrength()) {
+			stats.setStrength(stats.getStrength() + 1);
+			addBattleMessage("STR +1");
+		}
+		
+		// MAG
+	    if (random.nextInt(100) < growths.getMagic()) {
+	        stats.setMagic(stats.getMagic() + 1);
+	        addBattleMessage("MAG +1");
+	    }
+
+	    // SKL
+	    if (random.nextInt(100) < growths.getSkill()) {
+	        stats.setSkill(stats.getSkill() + 1);
+	        addBattleMessage("SKL +1");
+	    }
+
+	    // SPD
+	    if (random.nextInt(100) < growths.getSpeed()) {
+	        stats.setSpeed(stats.getSpeed() + 1);
+	        addBattleMessage("SPD +1");
+	    }
+
+	    // LCK
+	    if (random.nextInt(100) < growths.getLuck()) {
+	        stats.setLuck(stats.getLuck() + 1);
+	        addBattleMessage("LCK +1");
+	    }
+
+	    // DEF
+	    if (random.nextInt(100) < growths.getDefense()) {
+	        stats.setDefense(stats.getDefense() + 1);
+	        addBattleMessage("DEF +1");
+	    }
+
+	    // RES
+	    if (random.nextInt(100) < growths.getResistance()) {
+	        stats.setResistance(stats.getResistance() + 1);
+	        addBattleMessage("RES +1");
+	    }
+
+	    // level up
+	    incrementUnitLevel(unit);
+	    
+	    
+	}
+		
+    
+    //Increment Levels
+    private void incrementUnitLevel(BattleUnit unit) {
+    	
+    	unit.levelUp();
+    	
+    }
+    
+    //Experience can overflow if needed
+    private void checkLevelUp(BattleUnit unit) {
+
+        while (unit.getExperience() >= 100) {
+            unit.gainExperience(-100);
+            levelUpUnit(unit);
+        }
+    }
+    
     private void drawDialogue(Graphics g) {
     	
     	drawMap(g);
@@ -1731,46 +1817,59 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		}
         		
         		if (code == KeyEvent.VK_ENTER) {
-        			
-        			performAttack(previewAttacker, previewDefender);
-        			
-        			previewAttacker.setHasActed(true);
-        			
-        			if (!previewDefender.isAlive()) {
-        				addBattleMessage(previewDefender.getName() + " was defeated!");
-        				
-        				battleAttackPreviewOpen = false;
-        				previewAttacker = null;
-        				previewDefender = null;
-        				
-        				selectedBattleUnit = null;
-        				battleUnitSelected = false;
-        				
-        				selectedUnitStartCol = -1;
-        				selectedUnitStartRow = -1;
-        				
-        				repaint();
-        				checkBattleEnd();
-        				return;
-        			}
-        			
-        			battleAttackPreviewOpen = false;
-        			previewAttacker = null;
-        			previewDefender = null;
-        			
-        			selectedBattleUnit = null;
-        			battleUnitSelected = false;
-        			
-        			selectedUnitStartCol = -1;
-        			selectedUnitStartRow = -1;
-        			
-        			repaint();
-        			
-        			if (allPlayerUnitsHaveActed()) {
-        				endPlayerPhase();
-        			}
-        			
-        			return;
+
+        		    BattleUnit attacker = previewAttacker;
+        		    BattleUnit defender = previewDefender;
+
+        		    performAttack(attacker, defender);
+
+        		    attacker.setHasActed(true);
+
+        		    // EXP for making an attack
+        		    attacker.gainExperience(50);
+
+        		    // Bonus EXP if the defender dies
+        		    if (!defender.isAlive()) {
+        		        attacker.gainExperience(50);
+        		        addBattleMessage(defender.getName() + " was defeated!");
+        		    }
+
+        		    // Check for level up after EXP gain
+        		    checkLevelUp(attacker);
+
+        		    if (!defender.isAlive()) {
+        		        battleAttackPreviewOpen = false;
+        		        previewAttacker = null;
+        		        previewDefender = null;
+
+        		        selectedBattleUnit = null;
+        		        battleUnitSelected = false;
+
+        		        selectedUnitStartCol = -1;
+        		        selectedUnitStartRow = -1;
+
+        		        repaint();
+        		        checkBattleEnd();
+        		        return;
+        		    }
+
+        		    battleAttackPreviewOpen = false;
+        		    previewAttacker = null;
+        		    previewDefender = null;
+
+        		    selectedBattleUnit = null;
+        		    battleUnitSelected = false;
+
+        		    selectedUnitStartCol = -1;
+        		    selectedUnitStartRow = -1;
+
+        		    repaint();
+
+        		    if (allPlayerUnitsHaveActed()) {
+        		        endPlayerPhase();
+        		    }
+
+        		    return;
         		}
         		
         	}

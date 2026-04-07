@@ -13,6 +13,10 @@ public class BattleUnit {
 	private boolean hasMoved;
 	private boolean hasActed;
 	
+    private int level;
+    private int experience;
+    private GrowthRates growthRates;
+	
 	private int hp;
 	private int maxHp;
 	private CharacterClass characterClass;
@@ -21,7 +25,8 @@ public class BattleUnit {
 	
 	private Weapon weapon;
 	
-	public BattleUnit(String name, int col, int row, boolean enemy, Weapon weapon, CharacterClass characterClass, UnitStats stats) {
+	public BattleUnit(String name, int col, int row, boolean enemy, Weapon weapon,
+            CharacterClass characterClass, UnitStats stats, GrowthRates growthRates) {
 		
 		this.name = name;
 		this.col = col;
@@ -30,12 +35,19 @@ public class BattleUnit {
 		this.weapon = weapon;
 		this.characterClass = characterClass;
 		this.stats = stats;
+		this.growthRates = growthRates;
 		
 		this.hasMoved = false;
 		this.hasActed = false;
 		
+		this.level = 1;
+		this.experience = 0;
+		
 		this.maxHp = stats.getMaxHp();
 		this.hp = stats.getMaxHp();
+		
+		
+
 		
 	}
 	
@@ -134,6 +146,11 @@ public class BattleUnit {
 		this.hp = hp;
 	}
 	
+	public void setMaxHp(int maxHp) {
+		
+		this.maxHp = maxHp;
+	}
+	
 	public void takeDamage(int damage) {
 		
 		hp -= damage;
@@ -152,8 +169,33 @@ public class BattleUnit {
 		return 10 + stats.getDefense() + (stats.getSpeed() / 4);
 	}
 	
+	public int getLevel() {
+	    return level;
+	}
 	
+    //Level up
+	public void levelUp() {
+		
+		level++;
+	}
+
+	public int getExperience() {
+	    return experience;
+	}
+
+	public GrowthRates getGrowthRates() {
+	    return growthRates;
+	}
 	
+    //Gain experience overload
+    public void gainExperience(int amount) {
+    	
+    	experience += amount;
+    	if (experience <= 0) {
+    		experience = 0;
+    	}
+    		
+    }
 	
 	
 	
