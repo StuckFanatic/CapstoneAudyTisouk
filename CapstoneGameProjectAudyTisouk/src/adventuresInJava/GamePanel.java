@@ -1826,11 +1826,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		    attacker.setHasActed(true);
 
         		    // EXP for making an attack
-        		    attacker.gainExperience(50);
+        		    attacker.gainExperience(100);
 
         		    // Bonus EXP if the defender dies
         		    if (!defender.isAlive()) {
-        		        attacker.gainExperience(50);
+        		        attacker.gainExperience(100);
         		        addBattleMessage(defender.getName() + " was defeated!");
         		    }
 
