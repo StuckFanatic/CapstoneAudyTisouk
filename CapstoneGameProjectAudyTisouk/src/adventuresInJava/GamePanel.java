@@ -1081,14 +1081,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	int hitChance = calculateHitChance(previewAttacker, previewDefender);
     	int minDamage = calculateMinDamage(previewAttacker, previewDefender);
     	int maxDamage = calculateMaxDamage(previewAttacker, previewDefender);
+    	int critChance = calculateCritChance(previewAttacker);
     	boolean counter = canCounterattack(previewAttacker, previewDefender);
     	
     	g.drawString("Attack Preview", boxX + 15, boxY + 20);
     	g.drawString(previewAttacker.getName() + " -> " + previewDefender.getName(), boxX + 15, boxY + 40);
     	g.drawString("Weapon: " + weapon.getName(), boxX + 15, boxY + 60);
     	g.drawString("Hit: " + hitChance + "%", boxX + 15, boxY + 80);
-    	g.drawString("Damage: " + minDamage + " - " + maxDamage, boxX + 15, boxY + 100);
-    	g.drawString("Counter: " + (counter ? "Yes" : "No"), boxX + 15, boxY + 120);
+    	g.drawString("Crit: " + critChance + "%", boxX + 15, boxY + 100);
+    	g.drawString("Damage: " + minDamage + " - " + maxDamage, boxX + 15, boxY + 120);
+    	g.drawString("Counter: " + (counter ? "Yes" : "No"), boxX + 15, boxY + 140);
     }
     
     private void drawBattleActionMenu(Graphics g) {
@@ -1496,11 +1498,42 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		int damage = baseDamage + attackStat - defenseStat;
     		if (damage < 0) damage = 0;
     		
+    		//Critical
+    		boolean critical = false;
+    		int critRoll = random.nextInt(100) + 1;
+    		int critChance = calculateCritChance(attacker);
+    		
+    		if (critRoll <= critChance) {
+    			critical = true;
+    			damage *= 2;
+    		}
+    			
+    		//Lucky Break checker
+    		if (damage >= defender.getHp()) {
+    			if (tryLuckyBreak(defender)) {
+    				defender.setHp(1);
+    				
+    				addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
+    				+ " + SKL " + statHitBonus + " = " + totalAttack
+    				+ " vs AC " + defender.getArmorClass() + " -> HIT!");
+    				if (critical) {
+    					addBattleMessage("Critical Hit!");
+    				}
+    				addBattleMessage(defender.getName() + " triggered Lucky Break ");
+    				addBattleMessage(defender.getName() + " survived at 1 HP ");
+    				
+    				return true;
+    			}
+    		}
+    		
     		defender.takeDamage(damage);
     		
     		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
     				+ " + SKL " + statHitBonus + " = " + totalAttack
     				+ " vs AC " + defender.getArmorClass() + " -> HIT!");
+    		if (critical) {
+				addBattleMessage("Critical Hit!");
+			}
     		addBattleMessage(defender.getName() + " took " + damage + " damage.");
     		
     		return true;
@@ -1577,6 +1610,41 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	return totalDamage;
     }
+    
+    //Critical Strike chance 
+    private int calculateCritChance(BattleUnit attacker) {
+    	
+    	int critChance = attacker.getStats().getLuck() / 2;
+    	
+    	if (critChance < 0) critChance = 0;
+    	if (critChance > 50) critChance = 50;
+    	
+    	return critChance;
+    }
+    
+    //Lucky break: Saves your life
+    
+   private int calculateLuckyBreakChance(BattleUnit unit) {
+	   
+	   int critChance = unit.getStats().getLuck() / 4;
+   	
+   	if (critChance < 0) critChance = 0;
+   	if (critChance > 20) critChance = 20;
+   	
+   	return critChance;
+	   
+   }
+   
+   //Lucky break helper
+   private boolean tryLuckyBreak(BattleUnit defender) {
+	   
+	   int chance = calculateLuckyBreakChance(defender);
+	   int roll = random.nextInt(100) + 1;
+	   
+	   return roll <= chance;
+   }
+   
+   
     
     private void levelUpUnit(BattleUnit unit) {
     	
