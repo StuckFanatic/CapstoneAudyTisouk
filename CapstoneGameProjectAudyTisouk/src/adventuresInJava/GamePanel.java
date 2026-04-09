@@ -109,6 +109,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Turn Phases
     private String battlePhase = "PLAYER";
     
+    //Battle Phase Banner
+    private String battlePhaseBannerText = "";
+    private int battlePhaseBannerTimer = 0;
+    private final int BATTLE_PHASE_BANNER_DURATION = 60;
+    
     //Random Rolls
     private Random random = new Random();
     
@@ -576,6 +581,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	if (battlePauseTimer > 0) {
     		battlePauseTimer--;
     	}
+    	
+    	//Battle Phase Banner Timer
+    	if (battlePhaseBannerTimer > 0) {
+    		battlePhaseBannerTimer--;
+    	}
 
     	
     }
@@ -726,25 +736,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	
             	//if Preview is open do this first
             	g.drawString("Objective:", 20, panelY + 25);
-            	g.drawString(getObjectiveText(), 20, panelY + 50);
-            	g.drawString("Turn " + currentBattleTurn, 20, panelY + 70);
+            	g.drawString(getObjectiveText(), 20, panelY + 45);
+            	g.drawString("Turn " + currentBattleTurn, 20, panelY + 65);
             	
             	if (battleAttackPreviewOpen) {
-            		g.drawString("Attack Preview", 20, panelY + 75);
-            		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 95);
+            		g.drawString("Attack Preview", 20, panelY + 90);
+            		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
             		
             	} else if (battleTargetSelectOpen) {
-            		g.drawString("Select Target", 20, panelY + 75);
-            		g.drawString("Arrow keys switch targets", 20, panelY + 95);
+            		g.drawString("Select Target", 20, panelY + 90);
+            		g.drawString("Arrow keys switch targets", 20, panelY + 110);
             		
             	} else if (!battleUnitSelected || selectedBattleUnit == null) {
-                    g.drawString("Select a unit.", 20, panelY + 75);
+                    g.drawString("Select a unit.", 20, panelY + 90);
                     
                 } else if (battleActionMenuOpen) {
-                    g.drawString("Choose an action.", 20, panelY + 75);
+                    g.drawString("Choose an action.", 20, panelY + 90);
                     
                 } else {
-                    g.drawString("Choose destination.", 20, panelY + 75);
+                    g.drawString("Choose destination.", 20, panelY + 90);
                 }
             	
             	break;
@@ -1058,6 +1068,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		}
 		
 		drawBattleCursor(g);
+		drawBattlePhaseBanner(g);
 		drawTargetHighlight(g);
     	
     }
@@ -1228,6 +1239,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //battle phase banner during turn switch
+    private void drawBattlePhaseBanner(Graphics g) {
+
+        if (battlePhaseBannerTimer <= 0) return;
+
+        Graphics2D g2 = (Graphics2D) g;
+        Font originalFont = g2.getFont();
+
+        int alpha = (int)(255 * (battlePhaseBannerTimer / (float) BATTLE_PHASE_BANNER_DURATION));
+
+        g2.setColor(new Color(0, 0, 0, 180));
+        g2.fillRect(80, mapHeight / 2 - 40, mapWidth - 160, 80);
+
+        g2.setColor(new Color(255, 255, 255, alpha));
+        g2.setFont(g2.getFont().deriveFont(28f));
+
+        int textWidth = g2.getFontMetrics().stringWidth(battlePhaseBannerText);
+        int textX = (mapWidth - textWidth) / 2;
+        int textY = (mapHeight / 2) + 10;
+
+        g2.drawString(battlePhaseBannerText, textX, textY);
+        g2.setFont(originalFont);
+    }
+    
+    //battle banner
+    private void showBattlePhaseBanner(String text) {
+    	
+    	battlePhaseBannerText = text;
+    	battlePhaseBannerTimer = BATTLE_PHASE_BANNER_DURATION;
+    }
 
     
     //Battle logs will heap with players seeing actions done on screen
@@ -1310,23 +1351,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //starts the player phase after ends
     private void startPlayerPhase() {
-    	
-    	battlePhase = "PLAYER";
-    	addBattleMessage("Player Phase");
-    	
-    	currentBattleTurn++;
-    	
-    	if (playerBattleUnit != null) {
-    		playerBattleUnit.setHasMoved(false);
-    		playerBattleUnit.setHasActed(false);
-    	}
-    	
-    	if (allyBattleUnit != null) {
-    		allyBattleUnit.setHasMoved(false);
-    		allyBattleUnit.setHasActed(false);
-    	}
-    	
-    	checkBattleEnd();
+        battlePhase = "PLAYER";
+        addBattleMessage("Player Phase");
+        showBattlePhaseBanner("Player Phase");
+
+        currentBattleTurn++;
+
+        if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
+            playerBattleUnit.setHasMoved(false);
+            playerBattleUnit.setHasActed(false);
+        }
+
+        if (allyBattleUnit != null && allyBattleUnit.isAlive()) {
+            allyBattleUnit.setHasMoved(false);
+            allyBattleUnit.setHasActed(false);
+        }
+
+        checkBattleEnd();
     }
     
     //Check helps end player phase after all acted
@@ -1347,6 +1388,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void endPlayerPhase() {
     	battlePhase = "ENEMY";
     	addBattleMessage("Enemy Phase");
+    	showBattlePhaseBanner("Enemy Phase");
     	
     	enemyTurn();
     }
@@ -2285,8 +2327,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (newCol >= 0 && newCol < maxScreenCol &&
                 newRow >= 0 && newRow < maxScreenRow &&
-                currentMap.getTiles()[newCol][newRow].isPassable() &&
-            	!isTileOccupiedByOtherFriendly(newCol, newRow, selectedBattleUnit)) {
+                currentMap.getTiles()[newCol][newRow].isPassable()) {
             	
             	
 
