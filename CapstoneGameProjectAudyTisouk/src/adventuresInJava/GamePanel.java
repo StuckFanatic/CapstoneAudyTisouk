@@ -1490,7 +1490,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		if (!target.isAlive()) {
         			
         			addBattleMessage(target.getName() + " was defeated!");
-        			return;
         		}
         		
         		startBattlePause(45);
@@ -1500,8 +1499,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		startBattlePause(45);
         	}
         	
-        	startPlayerPhase();
+        	
     	}
+    	startPlayerPhase();
 	
     }
     
