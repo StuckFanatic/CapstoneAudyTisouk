@@ -125,6 +125,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private List<BattleUnit> availableTargets = new ArrayList<>();
     private int currentTargetIndex = 0;
     
+    //Objective Typing
+    private ObjectiveType currentObjective = ObjectiveType.DEFEAT_ALL;
+    private int surviveTurnTarget = 0;
+    private int currentBattleTurn = 1;
+    
 
     
     
@@ -428,6 +433,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		battleCursorCol = playerBattleUnit.getCol();
     		battleCursorRow = playerBattleUnit.getRow();
     		
+    		//Switch if needed
+    		currentObjective = ObjectiveType.SURVIVE_TURNS;
+    	    surviveTurnTarget = 4;
+    	    currentBattleTurn = 1;
+    		
     		battlePhase = "PLAYER";
     		clearBattleLog();
     		addBattleMessage("Player Phase");
@@ -716,7 +726,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	
             	//if Preview is open do this first
             	g.drawString("Objective:", 20, panelY + 25);
-            	g.drawString("Defeat all enemies", 20, panelY + 50);
+            	g.drawString(getObjectiveText(), 20, panelY + 50);
+            	g.drawString("Turn " + currentBattleTurn, 20, panelY + 70);
             	
             	if (battleAttackPreviewOpen) {
             		g.drawString("Attack Preview", 20, panelY + 75);
@@ -886,6 +897,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Objective Definer
+    private String getObjectiveText() {
+    	
+    	switch (currentObjective) {
+    	
+    	case DEFEAT_ALL:
+    		return "Defeat all enemies";
+    		
+    	case SURVIVE_TURNS:
+    		return "Survive " + surviveTurnTarget + " turns";
+    		
+    	default:
+    		return "Objective unknown";
+    	}
+    }
+    
     
     //Two Start Dialogues, Simple and Full
     private void startDialogue(String[] lines, GameState nextState) {
@@ -1034,6 +1061,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		drawTargetHighlight(g);
     	
     }
+    
     
     //Unique battle Movement highlights for battles
     private void drawBattleMovementRange(Graphics g) {
@@ -1225,9 +1253,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	battleLog.clear();
     }
     
-    
-    //Checks if the battle as concluded its objective
     private void checkBattleEnd() {
+    	
+    	switch (currentObjective) {
+    	
+    	case DEFEAT_ALL:
+    		checkDefeatAllObjective();
+    		break;
+    		
+    	case SURVIVE_TURNS:
+    		checkSurviveTurnsObjective();
+    		break;
+    	
+    	}
+    	
+    	
+    }
+    
+    
+    //Checks if the defeat all battle as concluded its objective
+    private void checkDefeatAllObjective() {
     	
     	boolean anyEnemyAlive = false;
     	
@@ -1249,11 +1294,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+  //Checks if the Survive turns battle as concluded its objective
+    private void checkSurviveTurnsObjective() {
+    	
+    	if (currentBattleTurn > surviveTurnTarget) {
+    		addBattleMessage("You Survived! Returning to the overworld...");
+    		
+    		currentMap =  overworldGameMap;
+    		currentState = GameState.OVERWORLD;
+    		
+    		player.col = 3;
+    		player.row = 1;
+    	}
+    }
+    
     //starts the player phase after ends
     private void startPlayerPhase() {
     	
     	battlePhase = "PLAYER";
     	addBattleMessage("Player Phase");
+    	
+    	currentBattleTurn++;
     	
     	if (playerBattleUnit != null) {
     		playerBattleUnit.setHasMoved(false);
@@ -1264,6 +1325,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		allyBattleUnit.setHasMoved(false);
     		allyBattleUnit.setHasActed(false);
     	}
+    	
+    	checkBattleEnd();
     }
     
     //Check helps end player phase after all acted
