@@ -131,9 +131,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int currentTargetIndex = 0;
     
     //Objective Typing
+    //Defeat All
     private ObjectiveType currentObjective = ObjectiveType.DEFEAT_ALL;
+    //Survive Wave
     private int surviveTurnTarget = 0;
     private int currentBattleTurn = 1;
+    //reach certain tile
+    private int objectiveCol = -1;
+    private int objectiveRow = -1;
+    
     
 
     
@@ -439,10 +445,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		battleCursorRow = playerBattleUnit.getRow();
     		
     		//Switch if needed
-    		currentObjective = ObjectiveType.SURVIVE_TURNS;
+    		//currentObjective = ObjectiveType.DEFEAT_ALL;
+    		
+    		//currentObjective = ObjectiveType.SURVIVE_TURNS;
     	    surviveTurnTarget = 4;
     	    currentBattleTurn = 1;
-    		
+    	    
+    	    //Reach Tile
+    	    currentObjective = ObjectiveType.REACH_TILE;
+    	    objectiveCol = 8;
+    	    objectiveRow = 2;
+    	    currentBattleTurn = 1;
+
+    	    
     		battlePhase = "PLAYER";
     		clearBattleLog();
     		addBattleMessage("Player Phase");
@@ -917,6 +932,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	case SURVIVE_TURNS:
     		return "Survive " + surviveTurnTarget + " turns";
+    	
+    	case REACH_TILE:
+    		return "Reach the objective tile";
     		
     	default:
     		return "Objective unknown";
@@ -1058,6 +1076,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		
 		if (allyBattleUnit != null) {
 			allyBattleUnit.draw(g, tileSize);
+		}
+		
+		if (currentObjective == ObjectiveType.REACH_TILE) {
+			int tileSize = 48;
+			
+			int x = objectiveCol * tileSize;
+			int y = objectiveRow * tileSize;
+			
+			g.setColor(Color.YELLOW);
+			g.drawRect(x, y, tileSize, tileSize);
+			g.drawRect( x + 1, y + 1, tileSize - 2, tileSize - 2);
 		}
 		
 		for (BattleUnit enemy : enemyUnits) {
@@ -1305,6 +1334,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case SURVIVE_TURNS:
     		checkSurviveTurnsObjective();
     		break;
+    		
+    	case REACH_TILE:
+    		checkReachTileObjective();
+    		break;
     	
     	}
     	
@@ -1348,6 +1381,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		player.row = 1;
     	}
     }
+    
+  //Checks if there is a player on the tile in the objective
+    private void checkReachTileObjective() {
+    	
+    	if (playerBattleUnit != null &&
+    			playerBattleUnit.isAlive() &&
+    			playerBattleUnit.getCol() == objectiveCol &&
+    			playerBattleUnit.getRow() == objectiveRow) {
+    		addBattleMessage("Objective Reached!");
+    		
+    		currentMap =  overworldGameMap;
+    		currentState = GameState.OVERWORLD;
+    		
+    		player.col = 3;
+    		player.row = 1;
+    	}
+    }
+    
+    
     
     //starts the player phase after ends
     private void startPlayerPhase() {
@@ -2253,6 +2305,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         				
         				selectedBattleUnit.setPosition(battleCursorCol, battleCursorRow);
         				selectedBattleUnit.setHasMoved(true);
+        				
+        				checkBattleEnd();
         				
         				//Open action menu
         				battleActionMenuOpen = true;

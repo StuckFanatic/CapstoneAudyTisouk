@@ -5,6 +5,7 @@ package adventuresInJava;
 public enum ObjectiveType {
 
 	DEFEAT_ALL,
-	SURVIVE_TURNS
+	SURVIVE_TURNS,
+	REACH_TILE
 	
 }
