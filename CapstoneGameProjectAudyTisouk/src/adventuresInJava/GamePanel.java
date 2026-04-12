@@ -100,8 +100,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Battle Menu
     private boolean battleActionMenuOpen = false;
-    private String[]battleMenuOptions = {"Attack", "Wait"};
+    private String[]battleMenuOptions = {"Attack", "Skill", "Wait"};
     private int battleMenuIndex = 0;
+    
+    //BattleSkill
+    private boolean battleSkillPreviewOpen = false;
+    private BattleUnit skillAttacker = null;
+    private BattleUnit skillDefender = null;
+    private boolean battleSkillTargetSelectOpen = false;
     
     //Combat Log
     private List<String> battleLog = new ArrayList<>();
@@ -430,13 +436,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
     		
     		//Name, Spawn column, Spawn row, Enemy or not, Weapon name, Class name
-    		playerBattleUnit = new BattleUnit("Leader", 1, 1, false, ironSword, fighterClass, leaderStats, leaderGrowth);
-    		allyBattleUnit = new BattleUnit("Archer Ally", 2, 1, false, shortBow, archerClass, archerStats, archerGrowth);
+    		playerBattleUnit = new BattleUnit(
+    				"Leader", 1, 1, false, ironSword, fighterClass, leaderStats, leaderGrowth, "Power Strike");
+    		
+    		allyBattleUnit = new BattleUnit(
+    				"Archer Ally", 2, 1, false, shortBow, archerClass, archerStats, archerGrowth, "Precise Shot");
     		
     		//Array for enemy units
     		enemyUnits.clear();
-    		enemyUnits.add(new BattleUnit("Bandit A", 6, 6, true, banditAxe, banditClass, banditStats, banditGrowth));
-    		enemyUnits.add(new BattleUnit("Bandit B", 7, 4, true, banditAxe, banditClass, banditStats, banditGrowth));
+    		enemyUnits.add(new BattleUnit(
+    				"Bandit A", 6, 6, true, banditAxe, banditClass, banditStats, banditGrowth,""));
+    		
+    		enemyUnits.add(new BattleUnit(
+    				"Bandit B", 7, 4, true, banditAxe, banditClass, banditStats, banditGrowth,""));
     		
     		selectedBattleUnit = null;
     		battleUnitSelected= false;
@@ -758,8 +770,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             		g.drawString("Attack Preview", 20, panelY + 90);
             		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
             		
+            	} else if (battleSkillPreviewOpen) {
+            		g.drawString("Skill Preview", 20, panelY + 90);
+            		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
+            		
             	} else if (battleTargetSelectOpen) {
             		g.drawString("Select Target", 20, panelY + 90);
+            		g.drawString("Arrow keys switch targets", 20, panelY + 110);
+            		
+            	} else if (battleSkillTargetSelectOpen ) {
+            		g.drawString("Select Skill Target", 20, panelY + 90);
             		g.drawString("Arrow keys switch targets", 20, panelY + 110);
             		
             	} else if (!battleUnitSelected || selectedBattleUnit == null) {
@@ -908,8 +928,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 if (battleAttackPreviewOpen && previewAttacker != null && previewDefender != null) {
                 	drawAttackPreview(g, panelX, panelY);
                 	
+                } else if (battleSkillPreviewOpen && skillAttacker != null && previewDefender != null) {
+                	drawSkillPreview(g, panelX, panelY);
+                	
+                	
                 } else if (battleTargetSelectOpen && !availableTargets.isEmpty()) {
                 	drawTargetSelection(g, panelX, panelY);
+                
+                } else if (battleSkillTargetSelectOpen && !availableTargets.isEmpty()) {
+                	drawSkillTargetSelection(g, panelX, panelY);
                 	
                 	
                 } else {
@@ -1161,6 +1188,37 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	g.drawString("Counter: " + (counter ? "Yes" : "No"), boxX + 15, boxY + 140);
     }
     
+    //Same as Attack preview but for skills
+    private void drawSkillPreview(Graphics g, int panelX, int panelY) {
+    	
+    	int boxX = panelX + 20;
+    	int boxY = mapHeight - 170;
+    	int boxWidth = rightPanelWidth - 40;
+    	int boxHeight = 140;
+    	
+    	g.setColor(new Color(30, 30, 30, 230));
+    	g.fillRect(boxX, boxY, boxWidth, boxHeight);
+    	
+    	g.setColor(Color.WHITE);
+    	g.drawRect(boxX, boxY, boxWidth, boxHeight);
+    	
+    	g.drawString("Skill Preview", boxX + 15, boxY + 20);
+    	g.drawString(skillAttacker.getName() + " -> " + skillDefender.getName(), boxX + 15, boxY + 40);
+    	g.drawString("Skill: " + skillAttacker.getSkillName(), boxX + 15, boxY + 60);
+    	
+    	if (skillAttacker.getSkillName().equals("Power Strike")) {
+    		g.drawString("Effect: +3 damage", boxX + 15, boxY + 80);
+    		
+    	} else if (skillAttacker.getSkillName().equals("Precise Shot")) {
+    		g.drawString("Effect: +2 hit bonus", boxX + 15, boxY + 80);
+    	}
+    	
+    	g.drawString("Enter confirm", boxX + 15, boxY + 100);
+    	g.drawString("ESC cancel", boxX + 15, boxY + 120);
+    	
+    }
+    
+    
     private void drawBattleActionMenu(Graphics g) {
     	
     	if (!battleActionMenuOpen) return;
@@ -1218,6 +1276,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    private boolean isSkillInRange(BattleUnit attacker, BattleUnit defender) {
+    	
+    	return isEnemyInRange(attacker, defender);
+    }
+    
     //Target Selection Box
     private void drawTargetSelection(Graphics g, int panelX, int panelY) {
     	
@@ -1242,6 +1305,32 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	g.drawString("HP: " + target.getHp() + "/" + target.getMaxHp(), boxX + 15, boxY + 105);
     }
     
+    
+    //target selection but for skills
+    private void drawSkillTargetSelection(Graphics g, int panelX, int panelY) {
+    	
+    	int boxX = panelX + 20;
+    	int boxY = mapHeight - 160;
+    	int boxWidth = rightPanelWidth - 40;
+    	int boxHeight = 120;
+    	
+    	g.setColor(new Color(30, 30, 30, 230));
+    	g.fillRect(boxX, boxY, boxWidth, boxHeight);
+    	
+    	g.setColor(Color.WHITE);
+    	g.drawRect(boxX, boxY, boxWidth, boxHeight);
+    	
+    	BattleUnit target = availableTargets.get(currentTargetIndex);
+    	
+    	g.drawString("Select Skill Target", boxX + 15, boxY + 20);
+    	g.drawString("Target: " + target.getName(), boxX + 15, boxY + 45);
+    	g.drawString("HP: " + target.getHp() + "/" + target.getMaxHp(), boxX + 15, boxY + 65);
+    	g.drawString("ENTER confirm: ", boxX + 15, boxY + 90);
+    	g.drawString("ESC cancel: ", boxX + 15, boxY + 110);
+    }
+    
+    
+    //highlights the target the users cursor is on
     private void drawTargetHighlight(Graphics g) {
     	
     	if (!battleTargetSelectOpen || availableTargets.isEmpty()) return;
@@ -1633,6 +1722,87 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return target;
     }
     
+    //Skill Attacker for chosen skill
+    private void performSkill(BattleUnit attacker, BattleUnit defender) {
+    	
+    	String skillName = attacker.getSkillName();
+    	
+    	if (skillName.equals("Power Strike")) {
+    		performPowerStrike(attacker, defender);
+    		return;
+    	}
+    	
+    	if (skillName.equals("Precise Shot")) {
+    		performPreciseShot(attacker, defender);
+    		return;
+    	}
+    	
+    	addBattleMessage(attacker.getName() + " has no usable skill.");
+    	
+    }
+    
+    //Stronger Version of a normal strike
+    private void performPowerStrike(BattleUnit attacker, BattleUnit defender) {
+    	
+    	Weapon weapon = attacker.getWeapon();
+    	
+    	int statHitBonus = attacker.getStats().getSkill() / 2; //Skill effects hit rating
+    	int roll = random.nextInt(20) + 1; //1 through 20
+    	int totalAttack = roll + weapon.getAttackBonus() + statHitBonus;
+    	
+    	addBattleMessage(attacker.getName() + " used Power Strike");
+    	
+    	if (totalAttack >= defender.getArmorClass()) {
+    		
+    		int baseDamage = rollWeaponDamage(weapon);
+    		int attackStat = attacker.getStats().getStrength();
+    		int defenseStat = defender.getStats().getDefense();
+    		
+    		int damage = baseDamage + attackStat + 3 - defenseStat;
+    		if (damage < 0) damage = 0;
+    	
+    		defender.takeDamage(damage);
+    		
+    		addBattleMessage("Power Strike Hit!");
+    		addBattleMessage(defender.getName() + " took " + damage + " damage.");
+    		
+    		
+    	} else {
+    		addBattleMessage("Power Strike Missed!");
+    	}
+    }
+    
+    //More accurate than a regular shot
+    private void performPreciseShot(BattleUnit attacker, BattleUnit defender) {
+    	
+    	Weapon weapon = attacker.getWeapon();
+    	
+    	int statHitBonus = attacker.getStats().getSkill() / 2;
+    	int roll = random.nextInt(20) + 1;
+    	int totalAttack = roll + weapon.getAttackBonus() + statHitBonus + 2;
+    	
+    	addBattleMessage(attacker.getName() + " used Precise Shot");
+    	
+    	if (totalAttack >= defender.getArmorClass()) {
+    		
+    		int baseDamage = rollWeaponDamage(weapon);
+    		int attackStat = attacker.getStats().getStrength();
+    		int defenseStat = defender.getStats().getDefense();
+    		
+    		int damage = baseDamage + attackStat - defenseStat;
+    		if (damage < 0) damage = 0;
+    	
+    		defender.takeDamage(damage);
+    		
+    		addBattleMessage("Precise Shot Hit!");
+    		addBattleMessage(defender.getName() + " took " + damage + " damage.");
+    		
+    		
+    	} else {
+    		addBattleMessage("Precise Shot Missed!");
+    	}
+    }
+    
     
     
     //Damage as well as attack rolls
@@ -1704,6 +1874,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     }
+    
     
     //Forecast for players to read on when attacking and defending
     private int calculateHitChance(BattleUnit attacker, BattleUnit defender) {
@@ -2030,6 +2201,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		
         	}
         	
+        	
+        	
         	//Battle Preview Before the actual menu first
         	if (battleAttackPreviewOpen) {
         		
@@ -2100,6 +2273,113 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	}
         	
         	
+        	
+        	//battle skill preview
+        	if (battleSkillPreviewOpen) {
+        		
+        		if (code == KeyEvent.VK_ESCAPE) {
+        			battleSkillPreviewOpen = false;
+        			battleSkillTargetSelectOpen = true;
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		if (code == KeyEvent.VK_ENTER) {
+        			
+        			performSkill(skillAttacker, skillDefender);
+        			
+        			skillAttacker.setSkillUsed(true);
+        			skillDefender.setHasActed(true);
+        			
+        			if (!skillDefender.isAlive()) {
+        				
+        				skillAttacker.gainExperience(10);
+        				skillAttacker.gainExperience(25);
+        				addBattleMessage(skillDefender.getName() + " was defeated");
+        				checkLevelUp(skillAttacker);
+        			} else {
+        				skillAttacker.gainExperience(10);
+        				checkLevelUp(skillAttacker);
+        			}
+        			
+        			battleSkillPreviewOpen = false;
+        			battleSkillTargetSelectOpen = false;
+        			
+        			skillAttacker = null;
+        			skillDefender = null;
+        			
+        			selectedBattleUnit = null;
+        			battleUnitSelected = false;
+        			
+        			selectedUnitStartCol = -1;
+        			selectedUnitStartRow = -1;
+        			
+        			repaint();
+        			checkBattleEnd();
+        			
+        			if (allPlayerUnitsHaveActed()) {
+        				endPlayerPhase();
+        			}
+        			
+        			return;
+        		}
+        	}
+        	
+        	
+        	//Battle Skill before the menu
+        	if (battleSkillTargetSelectOpen) {
+        		
+        		if (code == KeyEvent.VK_ESCAPE) {
+        			battleSkillTargetSelectOpen = false;
+        			battleActionMenuOpen = true;
+        			
+        			skillAttacker = null;
+        			skillDefender = null;
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		if (code == KeyEvent.VK_UP || code == KeyEvent.VK_LEFT) {
+        			currentTargetIndex--;
+        			if (currentTargetIndex < 0) {
+        				currentTargetIndex = availableTargets.size() - 1;
+        			}
+        			
+        			skillAttacker = selectedBattleUnit;
+        			skillDefender = availableTargets.get(currentTargetIndex);
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_RIGHT) {
+        			currentTargetIndex++;
+        			if (currentTargetIndex >= availableTargets.size()) {
+        				currentTargetIndex = 0;
+        			}
+        			
+        			skillAttacker = selectedBattleUnit;
+        			skillDefender = availableTargets.get(currentTargetIndex);
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		if (code == KeyEvent.VK_ENTER) {
+        			battleSkillTargetSelectOpen = false;
+        			battleSkillPreviewOpen = true;
+        			
+        			skillAttacker = selectedBattleUnit;
+        			skillDefender = availableTargets.get(currentTargetIndex);
+        			
+        			repaint();
+        			return;
+        		}
+        	}
+        	
+        	
         	//Battle menu movement
     		if (battleActionMenuOpen) {
     			
@@ -2162,6 +2442,40 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     					return;
     				}
     				
+    				if (selectedOption.equals("Skill")) {
+    					
+    					if (selectedBattleUnit != null) {
+    						repaint();
+    						return;
+    					}
+    					
+    					if (selectedBattleUnit.hasUsedSkill()) {
+    						
+    						addBattleMessage(selectedBattleUnit.getSkillName() + " has already been used.");
+    						repaint();
+    						return;
+    					}
+    					
+    					availableTargets = getEnemiesInRange(selectedBattleUnit);
+    					
+    					if (!availableTargets.isEmpty()) {
+							battleTargetSelectOpen = true;
+							battleActionMenuOpen = false;
+							currentTargetIndex = 0;
+							
+							skillAttacker = selectedBattleUnit;
+							skillDefender = availableTargets.get(currentTargetIndex);
+							
+							repaint();
+							return;
+    					
+    					} else {
+    						addBattleMessage("No enemy in range for skill.");
+    						repaint();
+    						return;
+    					}
+    				}
+    				
     				if (selectedOption.equals("Attack")) {
     					
     					if (selectedBattleUnit != null) {
@@ -2190,7 +2504,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				
     				}
     				
-    			}	
+    			}
     			
     		}
         	

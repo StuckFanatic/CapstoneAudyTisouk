@@ -25,8 +25,13 @@ public class BattleUnit {
 	
 	private Weapon weapon;
 	
+	//skills
+	private String skillName;
+	private boolean skillUsed;
+	
 	public BattleUnit(String name, int col, int row, boolean enemy, Weapon weapon,
-            CharacterClass characterClass, UnitStats stats, GrowthRates growthRates) {
+            CharacterClass characterClass, UnitStats stats, GrowthRates growthRates, 
+            String skillName) {
 		
 		this.name = name;
 		this.col = col;
@@ -36,7 +41,9 @@ public class BattleUnit {
 		this.characterClass = characterClass;
 		this.stats = stats;
 		this.growthRates = growthRates;
+		this.skillName = skillName;
 		
+		this.skillUsed = false;
 		this.hasMoved = false;
 		this.hasActed = false;
 		
@@ -196,8 +203,22 @@ public class BattleUnit {
     	}
     		
     }
+    
+    //Skills
+    public String getSkillName() {
+    	
+    	return skillName;
+    }
 	
+	public boolean hasUsedSkill() {
+		
+		return skillUsed;
+	}
 	
+	public void setSkillUsed(boolean skillUsed) {
+		
+		this.skillUsed = skillUsed;
+	}
 	
 	
 	
