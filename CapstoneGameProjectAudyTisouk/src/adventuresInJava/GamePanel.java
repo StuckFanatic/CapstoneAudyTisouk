@@ -146,9 +146,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int objectiveCol = -1;
     private int objectiveRow = -1;
     
+    //Zoom combat
+    private boolean battleZoomCombatOpen = false;
     
-
+    //Who is attacking 
+    private BattleUnit zoomAttacker = null;
+    private BattleUnit zoomDefender = null;
     
+    //What was used
+    private boolean zoomIsSkill = false;
+    private String zoomActionName = "";
+    
+    //Resolved or not
+    private boolean zoomAttackResolved = false;
     
     /*
      * GAMESTATES
@@ -766,31 +776,40 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	g.drawString(getObjectiveText(), 20, panelY + 45);
             	g.drawString("Turn " + currentBattleTurn, 20, panelY + 65);
             	
-            	if (battleAttackPreviewOpen) {
-            		g.drawString("Attack Preview", 20, panelY + 90);
-            		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
-            		
+            	if (battleZoomCombatOpen) {
+            	    g.drawString("Zoom Combat", 20, panelY + 90);
+
+            	    if (!zoomAttackResolved) {
+            	        g.drawString("ENTER to resolve attack", 20, panelY + 110);
+            	    } else {
+            	        g.drawString("ENTER to return to battle", 20, panelY + 110);
+            	    }
+
+            	} else if (battleAttackPreviewOpen) {
+            	    g.drawString("Attack Forecast", 20, panelY + 90);
+            	    g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
+
             	} else if (battleSkillPreviewOpen) {
-            		g.drawString("Skill Preview", 20, panelY + 90);
-            		g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
-            		
+            	    g.drawString("Skill Preview", 20, panelY + 90);
+            	    g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
+
             	} else if (battleTargetSelectOpen) {
-            		g.drawString("Select Target", 20, panelY + 90);
-            		g.drawString("Arrow keys switch targets", 20, panelY + 110);
-            		
-            	} else if (battleSkillTargetSelectOpen ) {
-            		g.drawString("Select Skill Target", 20, panelY + 90);
-            		g.drawString("Arrow keys switch targets", 20, panelY + 110);
-            		
+            	    g.drawString("Select Attack Target", 20, panelY + 90);
+            	    g.drawString("Arrow keys switch targets", 20, panelY + 110);
+
+            	} else if (battleSkillTargetSelectOpen) {
+            	    g.drawString("Select Skill Target", 20, panelY + 90);
+            	    g.drawString("Arrow keys switch targets", 20, panelY + 110);
+
             	} else if (!battleUnitSelected || selectedBattleUnit == null) {
-                    g.drawString("Select a unit.", 20, panelY + 90);
-                    
-                } else if (battleActionMenuOpen) {
-                    g.drawString("Choose an action.", 20, panelY + 90);
-                    
-                } else {
-                    g.drawString("Choose destination.", 20, panelY + 90);
-                }
+            	    g.drawString("Select a unit.", 20, panelY + 90);
+
+            	} else if (battleActionMenuOpen) {
+            	    g.drawString("Choose an action.", 20, panelY + 90);
+
+            	} else {
+            	    g.drawString("Choose destination.", 20, panelY + 90);
+            	}
             	
             	break;
         }
@@ -1124,6 +1143,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		drawBattleCursor(g);
 		drawBattlePhaseBanner(g);
 		drawTargetHighlight(g);
+		drawZoomCombat(g);
     	
     }
     
@@ -2048,6 +2068,66 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     }
     
+    //ZOOM IN COMBAT
+    private void openZoomCombat(BattleUnit attacker, BattleUnit defender, boolean isSkill, String actionName) {
+    	
+    	battleZoomCombatOpen = true;
+    	zoomAttacker = attacker;
+    	zoomDefender = defender;
+    	zoomIsSkill = isSkill;
+    	zoomActionName = actionName;
+    	zoomAttackResolved = false;
+    	
+    	
+    }
+    
+    //Draw Zoom in combat
+    private void drawZoomCombat(Graphics g) {
+    	
+    	if (!battleZoomCombatOpen || zoomAttacker == null || zoomDefender == null) return;
+    	
+    	//back round overlay
+    	g.setColor(new Color(0, 0, 0, 220));
+    	g.fillRect(0, 0, mapWidth, mapHeight);
+    	
+    	//left combat panel for attackers
+    	g.setColor(new Color(40, 40, 80));
+    	g.fillRect(40, 120, 160, 180);
+    	
+    	//right combat panel for defenders
+    	g.setColor(new Color(80, 40, 40));
+    	g.fillRect(mapWidth - 200, 120, 160, 180);
+    	
+    	//center information box
+    	g.setColor(new Color(30, 30, 30));
+    	g.fillRect(140, 330, 200, 90);
+    	
+    	g.setColor(Color.WHITE);
+    	
+    	//Attacker info
+    	g.drawString(zoomAttacker.getName(), 60, 150);
+    	g.drawString("HP: " + zoomAttacker.getHp() + "/" + zoomAttacker.getMaxHp(), 60, 175);
+    	g.drawString("Class: " + zoomAttacker.getCharacterClass().getName(), 60, 200);
+    	g.drawString("Weapon: " + zoomAttacker.getWeapon().getName(), 60, 225);
+    	
+    	//Defender info
+    	g.drawString(zoomDefender.getName(), mapWidth - 180, 150);
+    	g.drawString("HP: " + zoomDefender.getHp() + "/" + zoomDefender.getMaxHp(), mapWidth - 180, 175);
+    	g.drawString("Class: " + zoomDefender.getCharacterClass().getName(), mapWidth - 180, 200);
+    	g.drawString("Weapon: " + zoomDefender.getWeapon().getName(), mapWidth - 180, 225);
+    	
+    	//Action text
+    	g.drawString(zoomActionName, 200, 355);
+    	
+    	if(!zoomAttackResolved) {
+    		g.drawString("Enter to resolve", 180, 385);
+    	} else {
+    		g.drawString("Enter to return", 185, 385);
+    	}	
+    	
+    }
+    
+    //Dialogue
     private void drawDialogue(Graphics g) {
     	
     	drawMap(g);
@@ -2136,109 +2216,44 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		return;
         	}
         	
-        	
-        	//Battle Preview Before the actual menu first
-        	if (battleAttackPreviewOpen) {
-        		
-        		if (code == KeyEvent.VK_ESCAPE) {
-        			battleAttackPreviewOpen = false;
-        			battleActionMenuOpen = true;
-        			
-        			repaint();
-        			return;
-        		}
-        		
-        		if (code == KeyEvent.VK_ENTER) {
-
-        		    BattleUnit attacker = previewAttacker;
-        		    BattleUnit defender = previewDefender;
-
-        		    performAttack(attacker, defender);
-
-        		    attacker.setHasActed(true);
-
-        		    // EXP for making an attack
-        		    attacker.gainExperience(10);
-
-        		    // Bonus EXP if the defender dies
-        		    if (!defender.isAlive()) {
-        		        attacker.gainExperience(25);
-        		        addBattleMessage(defender.getName() + " was defeated!");
-        		    }
-
-        		    // Check for level up after EXP gain
-        		    checkLevelUp(attacker);
-
-        		    if (!defender.isAlive()) {
-        		        battleAttackPreviewOpen = false;
-        		        previewAttacker = null;
-        		        previewDefender = null;
-
-        		        selectedBattleUnit = null;
-        		        battleUnitSelected = false;
-
-        		        selectedUnitStartCol = -1;
-        		        selectedUnitStartRow = -1;
-
-        		        repaint();
-        		        checkBattleEnd();
-        		        return;
-        		    }
-
-        		    battleAttackPreviewOpen = false;
-        		    previewAttacker = null;
-        		    previewDefender = null;
-
-        		    selectedBattleUnit = null;
-        		    battleUnitSelected = false;
-
-        		    selectedUnitStartCol = -1;
-        		    selectedUnitStartRow = -1;
-
-        		    repaint();
-
-        		    if (currentState == GameState.BATTLE && allPlayerUnitsHaveActed()) {
-        		        endPlayerPhase();
-        		    }
-
-        		    return;
-        		}
-        		
-        	}
-        	
-        	//battle skill preview
-        	if (battleSkillPreviewOpen) {
-
-        	    if (code == KeyEvent.VK_ESCAPE) {
-        	        battleSkillPreviewOpen = false;
-        	        battleSkillTargetSelectOpen = true;
-
-        	        repaint();
-        	        return;
-        	    }
+        	//Zoom combat will handle much of the combat systems now
+        	if (battleZoomCombatOpen) {
 
         	    if (code == KeyEvent.VK_ENTER) {
 
-        	        performSkill(skillAttacker, skillDefender);
+        	        if (!zoomAttackResolved) {
 
-        	        skillAttacker.setSkillUsed(true);
-        	        skillAttacker.setHasActed(true);
+        	            if (zoomIsSkill) {
+        	                performSkill(zoomAttacker, zoomDefender);
+        	                zoomAttacker.setSkillUsed(true);
+        	            } else {
+        	                performAttack(zoomAttacker, zoomDefender);
+        	            }
 
-        	        if (!skillDefender.isAlive()) {
-        	            skillAttacker.gainExperience(10);
-        	            skillAttacker.gainExperience(25);
-        	            addBattleMessage(skillDefender.getName() + " was defeated!");
-        	            checkLevelUp(skillAttacker);
-        	        } else {
-        	            skillAttacker.gainExperience(10);
-        	            checkLevelUp(skillAttacker);
+        	            zoomAttacker.setHasActed(true);
+
+        	            zoomAttacker.gainExperience(10);
+
+        	            if (!zoomDefender.isAlive()) {
+        	                zoomAttacker.gainExperience(25);
+        	                addBattleMessage(zoomDefender.getName() + " was defeated!");
+        	            }
+
+        	            checkLevelUp(zoomAttacker);
+
+        	            zoomAttackResolved = true;
+        	            repaint();
+        	            return;
         	        }
 
-        	        battleSkillPreviewOpen = false;
-        	        battleSkillTargetSelectOpen = false;
+        	        // second ENTER closes zoom scene and returns to battle map
+        	        battleZoomCombatOpen = false;
 
-        	        skillAttacker = null;
-        	        skillDefender = null;
+        	        zoomAttacker = null;
+        	        zoomDefender = null;
+        	        zoomActionName = "";
+        	        zoomIsSkill = false;
+        	        zoomAttackResolved = false;
 
         	        selectedBattleUnit = null;
         	        battleUnitSelected = false;
@@ -2254,6 +2269,63 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	        }
 
         	        return;
+        	    }
+
+        	    return;
+        	}
+        	
+        	
+        	//Battle Preview Before the actual menu first
+        	if (battleAttackPreviewOpen) {
+        		
+        		if (code == KeyEvent.VK_ESCAPE) {
+        			battleAttackPreviewOpen = false;
+        			battleActionMenuOpen = true;
+        			
+        			repaint();
+        			return;
+        		}
+        		
+        		if (code == KeyEvent.VK_ENTER) {
+
+        			openZoomCombat(previewAttacker, previewDefender, false, previewAttacker.getWeapon().getName());
+        			
+        			battleAttackPreviewOpen = false;
+        			previewAttacker = null;
+        			previewDefender = null;
+        			
+        			repaint();
+        			return;
+        			
+        		}
+        		
+        	}
+        	
+        	
+        	//battle skill preview
+        	if (battleSkillPreviewOpen) {
+
+        	    if (code == KeyEvent.VK_ESCAPE) {
+        	        battleSkillPreviewOpen = false;
+        	        battleSkillTargetSelectOpen = true;
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_ENTER) {
+        	    	
+        			openZoomCombat(skillAttacker, skillDefender, false, skillAttacker.getSkillName());
+        			
+        			battleSkillPreviewOpen = false;
+        			battleSkillTargetSelectOpen = false;
+        			
+        			skillAttacker = null;
+        			skillDefender = null;
+        			
+        			repaint();
+        			return;
+        	        
         	    }
         	}
         	
