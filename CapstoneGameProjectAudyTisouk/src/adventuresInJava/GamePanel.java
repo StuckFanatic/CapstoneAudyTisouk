@@ -179,6 +179,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean lastAttackLuckyBreak = false;
     private int lastAttackDamage = 0;
     
+    //Zoom in counterActions
+    private boolean zoomCounterPending = false; //can counter but await it
+    private boolean zoomCounterResolved = false; //counter already dealt
+    private boolean zoomShowingCounter = false; // currently countering
+    
     
     
     
@@ -2127,6 +2132,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	zoomActionName = actionName;
     	zoomAttackResolved = false;
     	
+    	//Counter
+    	zoomCounterPending = false;
+    	zoomCounterResolved = false;
+    	zoomShowingCounter = false;
+    	
+    	//Actual showing
     	zoomFloatingText = "";
     	zoomFloatingText2 = "";
     	zoomFloatingTextTimer = 0;
@@ -2172,10 +2183,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	g.drawString(zoomActionName, 200, 355);
     	
     	if(!zoomAttackResolved) {
-    		g.drawString("Enter to resolve", 180, 385);
+    	
+    		if (!zoomAttackResolved) {
+    		    g.drawString("Opening battle...", 180, 385);
+
+    		} else if (zoomCounterPending && !zoomCounterResolved && (zoomFloatingTextTimer <= 0 && zoomFloatingText2Timer <= 0)) {
+    		    g.drawString("ENTER for counterattack", 160, 385);
+
+    		} else if (zoomCounterResolved && (zoomFloatingTextTimer <= 0 && zoomFloatingText2Timer <= 0)) {
+    		    g.drawString("ENTER to return", 185, 385);
+
+    		} else {
+    		    g.drawString("Resolving...", 190, 385);
+    		}
+    		
+    	}
+    	
+    	if (!zoomShowingCounter) {
+    	    g.drawString(zoomAttacker.getName() + " attacks!", 170, 105);
     	} else {
-    		g.drawString("Enter to return", 185, 385);
-    	}	
+    	    g.drawString(zoomDefender.getName() + " counters!", 170, 105);
+    	}
     	
     	drawZoomFloatingTexts(g);
     }
@@ -2223,6 +2251,31 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     	g2.setFont(originalFont);
     }
+    
+    //helper will allow text defender to show when countering
+    private void showZoomResultText(String actionName, boolean hit, boolean crit, boolean luckyBreak, int damage, boolean isSkill) {
+    	
+    	if (!hit) {
+    		showZoomFloatingText(isSkill ? "Skill Miss!" : "Miss!", mapWidth / 2 - 40, 180);
+    		return;
+    	}
+    	
+    	if (!crit) {
+    		showZoomFloatingText("Critical!", mapWidth / 2 - 45, 140);
+    		return;
+    		
+    	} else {
+        		showZoomFloatingText(isSkill ? actionName + "!" : "Hit!", mapWidth / 2 - 25, 160);
+        	}
+    	
+    		showZoomFloatingText2("-" + damage, mapWidth / 2 - 10, 200);
+    	
+    		if (luckyBreak) {
+    			showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 120);
+    			showZoomFloatingText("1 HP", mapWidth / 2 - 10, 220);
+    		}
+    }
+    
     
     
     //Dialogue
@@ -2317,6 +2370,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	//Zoom combat will handle much of the combat systems now
         	if (battleZoomCombatOpen) {
 
+        		//First Enter is attacker
         	    if (code == KeyEvent.VK_ENTER) {
 
         	        if (!zoomAttackResolved) {
@@ -2332,6 +2386,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	            		showZoomFloatingText("Miss!", mapWidth / 2 - 30, 180);
             	            		
             	            	} else {
+            	            		
             	            		if (lastAttackCrit) {
             	            			showZoomFloatingText("Critical!", mapWidth / 2 - 45, 160);
             	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
@@ -2378,7 +2433,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	            
 
         	            zoomAttacker.setHasActed(true);
-
         	            zoomAttacker.gainExperience(10);
 
         	            if (!zoomDefender.isAlive()) {
@@ -2388,12 +2442,66 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         	            checkLevelUp(zoomAttacker);
 
+        	            showZoomResultText(
+        	                zoomActionName,
+        	                lastAttackHit,
+        	                lastAttackCrit,
+        	                lastAttackLuckyBreak,
+        	                lastAttackDamage,
+        	                zoomIsSkill
+        	            );
+
         	            zoomAttackResolved = true;
+
+        	            // Counter attack only if defender survives and can counter
+        	            if (zoomDefender.isAlive() && canCounterattack(zoomAttacker, zoomDefender)) {
+        	                zoomCounterPending = true;
+        	            }
+
+        	            repaint();
+        	            return;
+        	        }
+        	        
+        	        
+        	        // First Wait until counter floating text finishes before allowing close
+        	        if (zoomFloatingTextTimer > 0 || zoomFloatingText2Timer > 0) {
+        	            return;
+        	        }
+        	        
+        	        
+        	        // Second ENTER: defender counter attacks if pending
+        	        if (zoomCounterPending && !zoomCounterResolved) {
+
+        	            performAttack(zoomDefender, zoomAttacker);
+
+        	            if (!zoomAttacker.isAlive()) {
+        	                addBattleMessage(zoomAttacker.getName() + " was defeated!");
+        	            }
+
+        	            showZoomResultText(
+        	                zoomDefender.getWeapon().getName(),
+        	                lastAttackHit,
+        	                lastAttackCrit,
+        	                lastAttackLuckyBreak,
+        	                lastAttackDamage,
+        	                false
+        	            );
+
+        	            zoomCounterPending = false;
+        	            zoomCounterResolved = true;
+        	            zoomShowingCounter = true;
+
         	            repaint();
         	            return;
         	        }
 
-        	        // second ENTER closes zoom scene and returns to battle map
+        	        
+        	        // Wait until counter floating text finishes before allowing close
+        	        if (zoomFloatingTextTimer > 0 || zoomFloatingText2Timer > 0) {
+        	            return;
+        	        }
+
+        	        // Final ENTER closes zoom scene and returns to battle map
         	        if (zoomAttackResolved) {
         	        	
         	        	if (zoomFloatingTextTimer > 0 || zoomFloatingText2Timer > 0) {
@@ -2407,6 +2515,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	        zoomActionName = "";
             	        zoomIsSkill = false;
             	        zoomAttackResolved = false;
+            	        
+            	        zoomCounterPending = false;
+            	        zoomCounterResolved = false;
+            	        zoomShowingCounter = false;
 
             	        selectedBattleUnit = null;
             	        battleUnitSelected = false;
