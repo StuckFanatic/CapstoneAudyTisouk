@@ -160,6 +160,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Resolved or not
     private boolean zoomAttackResolved = false;
     
+    //Zoom in combat text pops
+    private String zoomFloatingText = "";
+    private int zoomFloatingTextX = 0;
+    private int zoomFloatingTextY = 0;
+    private int zoomFloatingTextTimer = 0;
+    private final int ZOOM_FLOATING_TEXT_DURATION = 60;
+    
+    //A second zoom in text pop for combinations
+    private String zoomFloatingText2 = "";
+    private int zoomFloatingText2X = 0;
+    private int zoomFloatingText2Y = 0;
+    private int zoomFloatingText2Timer = 0;
+    
+    //memory for pop ups
+    private boolean lastAttackHit = false;
+    private boolean lastAttackCrit = false;
+    private boolean lastAttackLuckyBreak = false;
+    private int lastAttackDamage = 0;
+    
+    
+    
+    
     /*
      * GAMESTATES
      */
@@ -622,6 +644,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//Battle Phase Banner Timer
     	if (battlePhaseBannerTimer > 0) {
     		battlePhaseBannerTimer--;
+    	}
+    	
+    	//Floating text for battle Y will cause the text to float up
+    	if (zoomFloatingTextTimer > 0) {
+    		zoomFloatingTextTimer--;
+    		zoomFloatingTextY--;
+    	}
+    	
+    	if (zoomFloatingText2Timer > 0) {
+    		zoomFloatingText2Timer--;
+    		zoomFloatingText2Y--;
     	}
 
     	
@@ -1824,6 +1857,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	System.out.println("performAttack called");
     	Weapon weapon = attacker.getWeapon();
     	
+    	lastAttackHit = false;
+    	lastAttackCrit = false;
+    	lastAttackLuckyBreak = false;
+    	lastAttackDamage = 0;
+    	
+    	
     	int statHitBonus = attacker.getStats().getSkill() / 2; //Skill effects hit rating
     	int roll = random.nextInt(20) + 1; //1 through 20
     	int totalAttack = roll + weapon.getAttackBonus() + statHitBonus;
@@ -1832,12 +1871,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if (totalAttack >= defender.getArmorClass()) {
     		
+    		
+    		
     		int baseDamage = rollWeaponDamage(weapon);
     		int attackStat = weapon.isMagical() ? attacker.getStats().getMagic() : attacker.getStats().getStrength();
     		int defenseStat = weapon.isMagical() ? defender.getStats().getResistance() : defender.getStats().getDefense();
     		
     		int damage = baseDamage + attackStat - defenseStat;
     		if (damage < 0) damage = 0;
+    		
+    		lastAttackHit = true; //Floating Damage dealt
+    		lastAttackDamage = damage;
     		
     		//Critical
     		boolean critical = false;
@@ -1846,6 +1890,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		if (critRoll <= critChance) {
     			critical = true;
+    			lastAttackCrit = true; //Floating Critical
     			damage *= 2;
     		}
     			
@@ -1862,6 +1907,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				}
     				addBattleMessage(defender.getName() + " triggered Lucky Break ");
     				addBattleMessage(defender.getName() + " survived at 1 HP ");
+    				
+    				lastAttackLuckyBreak = true; //Floating Lucky Break
+    				lastAttackDamage = 0;
     				
     				return true;
     			}
@@ -1880,10 +1928,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		return true;
     		
     	} else {
+    		lastAttackHit = false;
     		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
     				+ " + SKL " + statHitBonus + " = " + totalAttack
     				+ " vs AC " + defender.getArmorClass() + " -> MISS!");
-    		
+    				
     		return false;
     	}
     	
@@ -2078,7 +2127,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	zoomActionName = actionName;
     	zoomAttackResolved = false;
     	
-    	
+    	zoomFloatingText = "";
+    	zoomFloatingText2 = "";
+    	zoomFloatingTextTimer = 0;
+    	zoomFloatingText2Timer = 0;
     }
     
     //Draw Zoom in combat
@@ -2125,7 +2177,53 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		g.drawString("Enter to return", 185, 385);
     	}	
     	
+    	drawZoomFloatingTexts(g);
     }
+    
+    //Zoom in floating text
+    private void showZoomFloatingText(String text, int x, int y) {
+    	
+    	zoomFloatingText = text;
+    	zoomFloatingTextX = x;
+    	zoomFloatingTextY = y;
+    	zoomFloatingTextTimer = ZOOM_FLOATING_TEXT_DURATION;
+    }
+    
+    
+  //Zoom in floating text number 2
+    private void showZoomFloatingText2(String text, int x, int y) {
+    	
+    	zoomFloatingText2 = text;
+    	zoomFloatingText2X = x;
+    	zoomFloatingText2Y = y;
+    	zoomFloatingText2Timer = ZOOM_FLOATING_TEXT_DURATION;
+    }
+    
+    //Fades out the text as the timer runs out
+    private void drawZoomFloatingTexts(Graphics g) {
+    	
+    	Graphics2D g2 = (Graphics2D) g;
+    	java.awt.Font originalFont = g2.getFont();    
+    	
+    	if (zoomFloatingTextTimer > 0) {
+    		int alpha = (int)(255 * (zoomFloatingTextTimer / (float) ZOOM_FLOATING_TEXT_DURATION));
+    		g2.setColor(new Color(255, 255, 255, alpha));
+    		g2.setFont(g2.getFont().deriveFont(22f));
+    		g2.drawString(zoomFloatingText, zoomFloatingTextX, zoomFloatingTextY);
+    		
+    	}
+    	
+    	if (zoomFloatingText2Timer > 0) {
+    		int alpha = (int)(255 * (zoomFloatingText2Timer / (float) ZOOM_FLOATING_TEXT_DURATION));
+    		g2.setColor(new Color(255, 220, 220, alpha));
+    		g2.setFont(g2.getFont().deriveFont(22f));
+    		g2.drawString(zoomFloatingText2, zoomFloatingText2X, zoomFloatingText2Y);
+    		
+    	}
+    
+    	g2.setFont(originalFont);
+    }
+    
     
     //Dialogue
     private void drawDialogue(Graphics g) {
@@ -2226,9 +2324,58 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	            if (zoomIsSkill) {
         	                performSkill(zoomAttacker, zoomDefender);
         	                zoomAttacker.setSkillUsed(true);
+        	                
+        	                if (!zoomIsSkill) {
+        	                	
+            	            	
+            	            	if (!lastAttackHit) {
+            	            		showZoomFloatingText("Miss!", mapWidth / 2 - 30, 180);
+            	            		
+            	            	} else {
+            	            		if (lastAttackCrit) {
+            	            			showZoomFloatingText("Critical!", mapWidth / 2 - 45, 160);
+            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
+            	            			
+            	            		} else {
+            	            			showZoomFloatingText("Hit!", mapWidth / 2 - 20, 160);
+            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
+            	            		}
+            	            		
+            	            		if (lastAttackLuckyBreak) {
+            	            			showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 140);
+            	            			showZoomFloatingText2("1 HP", mapWidth / 2 - 10, 220); //can delete for effect to just say LB
+            	            		}
+            	            	}
+        	                }
+        	                
         	            } else {
         	                performAttack(zoomAttacker, zoomDefender);
+        	                
+        	              //Float text logic will give us the floating text
+            	            if (!zoomIsSkill) {
+        	                	
+            	            	
+            	            	if (!lastAttackHit) {
+            	            		showZoomFloatingText("Miss!", mapWidth / 2 - 30, 180);
+            	            		
+            	            	} else {
+            	            		if (lastAttackCrit) {
+            	            			showZoomFloatingText("Critical!", mapWidth / 2 - 45, 160);
+            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
+            	            			
+            	            		} else {
+            	            			showZoomFloatingText("Hit!", mapWidth / 2 - 20, 160);
+            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
+            	            		}
+            	            		
+            	            		if (lastAttackLuckyBreak) {
+            	            			showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 140);
+            	            			showZoomFloatingText2("1 HP", mapWidth / 2 - 10, 220); //can delete for effect to just say LB
+            	            		}
+            	            	}
+        	                }
         	            }
+        	            
 
         	            zoomAttacker.setHasActed(true);
 
@@ -2247,28 +2394,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	        }
 
         	        // second ENTER closes zoom scene and returns to battle map
-        	        battleZoomCombatOpen = false;
+        	        if (zoomAttackResolved) {
+        	        	
+        	        	if (zoomFloatingTextTimer > 0 || zoomFloatingText2Timer > 0) {
+        	                return; 
+        	        	}
+        	        	
+        	        	battleZoomCombatOpen = false;
 
-        	        zoomAttacker = null;
-        	        zoomDefender = null;
-        	        zoomActionName = "";
-        	        zoomIsSkill = false;
-        	        zoomAttackResolved = false;
+            	        zoomAttacker = null;
+            	        zoomDefender = null;
+            	        zoomActionName = "";
+            	        zoomIsSkill = false;
+            	        zoomAttackResolved = false;
 
-        	        selectedBattleUnit = null;
-        	        battleUnitSelected = false;
+            	        selectedBattleUnit = null;
+            	        battleUnitSelected = false;
 
-        	        selectedUnitStartCol = -1;
-        	        selectedUnitStartRow = -1;
+            	        selectedUnitStartCol = -1;
+            	        selectedUnitStartRow = -1;
 
-        	        repaint();
-        	        checkBattleEnd();
+            	        repaint();
+            	        checkBattleEnd();
 
-        	        if (currentState == GameState.BATTLE && allPlayerUnitsHaveActed()) {
-        	            endPlayerPhase();
+            	        if (currentState == GameState.BATTLE && allPlayerUnitsHaveActed()) {
+            	            endPlayerPhase();
+            	        }
+
+            	        return;
         	        }
-
-        	        return;
+   
         	    }
 
         	    return;
