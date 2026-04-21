@@ -1816,14 +1816,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //enemy that cannot yet attack move towards the player
     private void moveEnemyTowardTarget(BattleUnit actingEnemy, BattleUnit target) {
-
         if (actingEnemy == null || target == null) return;
 
-        int movement = actingEnemy.getCharacterClass().getMovementRange();
+        int movement = actingEnemy.getStats().getMovement();
+        boolean movedAtLeastOnce = false;
 
         for (int step = 0; step < movement; step++) {
 
-            // stop if already in attack range
             if (isEnemyInRange(actingEnemy, target)) {
                 return;
             }
@@ -1834,32 +1833,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             int targetCol = target.getCol();
             int targetRow = target.getRow();
 
-            int newCol = enemyCol;
-            int newRow = enemyRow;
+            int dx = targetCol - enemyCol;
+            int dy = targetRow - enemyRow;
 
-            // choose direction
-            if (Math.abs(targetCol - enemyCol) > Math.abs(targetRow - enemyRow)) {
-                if (targetCol > enemyCol) newCol++;
-                else if (targetCol < enemyCol) newCol--;
+            java.util.List<int[]> candidateMoves = new java.util.ArrayList<>();
+
+            // Prefer the larger-distance axis first
+            if (Math.abs(dx) > Math.abs(dy)) {
+
+                if (dx > 0) candidateMoves.add(new int[]{enemyCol + 1, enemyRow});
+                else if (dx < 0) candidateMoves.add(new int[]{enemyCol - 1, enemyRow});
+
+                if (dy > 0) candidateMoves.add(new int[]{enemyCol, enemyRow + 1});
+                else if (dy < 0) candidateMoves.add(new int[]{enemyCol, enemyRow - 1});
+
             } else {
-                if (targetRow > enemyRow) newRow++;
-                else if (targetRow < enemyRow) newRow--;
+
+                if (dy > 0) candidateMoves.add(new int[]{enemyCol, enemyRow + 1});
+                else if (dy < 0) candidateMoves.add(new int[]{enemyCol, enemyRow - 1});
+
+                if (dx > 0) candidateMoves.add(new int[]{enemyCol + 1, enemyRow});
+                else if (dx < 0) candidateMoves.add(new int[]{enemyCol - 1, enemyRow});
             }
 
-            // check bounds + can pass + cannot pass friends
-            if (newCol >= 0 && newCol < maxScreenCol &&
-                newRow >= 0 && newRow < maxScreenRow &&
-                currentMap.getTiles()[newCol][newRow].isPassable() &&
-                !isTileOccupiedByAnyFriendly(newCol, newRow) &&
-            	!isTileOccupiedByOtherEnemy(newCol, newRow, actingEnemy)) {
-            	
-            	actingEnemy.setPosition(newCol, newRow);
-                } else {
-                    return;
+            // Fall back for going around obstacles/other units
+            candidateMoves.add(new int[]{enemyCol + 1, enemyRow});
+            candidateMoves.add(new int[]{enemyCol - 1, enemyRow});
+            candidateMoves.add(new int[]{enemyCol, enemyRow + 1});
+            candidateMoves.add(new int[]{enemyCol, enemyRow - 1});
+
+            boolean moved = false;
+
+            for (int[] move : candidateMoves) {
+                int newCol = move[0];
+                int newRow = move[1];
+
+                if (newCol >= 0 && newCol < maxScreenCol &&
+                    newRow >= 0 && newRow < maxScreenRow &&
+                    currentMap.getTiles()[newCol][newRow].isPassable() &&
+                    !isTileOccupiedByAnyFriendly(newCol, newRow) &&
+                    !isTileOccupiedByOtherEnemy(newCol, newRow, actingEnemy)) {
+
+                    actingEnemy.setPosition(newCol, newRow);
+                    moved = true;
+                    movedAtLeastOnce = true;
+                    break;
                 }
+            }
+
+            if (!moved) {
+                return;
+            }
         }
 
-        addBattleMessage(actingEnemy.getName() + " moved.");
+        if (movedAtLeastOnce) {
+            addBattleMessage(actingEnemy.getName() + " moved.");
+        }
     }
     
     //Helper for enemies to attack other units not just leader
