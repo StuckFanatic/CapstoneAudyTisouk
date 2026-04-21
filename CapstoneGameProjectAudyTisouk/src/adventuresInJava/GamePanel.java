@@ -1152,33 +1152,43 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false); 
 		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
 		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1, false);
+		Weapon enemyBow = new Weapon("Hunter Bow", 2, 2, 2, 1, 6, 1, false);
 		
 		//Class Name, Max HP, Armor Class, Movement Range
 		CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
 		CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
+		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5);
 		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
-		
-		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
-		UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
-		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
-		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
 		GrowthRates leaderGrowth = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
 		GrowthRates archerGrowth = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
+		GrowthRates hunterGrowths = new GrowthRates(60, 35, 0, 55, 50, 25, 15, 20);
+		
+		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
+		UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
+		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
+		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
+		UnitStats hunterStats = new UnitStats(9, 3, 0, 5, 5, 2, 1, 1, 5);
+		
+
 		
 		if (unitId.equals("leader")) {
-			return new BattleUnit("Leader", col, row, enemy, ironSword, fighterClass, leaderStats, leaderGrowth, "Power Strike");
+			return new BattleUnit("Leader", col, row, enemy, ironSword, fighterClass, leaderStats, leaderGrowth, "Power Strike", null);
 		}
 		
 		if (unitId.equals("archer_ally")) {
-			return new BattleUnit("Archer Ally", col, row, enemy, shortBow, archerClass, archerStats, archerGrowth, "Precise Shot");
+			return new BattleUnit("Archer Ally", col, row, enemy, shortBow, archerClass, archerStats, archerGrowth, "Precise Shot", null);
 		}
 		
 		if (unitId.equals("bandit")) {
-			return new BattleUnit("Bandit", col, row, enemy, banditAxe, banditClass, banditStats, banditGrowth, "");
+			return new BattleUnit("Bandit", col, row, enemy, banditAxe, banditClass, banditStats, banditGrowth, "", EnemyRole.AGGRESSIVE);
+		}
+		
+		if (unitId.equals("hunter")) {
+		    return new BattleUnit("Hunter", col, row, enemy, enemyBow, hunterClass, hunterStats, hunterGrowths, "", EnemyRole.RANGED);
 		}
     	
     	return null;
@@ -1784,33 +1794,153 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	for (BattleUnit enemy : enemyUnits) {
-    		
-    		if (enemy == null || !enemy.isAlive()) {
-    			continue;
-    		}
-    		
-    		BattleUnit target = getEnemyTarget(enemy);
-    		
-    		if (target == null) {
-    			continue;
-    			
-    		}
-    		
-    		if (isEnemyInRange(enemy, target)) {
-        		performAttack(enemy, target);
-        		
-        		
-        		startBattlePause(45);
-        		
-        	} else {
-        		moveEnemyTowardTarget(enemy, target);
-        		startBattlePause(45);
-        	}
-        	
-        	
+
+    	    if (enemy == null || !enemy.isAlive()) {
+    	        continue;
+    	    }
+
+    	    BattleUnit target = getEnemyTarget(enemy);
+
+    	    if (target == null) {
+    	        continue;
+    	    }
+
+    	    EnemyRole role = enemy.getEnemyRole();
+
+    	    if (role == EnemyRole.RANGED) {
+    	        handleRangedEnemyTurn(enemy, target);
+    	    } else {
+    	        handleAggressiveEnemyTurn(enemy, target);
+    	    }
     	}
+
     	startPlayerPhase();
 	
+    }
+    
+    //Aggressive Enemy Trait
+    private void handleAggressiveEnemyTurn(BattleUnit enemy, BattleUnit target) {
+
+        if (isEnemyInRange(enemy, target)) {
+            performAttack(enemy, target);
+
+            if (!target.isAlive()) {
+                addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            startBattlePause(45);
+
+        } else {
+            moveEnemyTowardTarget(enemy, target);
+            startBattlePause(45);
+        }
+    }
+    
+    //Ranged Enemy Trait
+    private void handleRangedEnemyTurn(BattleUnit enemy, BattleUnit target) {
+
+        if (isEnemyInRange(enemy, target)) {
+            performAttack(enemy, target);
+
+            if (!target.isAlive()) {
+                addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            startBattlePause(45);
+            return;
+        }
+
+        moveRangedEnemyTowardTarget(enemy, target);
+        startBattlePause(45);
+    }
+    
+    //Helps with spacing
+    private int getDistance(BattleUnit a, BattleUnit b) {
+        return Math.abs(a.getCol() - b.getCol()) + Math.abs(a.getRow() - b.getRow());
+    }
+    
+    //Ranged Movement and Spacing Logic
+    private void moveRangedEnemyTowardTarget(BattleUnit actingEnemy, BattleUnit target) {
+        if (actingEnemy == null || target == null) return;
+
+        int movement = actingEnemy.getStats().getMovement();
+        boolean movedAtLeastOnce = false;
+
+        for (int step = 0; step < movement; step++) {
+
+            if (isEnemyInRange(actingEnemy, target)) {
+                return;
+            }
+
+            int enemyCol = actingEnemy.getCol();
+            int enemyRow = actingEnemy.getRow();
+
+            int targetCol = target.getCol();
+            int targetRow = target.getRow();
+
+            int dx = targetCol - enemyCol;
+            int dy = targetRow - enemyRow;
+
+            java.util.List<int[]> candidateMoves = new java.util.ArrayList<>();
+
+            // Prefer moves that bring enemy into range, but don't force adjacency if avoidable
+            if (Math.abs(dx) > Math.abs(dy)) {
+
+                if (dx > 0) candidateMoves.add(new int[]{enemyCol + 1, enemyRow});
+                else if (dx < 0) candidateMoves.add(new int[]{enemyCol - 1, enemyRow});
+
+                if (dy > 0) candidateMoves.add(new int[]{enemyCol, enemyRow + 1});
+                else if (dy < 0) candidateMoves.add(new int[]{enemyCol, enemyRow - 1});
+
+            } else {
+
+                if (dy > 0) candidateMoves.add(new int[]{enemyCol, enemyRow + 1});
+                else if (dy < 0) candidateMoves.add(new int[]{enemyCol, enemyRow - 1});
+
+                if (dx > 0) candidateMoves.add(new int[]{enemyCol + 1, enemyRow});
+                else if (dx < 0) candidateMoves.add(new int[]{enemyCol - 1, enemyRow});
+            }
+
+            // fallback side-steps
+            candidateMoves.add(new int[]{enemyCol + 1, enemyRow});
+            candidateMoves.add(new int[]{enemyCol - 1, enemyRow});
+            candidateMoves.add(new int[]{enemyCol, enemyRow + 1});
+            candidateMoves.add(new int[]{enemyCol, enemyRow - 1});
+
+            boolean moved = false;
+
+            for (int[] move : candidateMoves) {
+                int newCol = move[0];
+                int newRow = move[1];
+
+                if (newCol >= 0 && newCol < maxScreenCol &&
+                    newRow >= 0 && newRow < maxScreenRow &&
+                    currentMap.getTiles()[newCol][newRow].isPassable() &&
+                    !isTileOccupiedByAnyFriendly(newCol, newRow) &&
+                    !isTileOccupiedByOtherEnemy(newCol, newRow, actingEnemy)) {
+
+                    int newDistance = Math.abs(newCol - target.getCol()) + Math.abs(newRow - target.getRow());
+
+                    // For ranged enemies, prefer not to stop adjacent if they can help it
+                    if (newDistance == 1 && actingEnemy.getWeapon().getMinRange() > 1) {
+                        continue;
+                    }
+
+                    actingEnemy.setPosition(newCol, newRow);
+                    moved = true;
+                    movedAtLeastOnce = true;
+                    break;
+                }
+            }
+
+            if (!moved) {
+                return;
+            }
+        }
+
+        if (movedAtLeastOnce) {
+            addBattleMessage(actingEnemy.getName() + " repositioned.");
+        }
     }
     
     

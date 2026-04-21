@@ -39,7 +39,7 @@ public class BattleScenarioLibrary {
 		
 		List<UnitSpawn> enemySpawns = new ArrayList<>();
 		enemySpawns.add(new UnitSpawn("bandit", 6, 6, true));
-		enemySpawns.add(new UnitSpawn("bandit", 7, 4, true));
+		enemySpawns.add(new UnitSpawn("hunter", 7, 4, true));
 		
 		List<ReinforcementSpawn> reinforcements = new ArrayList<>();
 		reinforcements.add(new ReinforcementSpawn(3, "bandit", 8, 1, true));
