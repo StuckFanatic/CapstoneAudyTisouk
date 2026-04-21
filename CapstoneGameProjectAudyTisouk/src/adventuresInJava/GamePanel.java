@@ -238,9 +238,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	else if(type == TileType.HILL) {
     		return "Rocky mounds of earth";
     	}
+    	//Forest
+    	else if(type == TileType.FOREST) {
+    		return "A dense group of trees";
+    	}
+    	//Shore
+    	else if(type == TileType.SHORE) {
+    		return "A sandy edge between land and water";
+    	}
     	//Town
     	else if (type == TileType.TOWN) {
     		return "A peaceful and lively town with open gates.";
+    	}
+    	//Road
+    	else if(type == TileType.ROAD) {
+    		return "A worn path most traveled";
     	}
     	else if (type == TileType.EXIT) {
     		return "Exit town and retrun to world map.";
@@ -380,14 +392,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	int[][] layout = {
     			
     	{1,1,1,1,1,1,1,1,1,1},
-    	{1,0,0,0,0,0,0,0,0,1},
-    	{1,0,0,0,0,0,0,0,0,1},
-    	{1,0,0,2,2,2,2,0,0,1},
-    	{1,0,0,0,0,0,0,0,0,1},
-    	{1,0,0,0,0,0,0,0,0,1},
-    	{1,0,0,0,0,0,0,0,0,1},
-    	{1,0,0,0,0,0,0,0,0,1},
-    	{1,0,0,0,0,0,0,0,0,1},
+    	{1,3,3,2,4,0,0,0,0,1},
+    	{1,3,2,2,4,0,0,0,2,1},
+    	{1,0,0,0,4,0,0,0,3,1},
+    	{1,0,0,0,4,4,4,4,4,1},
+    	{1,5,0,0,0,0,0,2,3,1},
+    	{1,5,0,0,0,0,0,0,0,1},
+    	{1,5,0,0,0,0,3,3,3,1},
+    	{1,5,0,0,0,0,3,3,3,1},
     	{1,1,1,1,1,1,1,1,1,1}
     	
     	};
@@ -399,17 +411,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			
     			if (value == 0) {
     				battleMap[col][row] = new Tile(TileType.GRASS);
-    				
     			}
     			
     			else if (value == 1) {
     				battleMap[col][row] = new Tile(TileType.WATER);
-    				
     			}
     			
     			else if (value == 2) {
     				battleMap[col][row] = new Tile(TileType.HILL);
-    				
+    			}
+    			
+    			else if (value == 3) {
+    				battleMap[col][row] = new Tile(TileType.FOREST);
+    			}
+    			
+    			else if (value == 4) {
+    				battleMap[col][row] = new Tile(TileType.ROAD);
+    			}
+    			
+    			else if (value == 5) {
+    				battleMap[col][row] = new Tile(TileType.SHORE);
     			}
     			
     			
@@ -2247,6 +2268,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	case ROAD: 
     		return new Color(120, 90, 60);
+    		
+    	case HILL: 
+    		return new Color(110, 85, 55);
+    		
+    	case TOWN: 
+    		return new Color(150, 120, 80);
+    		
+    	case WATER: 
+    		return new Color(70, 120, 160);
     		
     	default: 
     		return new Color(50, 50, 50);

@@ -48,11 +48,26 @@ public class Tile {
 			
 			//Base water look
 			g.setColor(new Color(30, 144, 255));
-			g.fillRect(x, y, tileSize, tileSize);
-			
-			
+			g.fillRect(x, y, tileSize, tileSize);	
 			
 		}
+		
+		else if (type == TileType.FOREST) {
+			
+			//Base Forest look
+			g.setColor(new Color(0, 100, 0));
+			g.fillRect(x, y, tileSize, tileSize);
+			
+		}
+		
+		else if (type == TileType.SHORE) {
+			
+			//Base Beach look
+			g.setColor(new Color(210, 180, 140));
+			g.fillRect(x, y, tileSize, tileSize);
+			
+		}
+		
 		
 		else if (type == TileType.HILL) {
 			
@@ -70,6 +85,14 @@ public class Tile {
 			
 			g.setColor(Color.YELLOW);
 			g.fillOval(x + 10, y + 10, tileSize - 20, tileSize - 20);
+			
+		}
+		
+		else if (type == TileType.ROAD) {
+			
+			//Base Road look
+			g.setColor(new Color(160, 82, 45));
+			g.fillRect(x, y, tileSize, tileSize);
 			
 		}
 		

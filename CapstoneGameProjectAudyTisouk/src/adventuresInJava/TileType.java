@@ -4,8 +4,11 @@ public enum TileType {
 
 	GRASS,
 	WATER,
+	FOREST,
 	HILL,
+	SHORE,
 	TOWN,
+	ROAD,
 	EXIT,
 	NPC,
 	SHOP,
