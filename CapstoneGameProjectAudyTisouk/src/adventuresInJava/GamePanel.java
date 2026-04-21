@@ -184,7 +184,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean zoomCounterResolved = false; //counter already dealt
     private boolean zoomShowingCounter = false; // currently countering
     
-    
+    //Battle Scenarios for maps
+    private BattleScenario currentBattleScenario;
     
     
     /*
@@ -468,71 +469,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	else if (tile == TileType.ENEMY) {
     		
-    		currentMap = battleGameMap;
-    		currentState = GameState.BATTLE;
-    		
-    		//#, #, #, #, #, #,
-    		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
-    		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false); 
-    		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
-    		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1, false);
-    		
-    		//Class Name, Max HP, Armor Class, Movement Range
-    		CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
-    		CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
-    		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
-    		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
-    		
-    		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
-    		UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
-    		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
-    		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
-    		
-    		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
-    		GrowthRates leaderGrowth = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
-    		GrowthRates archerGrowth = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
-    		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
-    		
-    		//Name, Spawn column, Spawn row, Enemy or not, Weapon name, Class name
-    		playerBattleUnit = new BattleUnit(
-    				"Leader", 1, 1, false, ironSword, fighterClass, leaderStats, leaderGrowth, "Power Strike");
-    		
-    		allyBattleUnit = new BattleUnit(
-    				"Archer Ally", 2, 1, false, shortBow, archerClass, archerStats, archerGrowth, "Precise Shot");
-    		
-    		//Array for enemy units
-    		enemyUnits.clear();
-    		enemyUnits.add(new BattleUnit(
-    				"Bandit A", 6, 6, true, banditAxe, banditClass, banditStats, banditGrowth,""));
-    		
-    		enemyUnits.add(new BattleUnit(
-    				"Bandit B", 7, 4, true, banditAxe, banditClass, banditStats, banditGrowth,""));
-    		
-    		selectedBattleUnit = null;
-    		battleUnitSelected= false;
-    		
-    		battleCursorCol = playerBattleUnit.getCol();
-    		battleCursorRow = playerBattleUnit.getRow();
-    		
-    		//Switch if needed
-    		//currentObjective = ObjectiveType.DEFEAT_ALL;
-    		
-    		//currentObjective = ObjectiveType.SURVIVE_TURNS;
-    	    surviveTurnTarget = 4;
-    	    currentBattleTurn = 1;
-    	    
-    	    //Reach Tile
-    	    currentObjective = ObjectiveType.REACH_TILE;
-    	    objectiveCol = 8;
-    	    objectiveRow = 2;
-    	    currentBattleTurn = 1;
-
-    	    
-    		battlePhase = "PLAYER";
-    		clearBattleLog();
-    		addBattleMessage("Player Phase");
-    		
-    		return;
+    		BattleScenario scenario = BattleScenarioLibrary.getScenario("bandit_field");
+    		loadBattleScenario(scenario);
     		
     	}
     	
@@ -1206,6 +1144,157 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Own helper to stop hard coding units in creation on battle start
+    private BattleUnit createUnitFromId(String unitId, int col, int row, boolean enemy) {
+    	
+		//#, #, #, #, #, #,
+		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
+		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false); 
+		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
+		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1, false);
+		
+		//Class Name, Max HP, Armor Class, Movement Range
+		CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
+		CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
+		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
+		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
+		
+		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
+		UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
+		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
+		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
+		
+		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
+		GrowthRates leaderGrowth = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
+		GrowthRates archerGrowth = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
+		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
+		
+		if (unitId.equals("leader")) {
+			return new BattleUnit("Leader", col, row, enemy, ironSword, fighterClass, leaderStats, leaderGrowth, "Power Strike");
+		}
+		
+		if (unitId.equals("archer_ally")) {
+			return new BattleUnit("Archer Ally", col, row, enemy, shortBow, archerClass, archerStats, archerGrowth, "Precise Shot");
+		}
+		
+		if (unitId.equals("bandit")) {
+			return new BattleUnit("Bandit", col, row, enemy, banditAxe, banditClass, banditStats, banditGrowth, "");
+		}
+    	
+    	return null;
+    }
+    
+    //Loads in the scenario player steps on 
+    private void loadBattleScenario(BattleScenario scenario) {
+    	
+    	currentBattleScenario = scenario;
+    	
+    	currentObjective = scenario.getObjectiveType();
+    	surviveTurnTarget = scenario.getSurviveTurnTarget();
+    	currentBattleTurn = 1;
+    	
+    	//Map will build from scenario layout
+    	Tile[][] battleMap = new Tile[maxScreenCol][maxScreenRow];
+    	int[][] layout = scenario.getLayout();
+    	
+    	for (int col = 0; col < maxScreenCol; col++) {
+    		for (int row = 0; row < maxScreenRow; row++) {
+    			
+    			int value = layout[row][col];
+    			
+    			if (value == 0) {
+    				battleMap[col][row] = new Tile(TileType.GRASS);
+    				
+    			} else if (value == 1) {
+    				battleMap[col][row] = new Tile(TileType.WATER);
+    				
+    			} else if (value == 2) {
+    				battleMap[col][row] = new Tile(TileType.HILL);
+    				
+    			} else if (value == 3) {
+    				battleMap[col][row] = new Tile(TileType.FOREST);
+    				
+    			} else if (value == 4) {
+    				battleMap[col][row] = new Tile(TileType.ROAD);
+    				
+    			} else if (value == 5) {
+    				battleMap[col][row] = new Tile(TileType.SHORE);
+    				
+    			}	
+    		}
+    	}
+    	
+    	// Current Map reset clear
+    	currentMap = new GameMap(battleMap, scenario.getName());
+
+    	playerBattleUnit = null;
+    	allyBattleUnit = null;
+    	enemyUnits.clear();
+
+    	// New Player Spawns
+    	for (UnitSpawn spawn : scenario.getPlayerSpawns()) {
+    	    BattleUnit unit = createUnitFromId(spawn.getUnitId(), spawn.getCol(), spawn.getRow(), spawn.isEnemy());
+
+    	    if (spawn.getUnitId().equals("leader")) {
+    	        playerBattleUnit = unit;
+    	    } else if (spawn.getUnitId().equals("archer_ally")) {
+    	        allyBattleUnit = unit;
+    	    }
+    	}
+
+    	// New Enemy Spawns
+    	for (UnitSpawn spawn : scenario.getEnemySpawns()) {
+    	    BattleUnit enemy = createUnitFromId(spawn.getUnitId(), spawn.getCol(), spawn.getRow(), spawn.isEnemy());
+    	    if (enemy != null) {
+    	        enemyUnits.add(enemy);
+    	    }
+    	}
+    		
+    	//Load
+    	battlePhase = "PLAYER";
+    	clearBattleLog();
+    	addBattleMessage("Player Phase");
+    	showBattlePhaseBanner("Player Phase");
+    	
+    	if (playerBattleUnit != null) {
+    	    battleCursorCol = playerBattleUnit.getCol();
+    	    battleCursorRow = playerBattleUnit.getRow();
+    	}
+    	
+    	currentState = GameState.BATTLE;
+    	
+    	
+    }
+    
+    //Reinforcements Spawning
+    private void checkReinforcements() {
+    	
+    	if (currentBattleScenario == null) return;
+    	
+    	for (ReinforcementSpawn reinforcement : currentBattleScenario.getReinforcement()) {
+    		
+    		if (!reinforcement.hasSpawned() && reinforcement.getTurn() == currentBattleTurn) {
+    			
+    			BattleUnit unit = createUnitFromId(
+    					reinforcement.getUnitId(),
+    					reinforcement.getCol(),
+    					reinforcement.getRow(),
+    					reinforcement.isEnemy()
+    					
+    			);
+    			
+    			if (unit != null) {
+    				if (reinforcement.isEnemy()) {
+    					enemyUnits.add(unit);
+    					addBattleMessage("Enemy Reinforcements arrived!");
+    				}
+    			}
+    			
+    			reinforcement.setSpawned(true);
+    		}
+    	}
+    }
+    
     
     //Unique battle Movement highlights for battles
     private void drawBattleMovementRange(Graphics g) {
@@ -1578,6 +1667,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         showBattlePhaseBanner("Player Phase");
 
         currentBattleTurn++;
+        checkReinforcements();
 
         if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
             playerBattleUnit.setHasMoved(false);
