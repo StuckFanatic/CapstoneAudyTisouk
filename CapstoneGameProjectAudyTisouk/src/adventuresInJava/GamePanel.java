@@ -1250,6 +1250,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	Weapon weapon = previewAttacker.getWeapon();
     	
+    	TileType defenderTerrain = currentMap.getTiles()[previewDefender.getCol()][previewDefender.getRow()].getType();
+    	int terrainBonus = getTerrainAcBonus(previewDefender);
+    	
     	int hitChance = calculateHitChance(previewAttacker, previewDefender);
     	int minDamage = calculateMinDamage(previewAttacker, previewDefender);
     	int maxDamage = calculateMaxDamage(previewAttacker, previewDefender);
@@ -1263,6 +1266,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	g.drawString("Crit: " + critChance + "%", boxX + 15, boxY + 100);
     	g.drawString("Damage: " + minDamage + " - " + maxDamage, boxX + 15, boxY + 120);
     	g.drawString("Counter: " + (counter ? "Yes" : "No"), boxX + 15, boxY + 140);
+    	g.drawString("Terrain: " + defenderTerrain + " (+" + terrainBonus + " AC", boxX + 15, boxY + 160);
     }
     
     //Same as Attack preview but for skills
@@ -1895,8 +1899,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	addBattleMessage(attacker.getName() + " used " + weapon.getName() + ".");
     	
-    	if (totalAttack >= defender.getArmorClass()) {
-    		
+    	int defenderAc = getTotalArmorClass(defender);
+    	
+    	if (totalAttack >= defenderAc) {
     		
     		
     		int baseDamage = rollWeaponDamage(weapon);
@@ -1927,7 +1932,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				
     				addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
     				+ " + SKL " + statHitBonus + " = " + totalAttack
-    				+ " vs AC " + defender.getArmorClass() + " -> HIT!");
+    				+ " vs AC " + defenderAc + " -> HIT!");
     				if (critical) {
     					addBattleMessage("Critical Hit!");
     				}
@@ -1945,7 +1950,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
     				+ " + SKL " + statHitBonus + " = " + totalAttack
-    				+ " vs AC " + defender.getArmorClass() + " -> HIT!");
+    				+ " vs AC " + defenderAc + " -> HIT!");
     		if (critical) {
 				addBattleMessage("Critical Hit!");
 			}
@@ -1957,21 +1962,29 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		lastAttackHit = false;
     		addBattleMessage("Roll: " + roll + " + " + weapon.getAttackBonus()
     				+ " + SKL " + statHitBonus + " = " + totalAttack
-    				+ " vs AC " + defender.getArmorClass() + " -> MISS!");
+    				+ " vs AC " + defenderAc + " -> MISS!");
     				
     		return false;
     	}
     	
     }
     
+    //Will get total Armor class from all bonuses
+    private int getTotalArmorClass(BattleUnit unit) {
+    	
+    	return unit.getArmorClass() + getTerrainAcBonus(unit);
+    }
+    
     
     //Forecast for players to read on when attacking and defending
     private int calculateHitChance(BattleUnit attacker, BattleUnit defender) {
     	
+    	int defenderAc = getTotalArmorClass(defender);
+    	
     	int hitScore = 50
     			+ (attacker.getWeapon().getAttackBonus() * 10)
     			+ ((attacker.getStats().getSkill() / 2) * 10)
-				- ((defender.getArmorClass() - 10) * 5);
+				- ((defenderAc - 10) * 5);
     	if (hitScore < 5) hitScore = 5;
     	if (hitScore > 95) hitScore = 95;
     	
@@ -2209,6 +2222,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	g.setColor(Color.WHITE);
     	g.drawString("Terrain: " + terrain.toString(), mapWidth / 2 - 50, 30);
     	
+    	//Terrain bonus
+    	int terrainBonus = getTerrainAcBonus(zoomAttacker);
+    	g.drawString("Defense AC Bonus: +" + terrainBonus, mapWidth / 2 - 50, 50);
+    	
     	g.setColor(Color.WHITE);
     	
     	//Attacker info
@@ -2283,6 +2300,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	
     	
+    	}
+    }
+    
+    private int getTerrainAcBonus(BattleUnit unit) {
+    	
+    	if (unit == null || currentMap == null) {
+    		return 0;
+    	}
+    	
+    	TileType terrain = currentMap.getTiles()[unit.getCol()][unit.getRow()].getType();
+    	
+    	switch (terrain) {
+    	case FOREST:
+    		return 1;
+    		
+    	default: 
+    		return 0;
+    		
     	}
     }
     
