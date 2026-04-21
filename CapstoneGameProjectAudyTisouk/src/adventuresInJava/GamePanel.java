@@ -2222,7 +2222,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	g.setColor(Color.WHITE);
     	g.drawString("Terrain: " + terrain.toString(), mapWidth / 2 - 50, 30);
     	
-    	//Terrain bonus
+    	//Terrain bonus text
     	int terrainBonus = getTerrainAcBonus(zoomAttacker);
     	g.drawString("Defense AC Bonus: +" + terrainBonus, mapWidth / 2 - 50, 50);
     	
