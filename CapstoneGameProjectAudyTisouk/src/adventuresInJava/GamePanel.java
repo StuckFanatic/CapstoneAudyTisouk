@@ -2147,10 +2147,29 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Draw Zoom in combat
     private void drawZoomCombat(Graphics g) {
     	
+    	
     	if (!battleZoomCombatOpen || zoomAttacker == null || zoomDefender == null) return;
     	
-    	//back round overlay
-    	g.setColor(new Color(0, 0, 0, 220));
+    	//Player Terrain logic
+    	Tile attackerTile = currentMap.getTiles()[zoomAttacker.getCol()][zoomAttacker.getRow()];
+    	TileType terrain = attackerTile.getType();
+
+    	Color terrainColor = getTerrainColor(terrain);
+    	
+    	//back round overlay that takes the terrain
+    	g.setColor(terrainColor);
+    	g.fillRect(0, 0, mapWidth, mapHeight);
+    	
+    	//left side (attacker)
+    	g.setColor(getTerrainColor(terrain));
+    	g.fillRect(0, 0, mapWidth / 2 , mapHeight);
+    	
+    	//right side (defenders)
+    	g.setColor(getTerrainColor(terrain).darker());
+    	g.fillRect(mapWidth / 2, 0, mapWidth / 2 , mapHeight);
+    	
+    	//Contrast
+    	g.setColor(new Color(0, 0, 0, 120));
     	g.fillRect(0, 0, mapWidth, mapHeight);
     	
     	//left combat panel for attackers
@@ -2160,10 +2179,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//right combat panel for defenders
     	g.setColor(new Color(80, 40, 40));
     	g.fillRect(mapWidth - 200, 120, 160, 180);
-    	
+    	   	
     	//center information box
     	g.setColor(new Color(30, 30, 30));
     	g.fillRect(140, 330, 200, 90);
+    	
+    	//Show terrain name
+    	g.setColor(Color.WHITE);
+    	g.drawString("Terrain: " + terrain.toString(), mapWidth / 2 - 50, 30);
     	
     	g.setColor(Color.WHITE);
     	
@@ -2206,6 +2229,31 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	drawZoomFloatingTexts(g);
+    }
+    
+    //Helper for color logic
+    private Color getTerrainColor(TileType type) {
+    	
+    	switch (type) {
+    	
+    	case GRASS: 
+    		return new Color(60, 140, 60);
+    		
+    	case FOREST: 
+    		return new Color(30, 100, 30);
+    		
+    	case SHORE: 
+    		return new Color(70, 120, 160);
+    		
+    	case ROAD: 
+    		return new Color(120, 90, 60);
+    		
+    	default: 
+    		return new Color(50, 50, 50);
+    	
+    	
+    	
+    	}
     }
     
     //Zoom in floating text
