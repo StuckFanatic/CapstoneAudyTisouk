@@ -12,11 +12,15 @@ public class BattleScenarioLibrary {
 			return createBanditField();
 		}
 		
+		if (scenarioId.equals("forest_ambush")) {
+		    return createForestAmbush();
+		}
+		
 		return createBanditField();
 		
 	}
 	
-	//Bandit Field
+	//Bandit Field Scenario
 	private static BattleScenario createBanditField() {
 		
 		int[][] layout = {
@@ -57,6 +61,46 @@ public class BattleScenarioLibrary {
 				reinforcements
 				
 		);
+		
+	}
+	
+	//Bandit Ambush Scenario
+	private static BattleScenario createForestAmbush() {
+
+	    int[][] layout = {
+	        {3,3,3,3,3,3,3,3,3,3},
+	        {3,0,0,0,0,0,0,0,0,3},
+	        {3,0,3,3,0,0,3,3,0,3},
+	        {3,0,3,0,0,0,0,3,0,3},
+	        {3,0,0,0,4,4,0,0,0,3},
+	        {3,0,0,0,4,4,0,0,0,3},
+	        {3,0,3,0,0,0,0,3,0,3},
+	        {3,0,3,3,0,0,3,3,0,3},
+	        {3,0,0,0,0,0,0,0,0,3},
+	        {3,3,3,3,3,3,3,3,3,3}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 1, 1, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 1, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("hunter", 7, 2, true));
+	    enemySpawns.add(new UnitSpawn("hunter", 7, 7, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+	    reinforcements.add(new ReinforcementSpawn(3, "hunter", 8, 1, true));
+
+	    return new BattleScenario(
+	        "forest_ambush",
+	        "Forest Ambush",
+	        layout,
+	        ObjectiveType.DEFEAT_ALL,
+	        0,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements
+	    );
 	}
 	
 	

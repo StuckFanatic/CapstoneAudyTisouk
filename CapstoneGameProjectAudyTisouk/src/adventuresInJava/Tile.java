@@ -4,17 +4,20 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 
+
 public class Tile {
 
 	//Player should not be able to pass water or other types of terrain
 	TileType type;
 	boolean passable;
+	private String scenarioId;
 	
 	
 	public Tile(TileType type) {
 		
 		
 		this.type = type;
+		this.scenarioId = "";
 		
 		//Water should NOT be able to be passed
 		switch(type) {
@@ -146,6 +149,14 @@ public class Tile {
 
 	public TileType getType() {
 		return type;
+	}
+	
+	public String getScenarioId() {
+		return scenarioId;
+	}
+
+	public void setScenarioId(String scenarioId) {
+	    this.scenarioId = scenarioId;
 	}
 	
 	

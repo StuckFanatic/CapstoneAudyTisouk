@@ -61,6 +61,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Over world Map
     Tile[][] worldMap;
     
+    //Tile Completion
+    private int encounterSourceCol = -1;
+    private int encounterSourceRow = -1;
+    
     
     //Current Map
     private GameMap currentMap;
@@ -287,7 +291,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			{0,1,1,1,0,0,2,0,0,0},
     			{0,0,0,1,0,0,2,0,1,0},
     			{0,0,0,0,0,0,0,0,1,0},
-    			{2,0,4,1,1,0,0,0,0,0},
+    			{2,5,4,1,1,0,0,0,0,0},
     	};
     	
     	
@@ -315,10 +319,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				worldMap[col][row] = new Tile(TileType.TOWN);
     			}
     			else if (tileValue == 4) {
-    				worldMap[col][row] = new Tile(TileType.ENEMY);
     				
+    				//Enemy Encounter Tile
+    				Tile enemyTile = new Tile(TileType.ENEMY);
+    				enemyTile.setScenarioId("bandit_field");
+    				worldMap[col][row] = enemyTile;
     				
     			}
+    			
+    			else if (tileValue == 5) {
+    				
+    				//Quest Tile
+    				Tile questEnemyTile = new Tile(TileType.ENEMY);
+    				questEnemyTile.setScenarioId("forest_ambush");
+    				worldMap[col][row] = questEnemyTile;
+    				
+    			}
+    			
     			//Generates the Town method
     			generateTown();
     			
@@ -469,8 +486,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	else if (tile == TileType.ENEMY) {
     		
-    		BattleScenario scenario = BattleScenarioLibrary.getScenario("bandit_field");
-    		loadBattleScenario(scenario);
+    		Tile currentTile = currentMap.getTiles()[player.col][player.row];
+    		String scenarioId = currentTile.getScenarioId();
+    		
+    		if (scenarioId == null || scenarioId.isEmpty()) {
+    			scenarioId = "bandit_field";
+    		}
+    		
+    		//Deletion upon completion
+    	    encounterSourceCol = player.col;
+    	    encounterSourceRow = player.row;
+    		
+    	    BattleScenario scenario = BattleScenarioLibrary.getScenario(scenarioId);
+    	    loadBattleScenario(scenario);
+    	    return;
     		
     	}
     	
@@ -1626,6 +1655,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		}
     	}
     	
+    	//Clears Tile
+    	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
+    	    Tile clearedTile = new Tile(TileType.GRASS);
+    	    overworldGameMap.getTiles()[encounterSourceCol][encounterSourceRow] = clearedTile;
+
+    	    encounterSourceCol = -1;
+    	    encounterSourceRow = -1;
+    	}
+    	
     	if (!anyEnemyAlive) {
     		addBattleMessage("Victory! Returning to the overworld...");
     		
@@ -1640,6 +1678,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
   //Checks if the Survive turns battle as concluded its objective
     private void checkSurviveTurnsObjective() {
     	
+    	//Clears Tile
+    	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
+    	    Tile clearedTile = new Tile(TileType.GRASS);
+    	    overworldGameMap.getTiles()[encounterSourceCol][encounterSourceRow] = clearedTile;
+
+    	    encounterSourceCol = -1;
+    	    encounterSourceRow = -1;
+    	}
+    	
     	if (currentBattleTurn > surviveTurnTarget) {
     		addBattleMessage("You Survived! Returning to the overworld...");
     		
@@ -1653,6 +1700,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
   //Checks if there is a player on the tile in the objective
     private void checkReachTileObjective() {
+    	
+    	//Clears Tile
+    	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
+    	    Tile clearedTile = new Tile(TileType.GRASS);
+    	    overworldGameMap.getTiles()[encounterSourceCol][encounterSourceRow] = clearedTile;
+
+    	    encounterSourceCol = -1;
+    	    encounterSourceRow = -1;
+    	}
     	
     	if (playerBattleUnit != null &&
     			playerBattleUnit.isAlive() &&
