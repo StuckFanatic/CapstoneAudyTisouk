@@ -60,12 +60,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Over world Map
     Tile[][] worldMap;
-    
-    //Tile Completion
-    private int encounterSourceCol = -1;
-    private int encounterSourceRow = -1;
-    
-    
+      
     //Current Map
     private GameMap currentMap;
     
@@ -75,6 +70,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Over world and Town maps
     private GameMap overworldGameMap;
     private GameMap townGameMap;
+    
+    /*
+     * QUESTS
+     */
+    //Tile Completion
+    private int encounterSourceCol = -1;
+    private int encounterSourceRow = -1;
+    
+    //Quest Flags
+    private boolean banditQuestAccepted = false;
+    private boolean banditQuestCompleted = false;
     
     /*
      * 
@@ -349,6 +355,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		battleGameMap = new GameMap(battleMap, "Battle");
 
     		currentMap = overworldGameMap;
+    		//helper for over world generation after quests
+    		updateOverworldQuestTiles();
     		
     	}	
     	
@@ -529,6 +537,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		currentMap = overworldGameMap;
     		currentState = GameState.OVERWORLD;
     		
+    		if (movementLeft <= 0) {
+    		    endTurn();
+    		}
+    		
     		//Temporary return location
     		player.col = 2;
     		player.row = 5;
@@ -538,11 +550,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (tile == TileType.NPC) {
-    		startDialogue(new String[] {
-    			    "Welcome, traveler.",
-    			    "The roads ahead can be dangerous."
-    			}, GameState.TOWN);
-    		return;
+    		
+    		if (!banditQuestAccepted) {
+    		    banditQuestAccepted = true;
+    		    acceptBanditQuest();
+    		    updateOverworldQuestTiles();
+
+    		    startDialogue(new String[] {
+    		        "Bandits have appeared in the forest.",
+    		        "Please deal with them."
+    		    }, GameState.TOWN);
+
+    		    return;
+    		}
+    		
+    		if (isBanditQuestActive()) {
+    		}
     	}
     	
     	if (tile == TileType.SHOP) {
@@ -674,6 +697,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void updateDialogue() {
     	
+    }
+    
+    //Allows quests to change the tiles of into a quest marker and back
+    private void updateOverworldQuestTiles() {
+
+        if (overworldGameMap == null) return;
+
+        Tile[][] tiles = overworldGameMap.getTiles();
+
+        // Example quest encounter tile location
+        int questCol = 7;
+        int questRow = 2;
+
+        if (banditQuestAccepted && !banditQuestCompleted) {
+            Tile questTile = new Tile(TileType.ENEMY);
+            questTile.setScenarioId("forest_ambush");
+            tiles[questCol][questRow] = questTile;
+
+        } else {
+            tiles[questCol][questRow] = new Tile(TileType.GRASS);
+        }
     }
 
     //This is where the tile lines start
@@ -1334,6 +1378,29 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    //Quest accept helper
+    private void acceptBanditQuest() {
+        banditQuestAccepted = true;
+        banditQuestCompleted = false;
+        updateOverworldQuestTiles();
+        addBattleMessage("Bandit quest accepted!");
+        System.out.println("Bandit quest accepted!");
+    }
+    
+    //Shows completion
+    private void completeBanditQuest() {
+        banditQuestCompleted = true;
+        updateOverworldQuestTiles();
+        System.out.println("Bandit quest completed!");
+    }
+    
+    //Handles dialogue for before after and during the quest
+    private boolean isBanditQuestActive() {
+        return banditQuestAccepted && !banditQuestCompleted;
+    }
+    
+    
+    
     
     //Unique battle Movement highlights for battles
     private void drawBattleMovementRange(Graphics g) {
@@ -1654,6 +1721,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			break;
     		}
     	}
+    	
+    	if (currentBattleScenario != null &&
+    		    currentBattleScenario.getId().equals("forest_ambush")) {
+    		    completeBanditQuest();
+    		}
     	
     	//Clears Tile
     	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
