@@ -1877,24 +1877,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Aggressive Enemy Trait
     private void handleAggressiveEnemyTurn(BattleUnit enemy, BattleUnit target) {
 
-        if (isEnemyInRange(enemy, target)) {
-            performAttack(enemy, target);
-
-            if (!target.isAlive()) {
-                addBattleMessage(target.getName() + " was defeated!");
-            }
-
-            startBattlePause(45);
-
-        } else {
-            moveEnemyTowardTarget(enemy, target);
-            startBattlePause(45);
-        }
-    }
-    
-    //Ranged Enemy Trait
-    private void handleRangedEnemyTurn(BattleUnit enemy, BattleUnit target) {
-
+        // Attack immediately if already in range
         if (isEnemyInRange(enemy, target)) {
             performAttack(enemy, target);
 
@@ -1906,7 +1889,48 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
 
+        // Otherwise move first
+        moveEnemyTowardTarget(enemy, target);
+
+        // After moving, check again and attack if now in range
+        if (target.isAlive() && isEnemyInRange(enemy, target)) {
+            performAttack(enemy, target);
+
+            if (!target.isAlive()) {
+                addBattleMessage(target.getName() + " was defeated!");
+            }
+        }
+
+        startBattlePause(45);
+    }
+    
+    //Ranged Enemy Trait
+    private void handleRangedEnemyTurn(BattleUnit enemy, BattleUnit target) {
+
+        // If already in range, shoot immediately
+        if (isEnemyInRange(enemy, target)) {
+            performAttack(enemy, target);
+
+            if (!target.isAlive()) {
+                addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            startBattlePause(45);
+            return;
+        }
+
+        // Otherwise reposition
         moveRangedEnemyTowardTarget(enemy, target);
+
+        // After moving, check again and shoot if now in range
+        if (target.isAlive() && isEnemyInRange(enemy, target)) {
+            performAttack(enemy, target);
+
+            if (!target.isAlive()) {
+                addBattleMessage(target.getName() + " was defeated!");
+            }
+        }
+
         startBattlePause(45);
     }
     
@@ -2079,29 +2103,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Helper for enemies to attack other units not just leader
     private BattleUnit getEnemyTarget(BattleUnit actingEnemy) {
-    	
-    	BattleUnit target = null;
-    	int closestDistance = Integer.MAX_VALUE;
-    	
-    	if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
-    		int distance = Math.abs(actingEnemy.getCol() - playerBattleUnit.getCol())
-    				+ Math.abs(actingEnemy.getRow() - playerBattleUnit.getRow());
-    		target = playerBattleUnit;
-    		closestDistance = distance;
-    	}
-    	
-    	if (allyBattleUnit != null && allyBattleUnit.isAlive()) {
-    		int distance = Math.abs(actingEnemy.getCol() - allyBattleUnit.getCol())
-    				+ Math.abs(actingEnemy.getRow() - allyBattleUnit.getRow());
-    		
-    		if (distance < closestDistance) {
-    			target = allyBattleUnit;
-        		closestDistance = distance;
-    		}
-    		
-    	}
-    	
-    	return target;
+
+        BattleUnit target = null;
+        int closestDistance = Integer.MAX_VALUE;
+
+        if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
+            int distance = Math.abs(actingEnemy.getCol() - playerBattleUnit.getCol())
+                         + Math.abs(actingEnemy.getRow() - playerBattleUnit.getRow());
+            target = playerBattleUnit;
+            closestDistance = distance;
+        }
+
+        if (allyBattleUnit != null && allyBattleUnit.isAlive()) {
+            int distance = Math.abs(actingEnemy.getCol() - allyBattleUnit.getCol())
+                         + Math.abs(actingEnemy.getRow() - allyBattleUnit.getRow());
+
+            if (distance < closestDistance) {
+                target = allyBattleUnit;
+                closestDistance = distance;
+            }
+        }
+
+        return target;
     }
     
     //Skill Attacker for chosen skill
