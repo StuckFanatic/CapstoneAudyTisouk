@@ -72,6 +72,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private GameMap townGameMap;
     
     /*
+     * NPC
+     */
+    private List<NPC> townNpcs = new ArrayList<>();
+    
+    /*
      * QUESTS
      */
     //Tile Completion
@@ -372,7 +377,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        {1,1,1,1,1,1,1,1,1,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,0,0,0,0,3,4,0,0,1},
+    	        {1,0,0,3,0,3,4,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
@@ -406,7 +411,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			}
     			
     		}
+        	
     	}
+    	
+    	createTownNpcs();
     }
     
     //BattleMap1?
@@ -533,6 +541,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void interactInTown(TileType tile) {
     	
+    	NPC adjacentNpc = getAdjacentNpc();
+    	
+    	if (adjacentNpc != null) {
+    		interactWithNpc(adjacentNpc);
+    		return;
+    	}
+    	
     	if (tile == TileType.EXIT) {
     		currentMap = overworldGameMap;
     		currentState = GameState.OVERWORLD;
@@ -547,39 +562,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		return; 
     		
-    	}
-    	
-    	if (isAdjacentToQuestNpc()) {
-
-    	    if (!banditQuestAccepted) {
-    	        acceptBanditQuest();
-
-    	        startDialogue(new String[] {
-    	            "Bandits have been spotted in the forest.",
-    	            "Please drive them off before they attack travelers.",
-    	            "I've marked their location on your map."
-    	        }, GameState.TOWN);
-
-    	        return;
-
-    	    } else if (isBanditQuestActive()) {
-
-    	        startDialogue(new String[] {
-    	            "Bandits are still out there.",
-    	            "Please clear them out in the forest."
-    	        }, GameState.TOWN);
-
-    	        return;
-
-    	    } else if (banditQuestCompleted) {
-
-    	        startDialogue(new String[] {
-    	            "You dealt with the bandits?",
-    	            "Thank you. The roads will be much safer now."
-    	        }, GameState.TOWN);
-
-    	        return;
-    	    }
     	}
     	
     	if (tile == TileType.SHOP) {
@@ -1181,6 +1163,57 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         drawPlayer(g);
     }
     
+    //NPC for towns
+    private void createTownNpcs() {
+    	
+    	townNpcs.clear();
+    	
+    	townNpcs.add(new NPC(
+    			"Village Elder",
+    			6,
+    			4,
+    			"bandit_quest",
+    			
+    			new String[] {
+    					"Safe travels, stranger."
+    			},
+    			
+    			new String[] {
+    					"Bandits have been spotted in the forest.",
+    					"Please drive them away before the attack travelers.",
+    					"I've marked their location on your map."   					
+    			},
+    			
+    			new String[] {
+    					"The bandits are still out there.",
+    					"Please clear them out of the forest." 					
+    			},
+    			
+    			new String[] {
+    					"You dealt with the bandits?",
+    					"Thank you. The roads will be safer now." 					
+    			}		
+    		));
+    	
+    	townNpcs.add(new NPC(
+    			"Townsperson",
+    			4,
+    			4,
+    			"",
+    			
+    			new String[] {
+    					"Beautiful weather today.",
+    					"Be careful outside the town walls."
+    			},
+    			null,
+    			null,
+    			null
+    			
+    			));
+    	
+    }
+    
+    
     private void drawShop(Graphics g) {
 
         g.setColor(new Color(60, 40, 20));
@@ -1414,19 +1447,52 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         return banditQuestAccepted && !banditQuestCompleted;
     }
     
-    //Detect NPC tile
-    private boolean isQuestNpcTile(int col, int row) {
-    	return col == 6 && row == 4;
+    //NPC Handling interaction
+    private NPC getAdjacentNpc() {
+    	
+    	for (NPC npc : townNpcs) {
+    		int distance = Math.abs(player.col - npc.getCol())
+    				+ Math.abs(player.row - npc.getRow());
+    		
+    		if (distance == 1) {
+    			return npc;
+    		}
+    	}
+    	
+    	return null;
     }
     
-    //NPC Handling interaction
-    private boolean isAdjacentToQuestNpc() {
-        int npcCol = 6;
-        int npcRow = 4;
-
-        int distance = Math.abs(player.col - npcCol) + Math.abs(player.row - npcRow);
-
-        return distance == 1;
+    //NPC interaction 
+    private void interactWithNpc(NPC npc) {
+    	
+    	if (npc == null) return;
+    	
+    	if (!npc.hasQuest()) {
+    		startDialogue(npc.getDefaultDialogue(), GameState.TOWN);
+    		return;
+    	}
+    	
+    	if (npc.getQuestId().equals("bandit_quest")) {
+    		
+    		if (!banditQuestAccepted) {
+    			acceptBanditQuest();
+    			startDialogue(npc.getQuestNotStartedDialogue(), GameState.TOWN);
+    			return;
+    		}
+    		
+    		if (isBanditQuestActive()) {
+    			startDialogue(npc.getQuestActiveDialogue(), GameState.TOWN);
+    			return;
+    		}
+    		
+    		if (banditQuestCompleted) {
+    			startDialogue(npc.getQuestCompletedDialogue(), GameState.TOWN);
+    			return;
+    		}
+    		
+    	}
+    	
+    	startDialogue(npc.getDefaultDialogue(), GameState.TOWN);
     }
     
     
