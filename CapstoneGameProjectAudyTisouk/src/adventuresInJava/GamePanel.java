@@ -549,23 +549,37 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	}
     	
-    	if (tile == TileType.NPC) {
-    		
-    		if (!banditQuestAccepted) {
-    		    banditQuestAccepted = true;
-    		    acceptBanditQuest();
-    		    updateOverworldQuestTiles();
+    	if (isAdjacentToQuestNpc()) {
 
-    		    startDialogue(new String[] {
-    		        "Bandits have appeared in the forest.",
-    		        "Please deal with them."
-    		    }, GameState.TOWN);
+    	    if (!banditQuestAccepted) {
+    	        acceptBanditQuest();
 
-    		    return;
-    		}
-    		
-    		if (isBanditQuestActive()) {
-    		}
+    	        startDialogue(new String[] {
+    	            "Bandits have been spotted in the forest.",
+    	            "Please drive them off before they attack travelers.",
+    	            "I've marked their location on your map."
+    	        }, GameState.TOWN);
+
+    	        return;
+
+    	    } else if (isBanditQuestActive()) {
+
+    	        startDialogue(new String[] {
+    	            "Bandits are still out there.",
+    	            "Please clear them out in the forest."
+    	        }, GameState.TOWN);
+
+    	        return;
+
+    	    } else if (banditQuestCompleted) {
+
+    	        startDialogue(new String[] {
+    	            "You dealt with the bandits?",
+    	            "Thank you. The roads will be much safer now."
+    	        }, GameState.TOWN);
+
+    	        return;
+    	    }
     	}
     	
     	if (tile == TileType.SHOP) {
@@ -1378,13 +1392,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    
     //Quest accept helper
     private void acceptBanditQuest() {
         banditQuestAccepted = true;
         banditQuestCompleted = false;
         updateOverworldQuestTiles();
-        addBattleMessage("Bandit quest accepted!");
-        System.out.println("Bandit quest accepted!");
+        addBattleMessage("Bandit quest accepted!"); // Battle Messages for looking at 
+        System.out.println("Bandit quest accepted!"); // Can be deleted after
     }
     
     //Shows completion
@@ -1399,7 +1414,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         return banditQuestAccepted && !banditQuestCompleted;
     }
     
+    //Detect NPC tile
+    private boolean isQuestNpcTile(int col, int row) {
+    	return col == 6 && row == 4;
+    }
     
+    //NPC Handling interaction
+    private boolean isAdjacentToQuestNpc() {
+        int npcCol = 6;
+        int npcRow = 4;
+
+        int distance = Math.abs(player.col - npcCol) + Math.abs(player.row - npcRow);
+
+        return distance == 1;
+    }
     
     
     //Unique battle Movement highlights for battles
