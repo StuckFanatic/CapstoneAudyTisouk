@@ -978,11 +978,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case OVERWORLD:
                 g.drawString("Overworld", panelX + 20, 30);
                 g.drawString("Move and explore.", panelX + 20, 55);
+                
+                drawQuestLog(g, panelX, 110);
                 break;
 
             case TOWN:
                 g.drawString("Town", panelX + 20, 30);
                 g.drawString("Talk, shop, or leave.", panelX + 20, 55);
+                
+                drawQuestLog(g, panelX, 110);
                 break;
 
             case SHOP:
@@ -1445,6 +1449,51 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Handles dialogue for before after and during the quest
     private boolean isBanditQuestActive() {
         return banditQuestAccepted && !banditQuestCompleted;
+    }
+    
+    //Quest Display 
+    private String getBanditQuestStatusText() {
+    	if (banditQuestCompleted) {
+    		return "Completed";
+    	}
+    	
+    	if (isBanditQuestActive()) {
+    		return "Active";
+    	}
+    	
+    	return "Not Started";
+    }
+    
+    private String getBanditQuestObjectiveText() {
+    	if (banditQuestCompleted) {
+    		return "Return to the village elder.";
+    	}
+    	
+    	if (isBanditQuestActive()) {
+    		return "=Clear the forest ambush.";
+    	}
+    	
+    	return "Talk to the village elder.";
+    }
+    
+    private void drawQuestLog(Graphics g, int panelX, int startY) {
+    	
+    	g.setColor(Color.WHITE);
+    	
+    	g.drawString("Quest", panelX + 20, startY);
+    	g.drawString("Bandit Trouble", panelX + 20, startY + 25);
+    	g.drawString("Status: " + getBanditQuestStatusText(), panelX + 20, startY + 50);
+    	
+    	drawWrappedText(
+    			g,
+    			"Objective: " + getBanditQuestStatusText(),
+    			panelX + 20,
+    			startY + 75,
+    			rightPanelWidth - 40,
+    			18
+    			
+    			);
+    	
     }
     
     //NPC Handling interaction
