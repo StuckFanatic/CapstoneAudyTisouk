@@ -83,6 +83,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int encounterSourceCol = -1;
     private int encounterSourceRow = -1;
     
+    private int gold = 0;
+    private boolean banditQuestRewardClaimed = false;
+    
     //Quest Flags
     private boolean banditQuestAccepted = false;
     private boolean banditQuestCompleted = false;
@@ -985,6 +988,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case TOWN:
                 g.drawString("Town", panelX + 20, 30);
                 g.drawString("Talk, shop, or leave.", panelX + 20, 55);
+                g.drawString("Gold: " + gold, panelX + 20, 85);
                 
                 drawQuestLog(g, panelX, 110);
                 break;
@@ -1453,27 +1457,35 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Quest Display 
     private String getBanditQuestStatusText() {
-    	if (banditQuestCompleted) {
-    		return "Completed";
-    	}
-    	
-    	if (isBanditQuestActive()) {
-    		return "Active";
-    	}
-    	
-    	return "Not Started";
+        if (banditQuestRewardClaimed) {
+            return "Reward Claimed";
+        }
+
+        if (banditQuestCompleted) {
+            return "Completed";
+        }
+
+        if (isBanditQuestActive()) {
+            return "Active";
+        }
+
+        return "Not Started";
     }
     
     private String getBanditQuestObjectiveText() {
-    	if (banditQuestCompleted) {
-    		return "Return to the village elder.";
-    	}
-    	
-    	if (isBanditQuestActive()) {
-    		return "=Clear the forest ambush.";
-    	}
-    	
-    	return "Talk to the village elder.";
+        if (banditQuestRewardClaimed) {
+            return "Quest complete.";
+        }
+
+        if (banditQuestCompleted) {
+            return "Return to the village elder.";
+        }
+
+        if (isBanditQuestActive()) {
+            return "Clear the forest ambush.";
+        }
+
+        return "Talk to the village elder.";
     }
     
     private void drawQuestLog(Graphics g, int panelX, int startY) {
@@ -1532,6 +1544,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		if (isBanditQuestActive()) {
     			startDialogue(npc.getQuestActiveDialogue(), GameState.TOWN);
     			return;
+    		}
+    		
+    		if (banditQuestCompleted && !banditQuestRewardClaimed) {
+    		    gold += 100;
+    		    banditQuestRewardClaimed = true;
+
+    		    startDialogue(new String[] {
+    		        "You dealt with the bandits?",
+    		        "Thank you. Please take this reward.",
+    		        "Received 100 gold."
+    		    }, GameState.TOWN);
+
+    		    return;
+    		}
+
+    		if (banditQuestRewardClaimed) {
+    		    startDialogue(new String[] {
+    		        "Thanks again for helping our village.",
+    		        "The roads are much safer now."
+    		    }, GameState.TOWN);
+
+    		    return;
     		}
     		
     		if (banditQuestCompleted) {
