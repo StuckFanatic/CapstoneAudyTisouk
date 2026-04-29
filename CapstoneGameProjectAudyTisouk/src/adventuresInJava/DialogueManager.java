@@ -70,6 +70,9 @@ public class DialogueManager {
 		int portraitY = screenHeight - 135;
 		int portraitSize = 80;
 		
+		//Portrait moves text over to the right
+		int textX = portraitX + portraitSize + 25;
+		
 		//Box itself
 		g.setColor(new Color(0, 0, 0, 200));
 		g.fillRect(40, y, screenWidth - 80, boxHeight);
@@ -79,7 +82,7 @@ public class DialogueManager {
 		g.drawRect(40, y, screenWidth - 80, boxHeight);
 		
 		//Drawing the text, Once text is done show press enter to continue
-		g.drawString(displayedText, 60, y + 40 );
+		g.drawString(displayedText, textX, y + 40 );
 		
 		//Portrait
 		g.setColor(new Color(35, 35, 35));
@@ -96,7 +99,8 @@ public class DialogueManager {
 		
 		//Dialogue Name
 		g.setColor(Color.YELLOW);
-		g.drawString(speakerName, 60, screenHeight - 120);
+		
+		g.drawString(speakerName, textX, screenHeight - 120);
 
 		g.setColor(Color.WHITE);
 		
