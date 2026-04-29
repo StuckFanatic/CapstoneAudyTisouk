@@ -65,6 +65,11 @@ public class DialogueManager {
 		int boxHeight = 120;
 		int y = screenHeight - boxHeight - 20;
 		
+		//Portrait for characters
+		int portraitX = 40;
+		int portraitY = screenHeight - 135;
+		int portraitSize = 80;
+		
 		//Box itself
 		g.setColor(new Color(0, 0, 0, 200));
 		g.fillRect(40, y, screenWidth - 80, boxHeight);
@@ -75,6 +80,19 @@ public class DialogueManager {
 		
 		//Drawing the text, Once text is done show press enter to continue
 		g.drawString(displayedText, 60, y + 40 );
+		
+		//Portrait
+		g.setColor(new Color(35, 35, 35));
+		g.fillRect(portraitX, portraitY, portraitSize, portraitSize);
+
+		g.setColor(Color.WHITE);
+		g.drawRect(portraitX, portraitY, portraitSize, portraitSize);
+		
+		//For now gets the initials of the speaker so we can use it as a placeholder
+		String initials = getInitials(speakerName);
+
+		g.setColor(Color.YELLOW);
+		g.drawString(initials, portraitX + 28, portraitY + 45);
 		
 		//Dialogue Name
 		g.setColor(Color.YELLOW);
@@ -122,6 +140,28 @@ public class DialogueManager {
 	
 	public String getSpeakerName() {
 	    return speakerName;
+	}
+	
+	//This will help sort portraits of characters
+	private String getInitials(String name) {
+	    if (name == null || name.isEmpty()) {
+	        return "?";
+	    }
+
+	    String[] parts = name.trim().split(" ");
+	    String initials = "";
+
+	    for (String part : parts) {
+	        if (!part.isEmpty()) {
+	            initials += part.charAt(0);
+	        }
+
+	        if (initials.length() >= 2) {
+	            break;
+	        }
+	    }
+
+	    return initials.toUpperCase();
 	}
 	
 }
