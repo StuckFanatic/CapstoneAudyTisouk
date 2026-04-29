@@ -495,7 +495,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	if (tile == TileType.TOWN) {
 
-    		startDialogue(new String[] {
+    		startDialogue("Narrator", new String[] {
     			    "Welcome to the town.",
     			    "We appreciate your stay."
     			}, GameState.TOWN, townGameMap, 5, 8);
@@ -1061,11 +1061,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     
     //Two Start Dialogues, Simple and Full
-    private void startDialogue(String[] lines, GameState nextState) {
-        startDialogue(lines, nextState, null, -1, -1);
+    private void startDialogue(String speakerName, String[] lines, GameState nextState) {
+        startDialogue(speakerName, lines, nextState, null, -1, -1);
     }
     
-    private void startDialogue(String[] lines, GameState nextState, GameMap nextMap, int nextCol, int nextRow) {
+    private void startDialogue(String speakerName, String[] lines, GameState nextState, GameMap nextMap, int nextCol, int nextRow) {
 
         previousState = nextState;
         currentState = GameState.DIALOGUE;
@@ -1074,7 +1074,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         dialogueNextCol = nextCol;
         dialogueNextRow = nextRow;
 
-        dialogueManager.startDialogue(lines);
+        dialogueManager.startDialogue(speakerName, lines);
     }
     
  
@@ -1472,6 +1472,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         return "Not Started";
     }
     
+    //Quest Dialogue completion
     private String getBanditQuestObjectiveText() {
         if (banditQuestRewardClaimed) {
             return "Quest complete.";
@@ -1529,7 +1530,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	if (npc == null) return;
     	
     	if (!npc.hasQuest()) {
-    		startDialogue(npc.getDefaultDialogue(), GameState.TOWN);
+    		startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
     		return;
     	}
     	
@@ -1537,12 +1538,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     		if (!banditQuestAccepted) {
     			acceptBanditQuest();
-    			startDialogue(npc.getQuestNotStartedDialogue(), GameState.TOWN);
+    			startDialogue(npc.getName(), npc.getQuestNotStartedDialogue(), GameState.TOWN);
     			return;
     		}
     		
     		if (isBanditQuestActive()) {
-    			startDialogue(npc.getQuestActiveDialogue(), GameState.TOWN);
+    			startDialogue(npc.getName(), npc.getQuestActiveDialogue(), GameState.TOWN);
     			return;
     		}
     		
@@ -1550,7 +1551,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		    gold += 100;
     		    banditQuestRewardClaimed = true;
 
-    		    startDialogue(new String[] {
+    		    startDialogue("Village Elder", new String[] {
     		        "You dealt with the bandits?",
     		        "Thank you. Please take this reward.",
     		        "Received 100 gold."
@@ -1560,7 +1561,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		}
 
     		if (banditQuestRewardClaimed) {
-    		    startDialogue(new String[] {
+    		    startDialogue("Village Elder", new String[] {
     		        "Thanks again for helping our village.",
     		        "The roads are much safer now."
     		    }, GameState.TOWN);
@@ -1569,13 +1570,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		}
     		
     		if (banditQuestCompleted) {
-    			startDialogue(npc.getQuestCompletedDialogue(), GameState.TOWN);
+    			startDialogue(npc.getName(), npc.getQuestCompletedDialogue(), GameState.TOWN);
     			return;
     		}
     		
     	}
     	
-    	startDialogue(npc.getDefaultDialogue(), GameState.TOWN);
+    	startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
     }
     
     

@@ -19,10 +19,14 @@ public class DialogueManager {
 	private int textSpeed = 2; // Lower speed = faster?
 	private int textTimer = 0;
 	
+	//Dialogue Speaker name
+	private String speakerName = "";
+	
 	
 	//Starts a new dialogue scene
-	public void startDialogue(String[] dialogueLines) {
+	public void startDialogue(String speakerName, String[] dialogueLines) {
 		
+		this.speakerName = speakerName;
 		this.lines = dialogueLines;
 		currentLine = 0;
 		charIndex = 0;
@@ -72,6 +76,12 @@ public class DialogueManager {
 		//Drawing the text, Once text is done show press enter to continue
 		g.drawString(displayedText, 60, y + 40 );
 		
+		//Dialogue Name
+		g.setColor(Color.YELLOW);
+		g.drawString(speakerName, 60, screenHeight - 120);
+
+		g.setColor(Color.WHITE);
+		
 		if(charIndex >= lines[currentLine].length()) {
 			g.drawString("Press Enter...", screenWidth - 180, y + 90);
 		}
@@ -108,6 +118,10 @@ public class DialogueManager {
 		
 		return active;
 		
+	}
+	
+	public String getSpeakerName() {
+	    return speakerName;
 	}
 	
 }
