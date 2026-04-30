@@ -1540,11 +1540,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         // Special multi-speaker towns person conversation
         if (npc.getName().equals("Townsperson")) {
-            startDialogue(new DialogueLine[] {
-                new DialogueLine("Townsperson", "Beautiful weather today."),
-                new DialogueLine("Leader", "It is peaceful here."),
-                new DialogueLine("Townsperson", "Peaceful for now, at least.")
-            }, GameState.TOWN);
+        	startDialogue(new DialogueLine[] {
+        		    new DialogueLine("Townsperson", "Beautiful weather today.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        		    new DialogueLine("Leader", "It is peaceful here.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        		    new DialogueLine("Townsperson", "Peaceful for now, at least.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        		}, GameState.TOWN);
 
             return;
         }

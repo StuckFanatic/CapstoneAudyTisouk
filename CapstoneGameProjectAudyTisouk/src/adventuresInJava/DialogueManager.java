@@ -25,6 +25,14 @@ public class DialogueManager {
 	//Dialogue Speaker name
 	private String speakerName = "";
 	
+	//Left and Right speaker portrait set up
+	private String leftSpeakerName = "";
+	private String rightSpeakerName = "";
+	
+	//Right now color in current speaks in blue and green to help visuals
+	private DialogueFaction leftSpeakerFaction = DialogueFaction.ALLY;
+	private DialogueFaction rightSpeakerFaction = DialogueFaction.NPC;
+	
 	
 	
 	// Starts a new dialogue scene with one speaker
@@ -33,6 +41,13 @@ public class DialogueManager {
 	    this.speakerName = speakerName;
 	    this.lines = lines;
 	    this.dialogueLines = null;
+	    
+	    //gets one speaker leaves right
+	    leftSpeakerName = speakerName;
+	    rightSpeakerName = "";
+	    
+	    leftSpeakerFaction = DialogueFaction.NPC;
+	    rightSpeakerFaction = DialogueFaction.NPC;
 
 	    currentLine = 0;
 	    charIndex = 0;
@@ -48,6 +63,13 @@ public class DialogueManager {
 	    this.lines = null;
 	    this.speakerName = "";
 
+	    //gets two speaker leaves right for other PC while left is always leader
+	    leftSpeakerName = "";
+	    rightSpeakerName = "";
+	    
+	    leftSpeakerFaction = DialogueFaction.ALLY;
+	    rightSpeakerFaction = DialogueFaction.NPC;
+	    
 	    currentLine = 0;
 	    charIndex = 0;
 	    textTimer = 0;
@@ -83,20 +105,49 @@ public class DialogueManager {
 
 	    String currentSpeaker = getCurrentSpeakerName();
 	    String currentText = getCurrentText();
+	    
+	    DialogueSide currentSide = getCurrentSide();
+	    
+	    
+	    DialogueFaction currentFaction = getCurrentFaction();
+
+	    updateVisibleSpeakers(currentSpeaker, currentSide, currentFaction);
 		
 		
 		int boxHeight = 120;
 		int y = screenHeight - boxHeight - 20;
 		
+		int textX = 140;
+		
 		
 		//Portrait for characters
-		int portraitX = 40;
-		int portraitY = screenHeight - 135;
-		int portraitSize = 80;
+		int portraitSize = 110;
 		
+		// This makes portraits rise above the dialogue box as like in fire emblem
+		int portraitY = screenHeight - 190;
+
+		int leftPortraitX = 45;
+		int rightPortraitX = screenWidth - 45 - portraitSize;
 		
-		//Portrait moves text over to the right
-		int textX = portraitX + portraitSize + 25;
+		drawPortraitBox(
+			    g,
+			    leftSpeakerName,
+			    leftSpeakerFaction,
+			    leftPortraitX,
+			    portraitY,
+			    portraitSize,
+			    currentSide == DialogueSide.LEFT
+			);
+
+		drawPortraitBox(
+			    g,
+			    rightSpeakerName,
+			    rightSpeakerFaction,
+			    rightPortraitX,
+			    portraitY,
+			    portraitSize,
+			    currentSide == DialogueSide.RIGHT
+			);
 		
 		
 		//Box itself
@@ -109,28 +160,14 @@ public class DialogueManager {
 		g.drawRect(40, y, screenWidth - 80, boxHeight);
 		
 		
-		//Drawing the text, Once text is done show press enter to continue
-		g.drawString(displayedText, textX, y + 40 );
-		
-		
-		//Portrait
-		g.setColor(new Color(35, 35, 35));
-		g.fillRect(portraitX, portraitY, portraitSize, portraitSize);
-
-		g.setColor(Color.WHITE);
-		g.drawRect(portraitX, portraitY, portraitSize, portraitSize);
-		
-		
-		//For now gets the initials of the speaker so we can use it as a placeholder
-		String initials = getInitials(currentSpeaker);
-
-		g.setColor(Color.YELLOW);
-		g.drawString(initials, portraitX + 28, portraitY + 45);
+		//Drawing the text, Once text is done show press enter to continue; Speaking
+		g.drawString(displayedText, textX, y + 40);
 		
 		
 		//Dialogue Name
-		g.setColor(Color.YELLOW);
+		g.setColor(getFactionColor(currentFaction));
 		g.drawString(currentSpeaker, textX, screenHeight - 120);
+		
 		g.setColor(Color.WHITE);
 		
 		
@@ -238,6 +275,103 @@ public class DialogueManager {
 	    return "";
 	}
 	
+	//Will default to the left
+	private DialogueSide getCurrentSide() {
+
+	    if (dialogueLines != null && currentLine < dialogueLines.length) {
+	        return dialogueLines[currentLine].getSide();
+	    }
+
+	    return DialogueSide.LEFT;
+	}
 	
+	//Portrait will appear when speaking
+	private void updateVisibleSpeakers(String currentSpeaker, DialogueSide currentSide, DialogueFaction faction) {
+
+	    if (currentSide == DialogueSide.LEFT) {
+	        leftSpeakerName = currentSpeaker;
+	        leftSpeakerFaction = faction;
+	        
+	    } else {
+	    	
+	        rightSpeakerName = currentSpeaker;
+	        rightSpeakerFaction = faction;
+	    }
+	}
+	
+	//bright active portrait and dim inactive portrait
+	private void drawPortraitBox(Graphics g, String speaker, DialogueFaction faction,
+            int x, int y, int size, boolean activeSpeaker) {
+
+		if (speaker == null || speaker.isEmpty()) {
+			return;
+		}
+
+		Color factionColor = getFactionColor(faction);
+
+		if (activeSpeaker) {
+			g.setColor(new Color(55, 55, 65));
+		} else {
+			
+			g.setColor(new Color(35, 35, 40));
+		}
+
+		g.fillRect(x, y, size, size);
+
+		// Portrait border
+		if (activeSpeaker) {
+			g.setColor(factionColor);
+		} else {
+			
+			g.setColor(factionColor.darker());
+		}
+
+		g.drawRect(x, y, size, size);
+		g.drawRect(x + 1, y + 1, size - 2, size - 2);
+
+		// Placeholder initials
+		String initials = getInitials(speaker);
+
+		if (activeSpeaker) {
+			g.setColor(factionColor);
+		} else {
+			
+			g.setColor(factionColor.darker());
+		}
+
+		g.drawString(initials, x + (size / 2) - 12, y + (size / 2) + 5);
+	}
+	
+	
+	
+
+	
+	//Factions = color
+	private DialogueFaction getCurrentFaction() {
+
+	    if (dialogueLines != null && currentLine < dialogueLines.length) {
+	        return dialogueLines[currentLine].getFaction();
+	    }
+
+	    return DialogueFaction.NPC;
+	}
+	
+	//This is the colors that will be called
+	private Color getFactionColor(DialogueFaction faction) {
+
+	    if (faction == DialogueFaction.ALLY) {
+	        return new Color(80, 160, 255); // blue players characters
+	    }
+
+	    if (faction == DialogueFaction.NPC) {
+	        return new Color(80, 220, 120); // green non playable 
+	    }
+
+	    if (faction == DialogueFaction.ENEMY) {
+	        return new Color(230, 80, 80); // red enemy
+	    }
+
+	    return Color.WHITE;
+	}
 	
 }
