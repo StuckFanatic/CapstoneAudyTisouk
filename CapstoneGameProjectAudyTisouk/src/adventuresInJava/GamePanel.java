@@ -1060,9 +1060,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     
-    //Two Start Dialogues, Simple and Full
+    //Three Start Dialogues, Simple and Full
     private void startDialogue(String speakerName, String[] lines, GameState nextState) {
         startDialogue(speakerName, lines, nextState, null, -1, -1);
+    }
+    
+    //Multiple Speakers
+    private void startDialogue(DialogueLine[] dialogueLines, GameState nextState) {
+        previousState = nextState;
+        currentState = GameState.DIALOGUE;
+        dialogueManager.startDialogue(dialogueLines);
     }
     
     private void startDialogue(String speakerName, String[] lines, GameState nextState, GameMap nextMap, int nextCol, int nextRow) {
@@ -1525,58 +1532,76 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //NPC interaction 
+  //NPC interaction 
     private void interactWithNpc(NPC npc) {
-    	
-    	if (npc == null) return;
-    	
-    	if (!npc.hasQuest()) {
-    		startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
-    		return;
-    	}
-    	
-    	if (npc.getQuestId().equals("bandit_quest")) {
-    		
-    		if (!banditQuestAccepted) {
-    			acceptBanditQuest();
-    			startDialogue(npc.getName(), npc.getQuestNotStartedDialogue(), GameState.TOWN);
-    			return;
-    		}
-    		
-    		if (isBanditQuestActive()) {
-    			startDialogue(npc.getName(), npc.getQuestActiveDialogue(), GameState.TOWN);
-    			return;
-    		}
-    		
-    		if (banditQuestCompleted && !banditQuestRewardClaimed) {
-    		    gold += 100;
-    		    banditQuestRewardClaimed = true;
 
-    		    startDialogue("Village Elder", new String[] {
-    		        "You dealt with the bandits?",
-    		        "Thank you. Please take this reward.",
-    		        "Received 100 gold."
-    		    }, GameState.TOWN);
+        if (npc == null) return;
 
-    		    return;
-    		}
+        
+        // Special multi-speaker towns person conversation
+        if (npc.getName().equals("Townsperson")) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Townsperson", "Beautiful weather today."),
+                new DialogueLine("Leader", "It is peaceful here."),
+                new DialogueLine("Townsperson", "Peaceful for now, at least.")
+            }, GameState.TOWN);
 
-    		if (banditQuestRewardClaimed) {
-    		    startDialogue("Village Elder", new String[] {
-    		        "Thanks again for helping our village.",
-    		        "The roads are much safer now."
-    		    }, GameState.TOWN);
+            return;
+        }
 
-    		    return;
-    		}
-    		
-    		if (banditQuestCompleted) {
-    			startDialogue(npc.getName(), npc.getQuestCompletedDialogue(), GameState.TOWN);
-    			return;
-    		}
-    		
-    	}
-    	
-    	startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
+        
+        // Normal non-quest NPC dialogue
+        if (!npc.hasQuest()) {
+            startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
+            return;
+        }
+
+        
+        // Quest NPC dialogue
+        if (npc.getQuestId().equals("bandit_quest")) {
+
+            if (!banditQuestAccepted) {
+                acceptBanditQuest();
+                startDialogue(npc.getName(), npc.getQuestNotStartedDialogue(), GameState.TOWN);
+                return;
+            }
+
+            if (isBanditQuestActive()) {
+                startDialogue(npc.getName(), npc.getQuestActiveDialogue(), GameState.TOWN);
+                return;
+            }
+
+            if (banditQuestCompleted && !banditQuestRewardClaimed) {
+                gold += 100;
+                banditQuestRewardClaimed = true;
+
+                startDialogue(npc.getName(), new String[] {
+                    "You dealt with the bandits?",
+                    "Thank you. Please take this reward.",
+                    "Received 100 gold."
+                }, GameState.TOWN);
+
+                return;
+            }
+
+            if (banditQuestRewardClaimed) {
+                startDialogue(npc.getName(), new String[] {
+                    "Thanks again for helping our village.",
+                    "The roads are much safer now."
+                }, GameState.TOWN);
+
+                return;
+            }
+
+            if (banditQuestCompleted) {
+                startDialogue(npc.getName(), npc.getQuestCompletedDialogue(), GameState.TOWN);
+                return;
+            }
+            
+        }
+
+        
+        startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
     }
     
     
