@@ -59,7 +59,8 @@ public class BattleScenarioLibrary {
 				playerSpawns,
 				enemySpawns,
 				reinforcements,
-				null //Normal Combat No pre-dialogue
+				null, //Normal Combat No pre-dialogue
+				null // after combat talk none for normal combat
 				
 		);
 		
@@ -99,6 +100,12 @@ public class BattleScenarioLibrary {
 	    	    new DialogueLine("Bandit", "You picked the wrong road, travelers!", DialogueSide.RIGHT, DialogueFaction.ENEMY),
 	    	    new DialogueLine("Leader", "Weapons ready!", DialogueSide.LEFT, DialogueFaction.ALLY)
 	    	};
+	    //Combat Post Battle
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	    	    new DialogueLine("Archer Ally", "That was too close.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Leader", "But the road is safe now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Leader", "Let's report back to the elder.", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    	};
 
 	    return new BattleScenario(
 	        "forest_ambush",
@@ -109,7 +116,8 @@ public class BattleScenarioLibrary {
 	        playerSpawns,
 	        enemySpawns,
 	        reinforcements,
-	        introDialogue
+	        introDialogue,
+	        outroDialogue
 	    );
 	}
 	

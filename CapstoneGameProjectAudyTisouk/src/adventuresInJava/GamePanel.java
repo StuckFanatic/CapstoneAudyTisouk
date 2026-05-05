@@ -208,6 +208,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Introduction before combat
     private BattleScenario pendingBattleScenario = null;
     
+    //This is for post battle dialogue and possibly scenes as well
+    private boolean pendingReturnToOverworldAfterDialogue = false;
+    
     
     /*
      * GAMESTATES
@@ -1951,13 +1954,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (!anyEnemyAlive) {
-    		addBattleMessage("Victory! Returning to the overworld...");
-    		
-    		currentMap =  overworldGameMap;
-    		currentState = GameState.OVERWORLD;
-    		
-    		player.col = 3;
-    		player.row = 1;
+
+    	    if (currentBattleScenario != null &&
+    	        currentBattleScenario.getId().equals("forest_ambush")) {
+    	        completeBanditQuest();
+    	    }
+
+    	    handleBattleVictory();
     	}
     }
     
@@ -1974,13 +1977,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (currentBattleTurn > surviveTurnTarget) {
-    		addBattleMessage("You Survived! Returning to the overworld...");
     		
-    		currentMap =  overworldGameMap;
-    		currentState = GameState.OVERWORLD;
+    		handleBattleVictory();
     		
-    		player.col = 3;
-    		player.row = 1;
     	}
     }
     
@@ -1997,19 +1996,42 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (playerBattleUnit != null &&
-    			playerBattleUnit.isAlive() &&
-    			playerBattleUnit.getCol() == objectiveCol &&
-    			playerBattleUnit.getRow() == objectiveRow) {
-    		addBattleMessage("Objective Reached!");
-    		
-    		currentMap =  overworldGameMap;
-    		currentState = GameState.OVERWORLD;
-    		
-    		player.col = 3;
-    		player.row = 1;
-    	}
+    	        playerBattleUnit.isAlive() &&
+    	        playerBattleUnit.getCol() == objectiveCol &&
+    	        playerBattleUnit.getRow() == objectiveRow) {
+
+    	        handleBattleVictory();
+    	    }
     }
     
+    //Helps return player to over world correctly
+    private void returnToOverworldAfterBattle() {
+
+        currentMap = overworldGameMap;
+        currentState = GameState.OVERWORLD;
+
+        player.col = 3;
+        player.row = 1;
+
+        pendingReturnToOverworldAfterDialogue = false;
+    }
+    
+    //victory logic; if there is a dialogue use it otherwise return to over world
+    private void handleBattleVictory() {
+
+        addBattleMessage("Victory!");
+
+        if (currentBattleScenario != null &&
+            currentBattleScenario.getOutroDialogue() != null &&
+            currentBattleScenario.getOutroDialogue().length > 0) {
+
+            pendingReturnToOverworldAfterDialogue = true;
+            startDialogue(currentBattleScenario.getOutroDialogue(), GameState.OVERWORLD);
+            return;
+        }
+
+        returnToOverworldAfterBattle();
+    }
     
     
     //starts the player phase after ends
@@ -3046,6 +3068,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 if (!dialogueManager.isActive()) {
                 	
+                	//In
                 	if (pendingBattleScenario != null) {
                         BattleScenario scenarioToLoad = pendingBattleScenario;
                         pendingBattleScenario = null;
@@ -3054,6 +3077,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                         repaint();
                         return;
                     }
+                	
+                	//Out
+                	if (pendingReturnToOverworldAfterDialogue) {
+                	    returnToOverworldAfterBattle();
+                	    repaint();
+                	    return;
+                	}
 
                     currentState = previousState;
 
