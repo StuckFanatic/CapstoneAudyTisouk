@@ -205,6 +205,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Battle Scenarios for maps
     private BattleScenario currentBattleScenario;
     
+    //Introduction before combat
+    private BattleScenario pendingBattleScenario = null;
+    
     
     /*
      * GAMESTATES
@@ -516,7 +519,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    encounterSourceCol = player.col;
     	    encounterSourceRow = player.row;
     		
+    	    //If the scenario has introduction dialogue play; however if there is none then start immediately
     	    BattleScenario scenario = BattleScenarioLibrary.getScenario(scenarioId);
+
+    	    if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
+    	        pendingBattleScenario = scenario;
+    	        startDialogue(scenario.getIntroDialogue(), GameState.OVERWORLD);
+    	        return;
+    	    }
+
     	    loadBattleScenario(scenario);
     	    return;
     		
@@ -3034,6 +3045,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 dialogueManager.nextLine();
 
                 if (!dialogueManager.isActive()) {
+                	
+                	if (pendingBattleScenario != null) {
+                        BattleScenario scenarioToLoad = pendingBattleScenario;
+                        pendingBattleScenario = null;
+
+                        loadBattleScenario(scenarioToLoad);
+                        repaint();
+                        return;
+                    }
 
                     currentState = previousState;
 

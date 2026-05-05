@@ -17,12 +17,15 @@ public class BattleScenario {
 	private List<UnitSpawn> enemySpawns;
 	private List<ReinforcementSpawn> reinforcements;
 	
+	//Introduction Dialogue or not
+	private DialogueLine[] introDialogue;
 	
 	public BattleScenario(String id, String name, int[][] layout,
 							ObjectiveType objectiveType, int surviveTurnTarget,
 							List<UnitSpawn> playerSpawns,
 							List<UnitSpawn> enemySpawns,
-							List<ReinforcementSpawn> reinforcements) {
+							List<ReinforcementSpawn> reinforcements,
+							DialogueLine[] introDialogue) {
 		
 		this.id = id;
 		this.name = name;
@@ -32,6 +35,7 @@ public class BattleScenario {
 		this.playerSpawns = playerSpawns;
 		this.enemySpawns = enemySpawns;
 		this.reinforcements = reinforcements;
+		this.introDialogue = introDialogue;
 		
 		
 	}
@@ -66,6 +70,10 @@ public class BattleScenario {
 	
 	public List<ReinforcementSpawn> getReinforcement() {
 		return reinforcements;
+	}
+	
+	public DialogueLine[] getIntroDialogue() {
+	    return introDialogue;
 	}
 	
 	

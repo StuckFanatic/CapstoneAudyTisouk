@@ -58,7 +58,8 @@ public class BattleScenarioLibrary {
 				0,
 				playerSpawns,
 				enemySpawns,
-				reinforcements
+				reinforcements,
+				null //Normal Combat No pre-dialogue
 				
 		);
 		
@@ -90,6 +91,14 @@ public class BattleScenarioLibrary {
 
 	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
 	    reinforcements.add(new ReinforcementSpawn(3, "hunter", 8, 1, true));
+	    
+	    //Combat PreDialogue
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	    	    new DialogueLine("Leader", "Something feels wrong.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Archer Ally", "The forest is too quiet.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Bandit", "You picked the wrong road, travelers!", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	    	    new DialogueLine("Leader", "Weapons ready!", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    	};
 
 	    return new BattleScenario(
 	        "forest_ambush",
@@ -99,7 +108,8 @@ public class BattleScenarioLibrary {
 	        0,
 	        playerSpawns,
 	        enemySpawns,
-	        reinforcements
+	        reinforcements,
+	        introDialogue
 	    );
 	}
 	
