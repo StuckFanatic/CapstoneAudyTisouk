@@ -227,6 +227,14 @@ public class BattleUnit {
 	    return enemyRole;
 	}
 	
+	//Save State Calls
+	public void setLevel(int level) {
+	    this.level = level;
+	}
+
+	public void setExperience(int experience) {
+	    this.experience = experience;
+	}
 	
 	
 	

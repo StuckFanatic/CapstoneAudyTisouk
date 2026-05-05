@@ -11,6 +11,12 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 
+//Save & Load
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
+
 
 
 
@@ -32,7 +38,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int screenWidth = mapWidth + rightPanelWidth;
     private int screenHeight = mapHeight + bottomPanelHeight;
     
+    //Save State
+    private final String SAVE_FILE = "save_data.txt";
     
+    //Leader level, Leader EXP, Leader points, Archer level, Archer EXP, Archer points
+    //This save state allows more to be saved when pressing S
+    private int leaderLevel = 1;
+    private int leaderExp = 0;
+    private UnitStats leaderPersistentStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
+
+    private int archerLevel = 1;
+    private int archerExp = 0;
+    private UnitStats archerPersistentStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
+    //These represent the party’s saved character growth outside battle
     
     //Movement of the player
     private int maxMovement = 4;
@@ -1325,11 +1343,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
 		
 		if (unitId.equals("leader")) {
-			return new BattleUnit("Leader", col, row, enemy, ironSword, fighterClass, leaderStats, leaderGrowth, "Power Strike", null);
+			BattleUnit unit = new BattleUnit("Leader",col,row,enemy,ironSword,fighterClass,leaderPersistentStats,leaderGrowth,"Power Strike",null);
+			unit.setLevel(leaderLevel);
+		    unit.setExperience(leaderExp);
+
+		    return unit;
 		}
 		
+		
 		if (unitId.equals("archer_ally")) {
-			return new BattleUnit("Archer Ally", col, row, enemy, shortBow, archerClass, archerStats, archerGrowth, "Precise Shot", null);
+			BattleUnit unit = new BattleUnit("Archer Ally",col,row,enemy,shortBow,archerClass,archerPersistentStats,archerGrowth,"Precise Shot",null);
+			unit.setLevel(archerLevel);
+		    unit.setExperience(archerExp);
+
+		    return unit;
+			
 		}
 		
 		if (unitId.equals("bandit")) {
@@ -1341,6 +1369,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		}
     	
     	return null;
+    }
+    
+    //Now Stats are loaded based on they were when saved
+    private void syncPartyProgressionFromBattle() {
+
+        if (playerBattleUnit != null) {
+            leaderLevel = playerBattleUnit.getLevel();
+            leaderExp = playerBattleUnit.getExperience();
+            leaderPersistentStats = playerBattleUnit.getStats();
+        }
+
+        if (allyBattleUnit != null) {
+            archerLevel = allyBattleUnit.getLevel();
+            archerExp = allyBattleUnit.getExperience();
+            archerPersistentStats = allyBattleUnit.getStats();
+        }
     }
     
     //Loads in the scenario player steps on 
@@ -2019,6 +2063,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //victory logic; if there is a dialogue use it otherwise return to over world
     private void handleBattleVictory() {
 
+    	syncPartyProgressionFromBattle();
+    	
         addBattleMessage("Victory!");
 
         if (currentBattleScenario != null &&
@@ -3054,12 +3100,210 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     }
     
+    //Save game function allows the save game as a text form
+    private void saveGame() {
+
+        try {
+            FileWriter writer = new FileWriter(SAVE_FILE);
+
+            //Save Stats for you
+            writer.write("playerCol=" + player.col + "\n");
+            writer.write("playerRow=" + player.row + "\n");
+            writer.write("day=" + day + "\n");
+            writer.write("gold=" + gold + "\n");
+            writer.write("leaderLevel=" + leaderLevel + "\n");
+            writer.write("leaderExp=" + leaderExp + "\n");
+            writer.write("leaderMaxHp=" + leaderPersistentStats.getMaxHp() + "\n");
+            writer.write("leaderStr=" + leaderPersistentStats.getStrength() + "\n");
+            writer.write("leaderMag=" + leaderPersistentStats.getMagic() + "\n");
+            writer.write("leaderSkl=" + leaderPersistentStats.getSkill() + "\n");
+            writer.write("leaderSpd=" + leaderPersistentStats.getSpeed() + "\n");
+            writer.write("leaderLck=" + leaderPersistentStats.getLuck() + "\n");
+            writer.write("leaderDef=" + leaderPersistentStats.getDefense() + "\n");
+            writer.write("leaderRes=" + leaderPersistentStats.getResistance() + "\n");
+            writer.write("leaderMov=" + leaderPersistentStats.getMovement() + "\n");
+
+            //Save Stats for Archer Ally
+            writer.write("archerLevel=" + archerLevel + "\n");
+            writer.write("archerExp=" + archerExp + "\n");
+            writer.write("archerMaxHp=" + archerPersistentStats.getMaxHp() + "\n");
+            writer.write("archerStr=" + archerPersistentStats.getStrength() + "\n");
+            writer.write("archerMag=" + archerPersistentStats.getMagic() + "\n");
+            writer.write("archerSkl=" + archerPersistentStats.getSkill() + "\n");
+            writer.write("archerSpd=" + archerPersistentStats.getSpeed() + "\n");
+            writer.write("archerLck=" + archerPersistentStats.getLuck() + "\n");
+            writer.write("archerDef=" + archerPersistentStats.getDefense() + "\n");
+            writer.write("archerRes=" + archerPersistentStats.getResistance() + "\n");
+            writer.write("archerMov=" + archerPersistentStats.getMovement() + "\n");
+
+            writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
+            writer.write("banditQuestCompleted=" + banditQuestCompleted + "\n");
+            writer.write("banditQuestRewardClaimed=" + banditQuestRewardClaimed + "\n");
+
+            writer.close();
+
+            System.out.println("Game saved.");
+
+        } catch (IOException e) {
+            System.out.println("Save failed.");
+            e.printStackTrace();
+        }
+    }
+    
+    //Load game after Save to give function
+    private void loadGame() {
+
+        File file = new File(SAVE_FILE);
+
+        if (!file.exists()) {
+            System.out.println("No save file found.");
+            return;
+        }
+
+        try {
+            Scanner scanner = new Scanner(file);
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+
+                String[] parts = line.split("=");
+
+                if (parts.length != 2) {
+                    continue;
+                }
+
+                String key = parts[0];
+                String value = parts[1];
+
+                //General
+                if (key.equals("playerCol")) {
+                    player.col = Integer.parseInt(value);
+                }
+                else if (key.equals("playerRow")) {
+                    player.row = Integer.parseInt(value);
+                }
+                else if (key.equals("day")) {
+                    day = Integer.parseInt(value);
+                }
+                else if (key.equals("gold")) {
+                    gold = Integer.parseInt(value);
+                }
+                
+                //leader
+                else if (key.equals("leaderLevel")) {
+                    leaderLevel = Integer.parseInt(value);
+                }
+                else if (key.equals("leaderExp")) {
+                    leaderExp = Integer.parseInt(value);
+                }
+                else if (key.equals("leaderMaxHp")) {
+                    leaderPersistentStats.setMaxHp(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderStr")) {
+                    leaderPersistentStats.setStrength(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderMag")) {
+                    leaderPersistentStats.setMagic(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderSkl")) {
+                    leaderPersistentStats.setSkill(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderSpd")) {
+                    leaderPersistentStats.setSpeed(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderLck")) {
+                    leaderPersistentStats.setLuck(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderDef")) {
+                    leaderPersistentStats.setDefense(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderRes")) {
+                    leaderPersistentStats.setResistance(Integer.parseInt(value));
+                }
+                else if (key.equals("leaderMov")) {
+                    leaderPersistentStats.setMovement(Integer.parseInt(value));
+                }
+                
+                //archer
+                else if (key.equals("archerLevel")) {
+                    archerLevel = Integer.parseInt(value);
+                }
+                else if (key.equals("archerExp")) {
+                    archerExp = Integer.parseInt(value);
+                }
+                else if (key.equals("archerMaxHp")) {
+                    archerPersistentStats.setMaxHp(Integer.parseInt(value));
+                }
+                else if (key.equals("archerStr")) {
+                    archerPersistentStats.setStrength(Integer.parseInt(value));
+                }
+                else if (key.equals("archerMag")) {
+                    archerPersistentStats.setMagic(Integer.parseInt(value));
+                }
+                else if (key.equals("archerSkl")) {
+                    archerPersistentStats.setSkill(Integer.parseInt(value));
+                }
+                else if (key.equals("archerSpd")) {
+                    archerPersistentStats.setSpeed(Integer.parseInt(value));
+                }
+                else if (key.equals("archerLck")) {
+                    archerPersistentStats.setLuck(Integer.parseInt(value));
+                }
+                else if (key.equals("archerDef")) {
+                    archerPersistentStats.setDefense(Integer.parseInt(value));
+                }
+                else if (key.equals("archerRes")) {
+                    archerPersistentStats.setResistance(Integer.parseInt(value));
+                }
+                else if (key.equals("archerMov")) {
+                    archerPersistentStats.setMovement(Integer.parseInt(value));
+                }
+                
+                //Active Quests
+                else if (key.equals("banditQuestAccepted")) {
+                    banditQuestAccepted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("banditQuestCompleted")) {
+                    banditQuestCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("banditQuestRewardClaimed")) {
+                    banditQuestRewardClaimed = Boolean.parseBoolean(value);
+                }
+            }
+
+            scanner.close();
+
+            currentMap = overworldGameMap;
+            currentState = GameState.OVERWORLD;
+
+            updateOverworldQuestTiles();
+
+            System.out.println("Game loaded.");
+
+        } catch (IOException e) {
+            System.out.println("Load failed.");
+            e.printStackTrace();
+        }
+    }
+    
     
     //keys need to be pressed for movement
     @Override
     public void keyPressed(KeyEvent e) {
 
         int code = e.getKeyCode();
+        
+        if (code == KeyEvent.VK_S) {
+            saveGame();
+            repaint();
+            return;
+        }
+
+        if (code == KeyEvent.VK_L) {
+            loadGame();
+            repaint();
+            return;
+        }
 
         if (currentState == GameState.DIALOGUE) {
 
