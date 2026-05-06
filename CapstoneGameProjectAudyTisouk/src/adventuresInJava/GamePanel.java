@@ -41,16 +41,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Save State
     private final String SAVE_FILE = "save_data.txt";
     
+    /*
+     * PARTY
+     */
     //Leader level, Leader EXP, Leader points, Archer level, Archer EXP, Archer points
     //This save state allows more to be saved when pressing S
-    private int leaderLevel = 1;
-    private int leaderExp = 0;
-    private UnitStats leaderPersistentStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
-
-    private int archerLevel = 1;
-    private int archerExp = 0;
-    private UnitStats archerPersistentStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
-    //These represent the party’s saved character growth outside battle
+    //unit fields
+    private PartyMember leaderMember;
+    private PartyMember archerMember;
     
     //Movement of the player
     private int maxMovement = 4;
@@ -257,6 +255,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         this.addKeyListener(this);
         
         player = new Player(tileSize);
+        
+        createPartyMembers();
         
         worldMap = new Tile[maxScreenCol][maxScreenRow];
         generateWorld();
@@ -1343,20 +1343,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
 		
 		if (unitId.equals("leader")) {
-			BattleUnit unit = new BattleUnit("Leader",col,row,enemy,ironSword,fighterClass,leaderPersistentStats,leaderGrowth,"Power Strike",null);
-			unit.setLevel(leaderLevel);
-		    unit.setExperience(leaderExp);
-
-		    return unit;
+			return createBattleUnitFromPartyMember(leaderMember, col, row);//These new are more unique to enemies
 		}
 		
 		
 		if (unitId.equals("archer_ally")) {
-			BattleUnit unit = new BattleUnit("Archer Ally",col,row,enemy,shortBow,archerClass,archerPersistentStats,archerGrowth,"Precise Shot",null);
-			unit.setLevel(archerLevel);
-		    unit.setExperience(archerExp);
-
-		    return unit;
+			return createBattleUnitFromPartyMember(archerMember, col, row);
 			
 		}
 		
@@ -1371,19 +1363,81 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return null;
     }
     
+    //Will make creation easier the above
+    private void createPartyMembers() {
+
+        Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false);
+        Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
+
+        CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
+        CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
+
+        GrowthRates leaderGrowths = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
+        GrowthRates archerGrowths = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
+
+        UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
+        UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
+
+        leaderMember = new PartyMember(
+            "leader",
+            "Leader",
+            1,
+            0,
+            leaderStats,
+            leaderGrowths,
+            fighterClass,
+            ironSword,
+            "Power Strike"
+        );
+
+        archerMember = new PartyMember(
+            "archer_ally",
+            "Archer Ally",
+            1,
+            0,
+            archerStats,
+            archerGrowths,
+            archerClass,
+            shortBow,
+            "Precise Shot"
+        );
+    }
+    
+    //Splitting and creating units from party ^Above
+    private BattleUnit createBattleUnitFromPartyMember(PartyMember member, int col, int row) {
+
+        BattleUnit unit = new BattleUnit(
+            member.getName(),
+            col,
+            row,
+            false,
+            member.getWeapon(),
+            member.getCharacterClass(),
+            member.getStats(),
+            member.getGrowthRates(),
+            member.getSkillName(),
+            null
+        );
+
+        unit.setLevel(member.getLevel());
+        unit.setExperience(member.getExperience());
+
+        return unit;
+    }
+    
     //Now Stats are loaded based on they were when saved
     private void syncPartyProgressionFromBattle() {
 
-        if (playerBattleUnit != null) {
-            leaderLevel = playerBattleUnit.getLevel();
-            leaderExp = playerBattleUnit.getExperience();
-            leaderPersistentStats = playerBattleUnit.getStats();
+    	if (playerBattleUnit != null && leaderMember != null) {
+            leaderMember.setLevel(playerBattleUnit.getLevel());
+            leaderMember.setExperience(playerBattleUnit.getExperience());
+            leaderMember.setStats(playerBattleUnit.getStats());
         }
 
-        if (allyBattleUnit != null) {
-            archerLevel = allyBattleUnit.getLevel();
-            archerExp = allyBattleUnit.getExperience();
-            archerPersistentStats = allyBattleUnit.getStats();
+        if (allyBattleUnit != null && archerMember != null) {
+            archerMember.setLevel(allyBattleUnit.getLevel());
+            archerMember.setExperience(allyBattleUnit.getExperience());
+            archerMember.setStats(allyBattleUnit.getStats());
         }
     }
     
@@ -3111,31 +3165,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("playerRow=" + player.row + "\n");
             writer.write("day=" + day + "\n");
             writer.write("gold=" + gold + "\n");
-            writer.write("leaderLevel=" + leaderLevel + "\n");
-            writer.write("leaderExp=" + leaderExp + "\n");
-            writer.write("leaderMaxHp=" + leaderPersistentStats.getMaxHp() + "\n");
-            writer.write("leaderStr=" + leaderPersistentStats.getStrength() + "\n");
-            writer.write("leaderMag=" + leaderPersistentStats.getMagic() + "\n");
-            writer.write("leaderSkl=" + leaderPersistentStats.getSkill() + "\n");
-            writer.write("leaderSpd=" + leaderPersistentStats.getSpeed() + "\n");
-            writer.write("leaderLck=" + leaderPersistentStats.getLuck() + "\n");
-            writer.write("leaderDef=" + leaderPersistentStats.getDefense() + "\n");
-            writer.write("leaderRes=" + leaderPersistentStats.getResistance() + "\n");
-            writer.write("leaderMov=" + leaderPersistentStats.getMovement() + "\n");
+            
+            //Leader
+            writer.write("leaderLevel=" + leaderMember.getLevel() + "\n");
+            writer.write("leaderExp=" + leaderMember.getExperience() + "\n");
+            writer.write("leaderMaxHp=" + leaderMember.getStats().getMaxHp() + "\n");
+            writer.write("leaderStr=" + leaderMember.getStats().getStrength() + "\n");
+            writer.write("leaderMag=" + leaderMember.getStats().getMagic() + "\n");
+            writer.write("leaderSkl=" + leaderMember.getStats().getSkill() + "\n");
+            writer.write("leaderSpd=" + leaderMember.getStats().getSpeed() + "\n");
+            writer.write("leaderLck=" + leaderMember.getStats().getLuck() + "\n");
+            writer.write("leaderDef=" + leaderMember.getStats().getDefense() + "\n");
+            writer.write("leaderRes=" + leaderMember.getStats().getResistance() + "\n");
+            writer.write("leaderMov=" + leaderMember.getStats().getMovement() + "\n");
 
             //Save Stats for Archer Ally
-            writer.write("archerLevel=" + archerLevel + "\n");
-            writer.write("archerExp=" + archerExp + "\n");
-            writer.write("archerMaxHp=" + archerPersistentStats.getMaxHp() + "\n");
-            writer.write("archerStr=" + archerPersistentStats.getStrength() + "\n");
-            writer.write("archerMag=" + archerPersistentStats.getMagic() + "\n");
-            writer.write("archerSkl=" + archerPersistentStats.getSkill() + "\n");
-            writer.write("archerSpd=" + archerPersistentStats.getSpeed() + "\n");
-            writer.write("archerLck=" + archerPersistentStats.getLuck() + "\n");
-            writer.write("archerDef=" + archerPersistentStats.getDefense() + "\n");
-            writer.write("archerRes=" + archerPersistentStats.getResistance() + "\n");
-            writer.write("archerMov=" + archerPersistentStats.getMovement() + "\n");
-
+            writer.write("archerLevel=" + archerMember.getLevel() + "\n");
+            writer.write("archerExp=" + archerMember.getExperience() + "\n");
+            writer.write("archerMaxHp=" + archerMember.getStats().getMaxHp() + "\n");
+            writer.write("archerStr=" + archerMember.getStats().getStrength() + "\n");
+            writer.write("archerMag=" + archerMember.getStats().getMagic() + "\n");
+            writer.write("archerSkl=" + archerMember.getStats().getSkill() + "\n");
+            writer.write("archerSpd=" + archerMember.getStats().getSpeed() + "\n");
+            writer.write("archerLck=" + archerMember.getStats().getLuck() + "\n");
+            writer.write("archerDef=" + archerMember.getStats().getDefense() + "\n");
+            writer.write("archerRes=" + archerMember.getStats().getResistance() + "\n");
+            writer.write("archerMov=" + archerMember.getStats().getMovement() + "\n");
+            
+            //Quest
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
             writer.write("banditQuestCompleted=" + banditQuestCompleted + "\n");
             writer.write("banditQuestRewardClaimed=" + banditQuestRewardClaimed + "\n");
@@ -3191,72 +3248,72 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 
                 //leader
                 else if (key.equals("leaderLevel")) {
-                    leaderLevel = Integer.parseInt(value);
+                    leaderMember.setLevel(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderExp")) {
-                    leaderExp = Integer.parseInt(value);
+                    leaderMember.setExperience(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderMaxHp")) {
-                    leaderPersistentStats.setMaxHp(Integer.parseInt(value));
+                    leaderMember.getStats().setMaxHp(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderStr")) {
-                    leaderPersistentStats.setStrength(Integer.parseInt(value));
+                    leaderMember.getStats().setStrength(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderMag")) {
-                    leaderPersistentStats.setMagic(Integer.parseInt(value));
+                    leaderMember.getStats().setMagic(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderSkl")) {
-                    leaderPersistentStats.setSkill(Integer.parseInt(value));
+                    leaderMember.getStats().setSkill(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderSpd")) {
-                    leaderPersistentStats.setSpeed(Integer.parseInt(value));
+                    leaderMember.getStats().setSpeed(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderLck")) {
-                    leaderPersistentStats.setLuck(Integer.parseInt(value));
+                    leaderMember.getStats().setLuck(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderDef")) {
-                    leaderPersistentStats.setDefense(Integer.parseInt(value));
+                    leaderMember.getStats().setDefense(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderRes")) {
-                    leaderPersistentStats.setResistance(Integer.parseInt(value));
+                    leaderMember.getStats().setResistance(Integer.parseInt(value));
                 }
                 else if (key.equals("leaderMov")) {
-                    leaderPersistentStats.setMovement(Integer.parseInt(value));
+                    leaderMember.getStats().setMovement(Integer.parseInt(value));
                 }
                 
                 //archer
                 else if (key.equals("archerLevel")) {
-                    archerLevel = Integer.parseInt(value);
+                    archerMember.setLevel(Integer.parseInt(value));
                 }
                 else if (key.equals("archerExp")) {
-                    archerExp = Integer.parseInt(value);
+                    archerMember.setExperience(Integer.parseInt(value));
                 }
                 else if (key.equals("archerMaxHp")) {
-                    archerPersistentStats.setMaxHp(Integer.parseInt(value));
+                    archerMember.getStats().setMaxHp(Integer.parseInt(value));
                 }
                 else if (key.equals("archerStr")) {
-                    archerPersistentStats.setStrength(Integer.parseInt(value));
+                    archerMember.getStats().setStrength(Integer.parseInt(value));
                 }
                 else if (key.equals("archerMag")) {
-                    archerPersistentStats.setMagic(Integer.parseInt(value));
+                    archerMember.getStats().setMagic(Integer.parseInt(value));
                 }
                 else if (key.equals("archerSkl")) {
-                    archerPersistentStats.setSkill(Integer.parseInt(value));
+                    archerMember.getStats().setSkill(Integer.parseInt(value));
                 }
                 else if (key.equals("archerSpd")) {
-                    archerPersistentStats.setSpeed(Integer.parseInt(value));
+                    archerMember.getStats().setSpeed(Integer.parseInt(value));
                 }
                 else if (key.equals("archerLck")) {
-                    archerPersistentStats.setLuck(Integer.parseInt(value));
+                    archerMember.getStats().setLuck(Integer.parseInt(value));
                 }
                 else if (key.equals("archerDef")) {
-                    archerPersistentStats.setDefense(Integer.parseInt(value));
+                    archerMember.getStats().setDefense(Integer.parseInt(value));
                 }
                 else if (key.equals("archerRes")) {
-                    archerPersistentStats.setResistance(Integer.parseInt(value));
+                    archerMember.getStats().setResistance(Integer.parseInt(value));
                 }
                 else if (key.equals("archerMov")) {
-                    archerPersistentStats.setMovement(Integer.parseInt(value));
+                    archerMember.getStats().setMovement(Integer.parseInt(value));
                 }
                 
                 //Active Quests
