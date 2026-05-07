@@ -49,6 +49,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //unit fields
     private PartyMember leaderMember;
     private PartyMember archerMember;
+    private PartyMember mageMember;
     
     private List<PartyMember> partyMembers = new ArrayList<>();
     
@@ -122,6 +123,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //unit selected
     private BattleUnit playerBattleUnit;
     private BattleUnit allyBattleUnit;
+    private BattleUnit mageBattleUnit;
     private List<BattleUnit> enemyUnits = new ArrayList<>();
     private BattleUnit selectedBattleUnit;
     private boolean battleUnitSelected = false;
@@ -1288,6 +1290,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 			allyBattleUnit.draw(g, tileSize);
 		}
 		
+		if (mageBattleUnit != null) {
+		    mageBattleUnit.draw(g, tileSize);
+		}
+		
 		if (currentObjective == ObjectiveType.REACH_TILE) {
 			int tileSize = 48;
 			
@@ -1352,7 +1358,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return null;
     }
     
-    //Will make creation easier the above
+    //THIS IS FOR NEW PLAYERS UNITS ADD HERE!!!
+    //Will make creation easier the above for players
     private void createPartyMembers() {
     	
     	partyMembers.clear();
@@ -1361,18 +1368,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
         Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false);
         Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
+        Weapon fireTome = new Weapon("Fire Tome", 1, 2, 3, 1, 6, 2, true);
         
         //Class Name, Max HP, Armor Class, Movement Range
         CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
         CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
+        CharacterClass mageClass = new CharacterClass("Mage", 8, 10, 4);
         
         //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
         GrowthRates leaderGrowths = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
         GrowthRates archerGrowths = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
+        GrowthRates mageGrowths = new GrowthRates(50, 10, 60, 45, 45, 40, 15, 45);
         
         //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
         UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
         UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
+        UnitStats mageStats = new UnitStats(8, 0, 5, 4, 4, 4, 1, 3, 4);
 
         leaderMember = new PartyMember(
             "leader",
@@ -1398,8 +1409,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             "Precise Shot"
         );
         
+        mageMember = new PartyMember(
+        	    "mage",
+        	    "Mage",
+        	    1,
+        	    0,
+        	    mageStats,
+        	    mageGrowths,
+        	    mageClass,
+        	    fireTome,
+        	    "Fire Bolt"
+        	);
+        
         partyMembers.add(leaderMember);
         partyMembers.add(archerMember);
+        partyMembers.add(mageMember);
     }
     
     //Splitting and creating units from party ^Above
@@ -1467,6 +1491,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
     	syncPartyMemberFromBattleUnit(playerBattleUnit);
         syncPartyMemberFromBattleUnit(allyBattleUnit);
+        syncPartyMemberFromBattleUnit(mageBattleUnit);
     }
     
     //Loads in the scenario player steps on 
@@ -1514,6 +1539,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
     	playerBattleUnit = null;
     	allyBattleUnit = null;
+    	mageBattleUnit = null;
     	enemyUnits.clear();
 
     	// New Player Spawns
@@ -1524,7 +1550,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        playerBattleUnit = unit;
     	    } else if (spawn.getUnitId().equals("archer_ally")) {
     	        allyBattleUnit = unit;
+    	        
+    	    } else if (spawn.getUnitId().equals("mage")) {
+    	        mageBattleUnit = unit;
     	    }
+    	    
     	}
 
     	// New Enemy Spawns
@@ -2163,6 +2193,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     
     //starts the player phase after ends
+    //necessary to adding new unit
     private void startPlayerPhase() {
         battlePhase = "PLAYER";
         addBattleMessage("Player Phase");
@@ -2180,11 +2211,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             allyBattleUnit.setHasMoved(false);
             allyBattleUnit.setHasActed(false);
         }
+        
+        if (mageBattleUnit != null && mageBattleUnit.isAlive()) {
+            mageBattleUnit.setHasMoved(false);
+            mageBattleUnit.setHasActed(false);
+        }
 
         checkBattleEnd();
     }
     
     //Check helps end player phase after all acted
+    //necessary to adding new unit
     private boolean allPlayerUnitsHaveActed() {
     	
     	if (playerBattleUnit != null && !playerBattleUnit.hasActed()) {
@@ -2192,6 +2229,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (allyBattleUnit != null && !allyBattleUnit.hasActed()) {
+    		return false;
+    	}
+    	
+    	if (mageBattleUnit != null && !mageBattleUnit.hasActed()) {
     		return false;
     	}
     	
@@ -2208,6 +2249,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //Stop Leader and allies from stacking on the same tile
+    //necessary to adding new unit
     private boolean isTileOccupiedByOtherFriendly(int col, int row, BattleUnit currentUnit) {
     	
     	if (playerBattleUnit != null && playerBattleUnit != currentUnit &&
@@ -2220,9 +2262,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		return true;
     	}
     	
+    	if (mageBattleUnit != null && mageBattleUnit != currentUnit && 
+    			mageBattleUnit.getCol() == col && mageBattleUnit.getRow() == row) {
+    		return true;
+    	}
+    	
     	return false;
     }
     
+    //make enemies be able to target Mage
+    //necessary to adding new unit
     private boolean isTileOccupiedByAnyFriendly(int col, int row) {
     	
     	if (playerBattleUnit != null &&
@@ -2238,6 +2287,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			allyBattleUnit.getRow() == row) {
     		return true;
     	}
+    	
+    	if (mageBattleUnit != null &&
+    		    mageBattleUnit.isAlive() &&
+    		    mageBattleUnit.getCol() == col &&
+    		    mageBattleUnit.getRow() == row) {
+    		    return true;
+    		}
     	
     	return false;
     }
@@ -2538,6 +2594,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //Helper for enemies to attack other units not just leader
+    //necessary to adding new unit
     private BattleUnit getEnemyTarget(BattleUnit actingEnemy) {
 
         BattleUnit target = null;
@@ -2556,6 +2613,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (distance < closestDistance) {
                 target = allyBattleUnit;
+                closestDistance = distance;
+            }
+        }
+        
+        if (mageBattleUnit != null && mageBattleUnit.isAlive()) {
+            int distance = Math.abs(actingEnemy.getCol() - mageBattleUnit.getCol())
+                         + Math.abs(actingEnemy.getRow() - mageBattleUnit.getRow());
+
+            if (distance < closestDistance) {
+                target = mageBattleUnit;
                 closestDistance = distance;
             }
         }
@@ -3991,6 +4058,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			return;
         			
         			}
+        			
+        			if (mageBattleUnit != null &&
+        				    battleCursorCol == mageBattleUnit.getCol() &&
+        				    battleCursorRow == mageBattleUnit.getRow() &&
+        				    !mageBattleUnit.hasActed()) {
+
+        				    selectedBattleUnit = mageBattleUnit;
+        				    battleUnitSelected = true;
+
+        				    selectedUnitStartCol = selectedBattleUnit.getCol();
+        				    selectedUnitStartRow = selectedBattleUnit.getRow();
+
+        				    battleCursorCol = selectedBattleUnit.getCol();
+        				    battleCursorRow = selectedBattleUnit.getRow();
+
+        				    repaint();
+        				    return;
+        				}
+        			
         		}
         	}
         	

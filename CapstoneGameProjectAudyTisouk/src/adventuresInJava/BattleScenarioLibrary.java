@@ -40,6 +40,7 @@ public class BattleScenarioLibrary {
 		List<UnitSpawn> playerSpawns = new ArrayList<>();
 		playerSpawns.add(new UnitSpawn("leader", 1, 1, false));
 		playerSpawns.add(new UnitSpawn("archer_ally", 2, 1, false));
+		playerSpawns.add(new UnitSpawn("mage", 3, 1, false));
 		
 		List<UnitSpawn> enemySpawns = new ArrayList<>();
 		enemySpawns.add(new UnitSpawn("hunter", 6, 6, true));
@@ -85,6 +86,7 @@ public class BattleScenarioLibrary {
 	    List<UnitSpawn> playerSpawns = new ArrayList<>();
 	    playerSpawns.add(new UnitSpawn("leader", 1, 1, false));
 	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 1, false));
+	    playerSpawns.add(new UnitSpawn("mage", 3, 1, false));
 
 	    List<UnitSpawn> enemySpawns = new ArrayList<>();
 	    enemySpawns.add(new UnitSpawn("hunter", 7, 2, true));
