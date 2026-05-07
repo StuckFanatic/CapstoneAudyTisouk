@@ -53,6 +53,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private List<PartyMember> partyMembers = new ArrayList<>();
     
+    
     //Movement of the player
     private int maxMovement = 4;
     private int movementLeft = 4;
@@ -124,7 +125,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private BattleUnit playerBattleUnit;
     private BattleUnit allyBattleUnit;
     private BattleUnit mageBattleUnit;
+    
+    private List<BattleUnit> playerBattleUnits = new ArrayList<>();
     private List<BattleUnit> enemyUnits = new ArrayList<>();
+    
     private BattleUnit selectedBattleUnit;
     private boolean battleUnitSelected = false;
     
@@ -936,7 +940,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             case BATTLE:
             	
-            	BattleUnit displayUnit = selectedBattleUnit != null ? selectedBattleUnit : playerBattleUnit;
+            	
+            	BattleUnit displayUnit = selectedBattleUnit;
+            	//updates display unit in bottom panel
+            	if (displayUnit == null && !playerBattleUnits.isEmpty()) {
+            	    displayUnit = playerBattleUnits.get(0);
+            	}
             	
                 if (displayUnit != null) {
                     g.drawString("Player: " + displayUnit.getName(), 280, panelY + 25);
@@ -1282,16 +1291,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	drawMap(g);
 		drawBattleMovementRange(g);
 		
-		if (playerBattleUnit != null) {
-			playerBattleUnit.draw(g, tileSize);
-		}
-		
-		if (allyBattleUnit != null) {
-			allyBattleUnit.draw(g, tileSize);
-		}
-		
-		if (mageBattleUnit != null) {
-		    mageBattleUnit.draw(g, tileSize);
+		//Draws Unit
+		for (BattleUnit unit : playerBattleUnits) {
+		    if (unit != null && unit.isAlive()) {
+		        unit.draw(g, tileSize);
+		    }
 		}
 		
 		if (currentObjective == ObjectiveType.REACH_TILE) {
@@ -1489,9 +1493,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Now Stats are loaded based on they were when saved
     private void syncPartyProgressionFromBattle() {
 
-    	syncPartyMemberFromBattleUnit(playerBattleUnit);
-        syncPartyMemberFromBattleUnit(allyBattleUnit);
-        syncPartyMemberFromBattleUnit(mageBattleUnit);
+    	for (BattleUnit unit : playerBattleUnits) {
+            syncPartyMemberFromBattleUnit(unit);
+        }
     }
     
     //Loads in the scenario player steps on 
@@ -1540,12 +1544,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	playerBattleUnit = null;
     	allyBattleUnit = null;
     	mageBattleUnit = null;
+    	
+    	playerBattleUnits.clear();
     	enemyUnits.clear();
 
     	// New Player Spawns
     	for (UnitSpawn spawn : scenario.getPlayerSpawns()) {
     	    BattleUnit unit = createUnitFromId(spawn.getUnitId(), spawn.getCol(), spawn.getRow(), spawn.isEnemy());
+    	    
+    	    if (unit != null) {
+    	        playerBattleUnits.add(unit);
+    	    }
 
+    	    //Older Code TEMP
     	    if (spawn.getUnitId().equals("leader")) {
     	        playerBattleUnit = unit;
     	    } else if (spawn.getUnitId().equals("archer_ally")) {
@@ -1553,6 +1564,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        
     	    } else if (spawn.getUnitId().equals("mage")) {
     	        mageBattleUnit = unit;
+    	    }
+    	    
+    	    if (!playerBattleUnits.isEmpty()) {
+    	        battleCursorCol = playerBattleUnits.get(0).getCol();
+    	        battleCursorRow = playerBattleUnits.get(0).getRow();
     	    }
     	    
     	}
@@ -1571,9 +1587,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	addBattleMessage("Player Phase");
     	showBattlePhaseBanner("Player Phase");
     	
-    	if (playerBattleUnit != null) {
-    	    battleCursorCol = playerBattleUnit.getCol();
-    	    battleCursorRow = playerBattleUnit.getRow();
+    	if (!playerBattleUnits.isEmpty()) {
+    	    battleCursorCol = playerBattleUnits.get(0).getCol();
+    	    battleCursorRow = playerBattleUnits.get(0).getRow();
     	}
     	
     	currentState = GameState.BATTLE;
@@ -2151,13 +2167,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    encounterSourceRow = -1;
     	}
     	
-    	if (playerBattleUnit != null &&
-    	        playerBattleUnit.isAlive() &&
-    	        playerBattleUnit.getCol() == objectiveCol &&
-    	        playerBattleUnit.getRow() == objectiveRow) {
+    	for (BattleUnit unit : playerBattleUnits) {
+    	    if (unit != null &&
+    	        unit.isAlive() &&
+    	        unit.getCol() == objectiveCol &&
+    	        unit.getRow() == objectiveRow) {
 
     	        handleBattleVictory();
+    	        return;
     	    }
+    	}
     }
     
     //Helps return player to over world correctly
@@ -2202,41 +2221,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         currentBattleTurn++;
         checkReinforcements();
 
-        if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
-            playerBattleUnit.setHasMoved(false);
-            playerBattleUnit.setHasActed(false);
-        }
-
-        if (allyBattleUnit != null && allyBattleUnit.isAlive()) {
-            allyBattleUnit.setHasMoved(false);
-            allyBattleUnit.setHasActed(false);
-        }
-        
-        if (mageBattleUnit != null && mageBattleUnit.isAlive()) {
-            mageBattleUnit.setHasMoved(false);
-            mageBattleUnit.setHasActed(false);
+        //Resets all at once
+        for (BattleUnit unit : playerBattleUnits) {
+            if (unit != null && unit.isAlive()) {
+                unit.setHasMoved(false);
+                unit.setHasActed(false);
+            }
         }
 
         checkBattleEnd();
     }
     
-    //Check helps end player phase after all acted
+    //Check helps end player phase after all acted updated enemy phase starts only when every living player unit has acted
     //necessary to adding new unit
     private boolean allPlayerUnitsHaveActed() {
     	
-    	if (playerBattleUnit != null && !playerBattleUnit.hasActed()) {
-    		return false;
-    	}
-    	
-    	if (allyBattleUnit != null && !allyBattleUnit.hasActed()) {
-    		return false;
-    	}
-    	
-    	if (mageBattleUnit != null && !mageBattleUnit.hasActed()) {
-    		return false;
-    	}
-    	
-    	return true;
+    	for (BattleUnit unit : playerBattleUnits) {
+            if (unit != null && unit.isAlive() && !unit.hasActed()) {
+                return false;
+            }
+        }
+
+        return true;
     }
     
     //helps end the player phase
@@ -2252,50 +2258,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //necessary to adding new unit
     private boolean isTileOccupiedByOtherFriendly(int col, int row, BattleUnit currentUnit) {
     	
-    	if (playerBattleUnit != null && playerBattleUnit != currentUnit &&
-    			playerBattleUnit.getCol() == col && playerBattleUnit.getRow() == row) {
-    		return true;
-    	}
-    	
-    	if (allyBattleUnit != null && allyBattleUnit != currentUnit &&
-    			allyBattleUnit.getCol() == col && allyBattleUnit.getRow() == row) {
-    		return true;
-    	}
-    	
-    	if (mageBattleUnit != null && mageBattleUnit != currentUnit && 
-    			mageBattleUnit.getCol() == col && mageBattleUnit.getRow() == row) {
-    		return true;
-    	}
-    	
-    	return false;
+    	//Made it easier now friendly collision works for any number of player units
+    	for (BattleUnit unit : playerBattleUnits) {
+            if (unit != null &&
+                unit != currentUnit &&
+                unit.isAlive() &&
+                unit.getCol() == col &&
+                unit.getRow() == row) {
+                return true;
+            }
+        }
+
+        return false;
     }
     
     //make enemies be able to target Mage
     //necessary to adding new unit
     private boolean isTileOccupiedByAnyFriendly(int col, int row) {
     	
-    	if (playerBattleUnit != null &&
-    			playerBattleUnit.isAlive() &&
-    			playerBattleUnit.getCol() == col &&
-    			playerBattleUnit.getRow() == row) {
-    		return true;
-    	}
-    	
-    	if (allyBattleUnit != null &&
-    			allyBattleUnit.isAlive() &&
-    			allyBattleUnit.getCol() == col &&
-    			allyBattleUnit.getRow() == row) {
-    		return true;
-    	}
-    	
-    	if (mageBattleUnit != null &&
-    		    mageBattleUnit.isAlive() &&
-    		    mageBattleUnit.getCol() == col &&
-    		    mageBattleUnit.getRow() == row) {
-    		    return true;
-    		}
-    	
-    	return false;
+    	for (BattleUnit unit : playerBattleUnits) {
+            if (unit != null &&
+                unit.isAlive() &&
+                unit.getCol() == col &&
+                unit.getRow() == row) {
+                return true;
+            }
+        }
+
+        return false;
     }
     
     private boolean isTileOccupiedByEnemy(int col, int row) {
@@ -2330,10 +2320,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //enemy turn
     private void enemyTurn() {
     	
+    	//Any player alive check
     	boolean anyPlayerAlive = false;
-    	
-    	if (playerBattleUnit != null && playerBattleUnit.isAlive()) anyPlayerAlive = true;
-    	if (allyBattleUnit != null && allyBattleUnit.isAlive()) anyPlayerAlive = true;
+
+    	for (BattleUnit unit : playerBattleUnits) {
+    	    if (unit != null && unit.isAlive()) {
+    	        anyPlayerAlive = true;
+    	        break;
+    	    }
+    	}
     	
     	
     	if (!anyPlayerAlive) {
@@ -2593,36 +2588,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     }
     
-    //Helper for enemies to attack other units not just leader
+    //Helper for enemies to attack other units not just leader updated to now any unit and future ones can be targets
     //necessary to adding new unit
     private BattleUnit getEnemyTarget(BattleUnit actingEnemy) {
 
-        BattleUnit target = null;
+    	BattleUnit target = null;
         int closestDistance = Integer.MAX_VALUE;
 
-        if (playerBattleUnit != null && playerBattleUnit.isAlive()) {
-            int distance = Math.abs(actingEnemy.getCol() - playerBattleUnit.getCol())
-                         + Math.abs(actingEnemy.getRow() - playerBattleUnit.getRow());
-            target = playerBattleUnit;
-            closestDistance = distance;
-        }
+        for (BattleUnit unit : playerBattleUnits) {
 
-        if (allyBattleUnit != null && allyBattleUnit.isAlive()) {
-            int distance = Math.abs(actingEnemy.getCol() - allyBattleUnit.getCol())
-                         + Math.abs(actingEnemy.getRow() - allyBattleUnit.getRow());
-
-            if (distance < closestDistance) {
-                target = allyBattleUnit;
-                closestDistance = distance;
+            if (unit == null || !unit.isAlive()) {
+                continue;
             }
-        }
-        
-        if (mageBattleUnit != null && mageBattleUnit.isAlive()) {
-            int distance = Math.abs(actingEnemy.getCol() - mageBattleUnit.getCol())
-                         + Math.abs(actingEnemy.getRow() - mageBattleUnit.getRow());
+
+            int distance = Math.abs(actingEnemy.getCol() - unit.getCol())
+                         + Math.abs(actingEnemy.getRow() - unit.getRow());
 
             if (distance < closestDistance) {
-                target = mageBattleUnit;
+                target = unit;
                 closestDistance = distance;
             }
         }
@@ -4017,65 +4000,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		//unit  Selection
         		if (!battleUnitSelected) {
         			
-        			//Leader
-        			if (playerBattleUnit != null &&
-        					battleCursorCol == playerBattleUnit.getCol() &&
-        					battleCursorRow == playerBattleUnit.getRow() &&
-        					!playerBattleUnit.hasActed()) {
-        				
-        				
-        				selectedBattleUnit = playerBattleUnit;
-        				battleUnitSelected = true;
-        				
-        				selectedUnitStartCol = selectedBattleUnit.getCol();
-        				selectedUnitStartRow = selectedBattleUnit.getRow();
-        				
-        				battleCursorCol = selectedBattleUnit.getCol();
-        				battleCursorRow = selectedBattleUnit.getRow();
-        				
-        				repaint();
-        				return;
+        			//selected automatically if it is in the list
+        			for (BattleUnit unit : playerBattleUnits) {
+
+        			    if (unit != null &&
+        			        unit.isAlive() &&
+        			        battleCursorCol == unit.getCol() &&
+        			        battleCursorRow == unit.getRow() &&
+        			        !unit.hasActed()) {
+
+        			        selectedBattleUnit = unit;
+        			        battleUnitSelected = true;
+
+        			        selectedUnitStartCol = selectedBattleUnit.getCol();
+        			        selectedUnitStartRow = selectedBattleUnit.getRow();
+
+        			        battleCursorCol = selectedBattleUnit.getCol();
+        			        battleCursorRow = selectedBattleUnit.getRow();
+
+        			        repaint();
+        			        return;
+        			    }
         			}
-        			
-        			//Ally Selection
-        			if (allyBattleUnit != null &&
-        					battleCursorCol == allyBattleUnit.getCol() &&
-        					battleCursorRow == allyBattleUnit.getRow() &&
-        					!allyBattleUnit.hasActed()) {
-        				
-        				
-        				selectedBattleUnit = allyBattleUnit;
-        				battleUnitSelected = true;
-        				
-        				selectedUnitStartCol = selectedBattleUnit.getCol();
-        				selectedUnitStartRow = selectedBattleUnit.getRow();
-        				
-        				battleCursorCol = selectedBattleUnit.getCol();
-        				battleCursorRow = selectedBattleUnit.getRow();
-        			
-        			
-        			repaint();
-        			return;
-        			
-        			}
-        			
-        			if (mageBattleUnit != null &&
-        				    battleCursorCol == mageBattleUnit.getCol() &&
-        				    battleCursorRow == mageBattleUnit.getRow() &&
-        				    !mageBattleUnit.hasActed()) {
-
-        				    selectedBattleUnit = mageBattleUnit;
-        				    battleUnitSelected = true;
-
-        				    selectedUnitStartCol = selectedBattleUnit.getCol();
-        				    selectedUnitStartRow = selectedBattleUnit.getRow();
-
-        				    battleCursorCol = selectedBattleUnit.getCol();
-        				    battleCursorRow = selectedBattleUnit.getRow();
-
-        				    repaint();
-        				    return;
-        				}
         			
         		}
         	}
@@ -4161,16 +4107,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		//ESC cancels battle
         		if (code == KeyEvent.VK_ESCAPE) {
         			
-        			selectedBattleUnit = null;
-        			battleUnitSelected = false;
-        			selectedUnitStartCol = -1;
-        			selectedUnitStartRow = -1;
-        			
-        			battleCursorCol = playerBattleUnit.getCol();
-        			battleCursorRow = playerBattleUnit.getRow();
-        			
-        			repaint();
-        			return;
+        			if (selectedBattleUnit != null) {
+        		        battleCursorCol = selectedUnitStartCol;
+        		        battleCursorRow = selectedUnitStartRow;
+        		    } else if (!playerBattleUnits.isEmpty()) {
+        		        battleCursorCol = playerBattleUnits.get(0).getCol();
+        		        battleCursorRow = playerBattleUnits.get(0).getRow();
+        		    }
+
+        		    selectedBattleUnit = null;
+        		    battleUnitSelected = false;
+        		    selectedUnitStartCol = -1;
+        		    selectedUnitStartRow = -1;
+        		    
+        		    repaint();
+        		    return;
         		}
         		
         		//ArrowKeys move cursor only
