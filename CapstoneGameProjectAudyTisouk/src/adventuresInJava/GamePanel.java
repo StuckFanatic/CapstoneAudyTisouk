@@ -50,6 +50,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private PartyMember leaderMember;
     private PartyMember archerMember;
     
+    private List<PartyMember> partyMembers = new ArrayList<>();
+    
     //Movement of the player
     private int maxMovement = 4;
     private int movementLeft = 4;
@@ -1314,44 +1316,31 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Own helper to stop hard coding units in creation on battle start
     private BattleUnit createUnitFromId(String unitId, int col, int row, boolean enemy) {
     	
+    	PartyMember partyMember = getPartyMemberById(unitId);
+
+    	if (partyMember != null && !enemy) {
+    	    return createBattleUnitFromPartyMember(partyMember, col, row); //hard coded leader/archer replaced with a call
+    	}
+    	
 		//#, #, #, #, #, #,
 		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
-		Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false); 
-		Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
 		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1, false);
 		Weapon enemyBow = new Weapon("Hunter Bow", 2, 2, 2, 1, 6, 1, false);
 		
 		//Class Name, Max HP, Armor Class, Movement Range
-		CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
-		CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
 		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5);
 		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
-		GrowthRates leaderGrowth = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
-		GrowthRates archerGrowth = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
 		GrowthRates hunterGrowths = new GrowthRates(60, 35, 0, 55, 50, 25, 15, 20);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
-		UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
-		UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
 		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
 		UnitStats hunterStats = new UnitStats(9, 3, 0, 5, 5, 2, 1, 1, 5);
 		
 
-		
-		if (unitId.equals("leader")) {
-			return createBattleUnitFromPartyMember(leaderMember, col, row);//These new are more unique to enemies
-		}
-		
-		
-		if (unitId.equals("archer_ally")) {
-			return createBattleUnitFromPartyMember(archerMember, col, row);
-			
-		}
-		
 		if (unitId.equals("bandit")) {
 			return new BattleUnit("Bandit", col, row, enemy, banditAxe, banditClass, banditStats, banditGrowth, "", EnemyRole.AGGRESSIVE);
 		}
@@ -1365,16 +1354,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Will make creation easier the above
     private void createPartyMembers() {
+    	
+    	partyMembers.clear();
 
+    	//#, #, #, #, #, #,
+    	//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
         Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false);
         Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
-
+        
+        //Class Name, Max HP, Armor Class, Movement Range
         CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
         CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
-
+        
+        //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
         GrowthRates leaderGrowths = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
         GrowthRates archerGrowths = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
-
+        
+        //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
         UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
         UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
 
@@ -1401,6 +1397,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             shortBow,
             "Precise Shot"
         );
+        
+        partyMembers.add(leaderMember);
+        partyMembers.add(archerMember);
     }
     
     //Splitting and creating units from party ^Above
@@ -1425,20 +1424,49 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         return unit;
     }
     
+    //Allows party member by the same ID in more maps/ spawns
+    private PartyMember getPartyMemberById(String id) {
+
+        for (PartyMember member : partyMembers) {
+            if (member.getId().equals(id)) {
+                return member;
+            }
+        }
+
+        return null;
+    }
+    
+    //Carries levels and xp and stats from battle to battle
+    private void syncPartyMemberFromBattleUnit(BattleUnit battleUnit) {
+
+        if (battleUnit == null) return;
+
+        PartyMember member = getPartyMemberByName(battleUnit.getName());
+
+        if (member == null) return;
+
+        member.setLevel(battleUnit.getLevel());
+        member.setExperience(battleUnit.getExperience());
+        member.setStats(battleUnit.getStats());
+    }
+    
+    //Calls Units By Name
+    private PartyMember getPartyMemberByName(String name) {
+
+        for (PartyMember member : partyMembers) {
+            if (member.getName().equals(name)) {
+                return member;
+            }
+        }
+
+        return null;
+    }
+    
     //Now Stats are loaded based on they were when saved
     private void syncPartyProgressionFromBattle() {
 
-    	if (playerBattleUnit != null && leaderMember != null) {
-            leaderMember.setLevel(playerBattleUnit.getLevel());
-            leaderMember.setExperience(playerBattleUnit.getExperience());
-            leaderMember.setStats(playerBattleUnit.getStats());
-        }
-
-        if (allyBattleUnit != null && archerMember != null) {
-            archerMember.setLevel(allyBattleUnit.getLevel());
-            archerMember.setExperience(allyBattleUnit.getExperience());
-            archerMember.setStats(allyBattleUnit.getStats());
-        }
+    	syncPartyMemberFromBattleUnit(playerBattleUnit);
+        syncPartyMemberFromBattleUnit(allyBattleUnit);
     }
     
     //Loads in the scenario player steps on 
