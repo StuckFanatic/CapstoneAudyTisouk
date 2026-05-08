@@ -3243,37 +3243,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("playerRow=" + player.row + "\n");
             writer.write("day=" + day + "\n");
             writer.write("gold=" + gold + "\n");
-            
-            //Leader
-            writer.write("leaderLevel=" + leaderMember.getLevel() + "\n");
-            writer.write("leaderExp=" + leaderMember.getExperience() + "\n");
-            writer.write("leaderMaxHp=" + leaderMember.getStats().getMaxHp() + "\n");
-            writer.write("leaderStr=" + leaderMember.getStats().getStrength() + "\n");
-            writer.write("leaderMag=" + leaderMember.getStats().getMagic() + "\n");
-            writer.write("leaderSkl=" + leaderMember.getStats().getSkill() + "\n");
-            writer.write("leaderSpd=" + leaderMember.getStats().getSpeed() + "\n");
-            writer.write("leaderLck=" + leaderMember.getStats().getLuck() + "\n");
-            writer.write("leaderDef=" + leaderMember.getStats().getDefense() + "\n");
-            writer.write("leaderRes=" + leaderMember.getStats().getResistance() + "\n");
-            writer.write("leaderMov=" + leaderMember.getStats().getMovement() + "\n");
-
-            //Save Stats for Archer Ally
-            writer.write("archerLevel=" + archerMember.getLevel() + "\n");
-            writer.write("archerExp=" + archerMember.getExperience() + "\n");
-            writer.write("archerMaxHp=" + archerMember.getStats().getMaxHp() + "\n");
-            writer.write("archerStr=" + archerMember.getStats().getStrength() + "\n");
-            writer.write("archerMag=" + archerMember.getStats().getMagic() + "\n");
-            writer.write("archerSkl=" + archerMember.getStats().getSkill() + "\n");
-            writer.write("archerSpd=" + archerMember.getStats().getSpeed() + "\n");
-            writer.write("archerLck=" + archerMember.getStats().getLuck() + "\n");
-            writer.write("archerDef=" + archerMember.getStats().getDefense() + "\n");
-            writer.write("archerRes=" + archerMember.getStats().getResistance() + "\n");
-            writer.write("archerMov=" + archerMember.getStats().getMovement() + "\n");
-            
+                     
             //Quest
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
             writer.write("banditQuestCompleted=" + banditQuestCompleted + "\n");
             writer.write("banditQuestRewardClaimed=" + banditQuestRewardClaimed + "\n");
+
+            //Deletes Old Hard code in favor of calling 
+            writer.write("partyCount=" + partyMembers.size() + "\n");
+
+            for (int i = 0; i < partyMembers.size(); i++) {
+                writePartyMember(writer, partyMembers.get(i), i);
+            }
 
             writer.close();
 
@@ -3297,8 +3278,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         try {
             Scanner scanner = new Scanner(file);
+            
+            int partyCount = 0;
+
+            //TEMP
+            String[] partyIds = new String[20];
+            int[] partyLevels = new int[20];
+            int[] partyExps = new int[20];
+
+            int[] partyMaxHp = new int[20];
+            int[] partyStr = new int[20];
+            int[] partyMag = new int[20];
+            int[] partySkl = new int[20];
+            int[] partySpd = new int[20];
+            int[] partyLck = new int[20];
+            int[] partyDef = new int[20];
+            int[] partyRes = new int[20];
+            int[] partyMov = new int[20];
 
             while (scanner.hasNextLine()) {
+            	
                 String line = scanner.nextLine();
 
                 String[] parts = line.split("=");
@@ -3313,6 +3312,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 //General
                 if (key.equals("playerCol")) {
                     player.col = Integer.parseInt(value);
+                }
+                else if (key.equals("partyCount")) {
+                    partyCount = Integer.parseInt(value);
                 }
                 else if (key.equals("playerRow")) {
                     player.row = Integer.parseInt(value);
@@ -3404,9 +3406,87 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 else if (key.equals("banditQuestRewardClaimed")) {
                     banditQuestRewardClaimed = Boolean.parseBoolean(value);
                 }
+                
+                else if (key.startsWith("party")) {
+
+                    // Example keys:
+                    // party0Id
+                    // party0Level
+                    // party0MaxHp
+
+                    String numberPart = key.replaceAll("[^0-9]", "");
+
+                    if (!numberPart.isEmpty()) {
+                        int index = Integer.parseInt(numberPart);
+
+                        if (key.endsWith("Id")) {
+                            partyIds[index] = value;
+                        }
+                        else if (key.endsWith("Level")) {
+                            partyLevels[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Exp")) {
+                            partyExps[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("MaxHp")) {
+                            partyMaxHp[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Str")) {
+                            partyStr[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Mag")) {
+                            partyMag[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Skl")) {
+                            partySkl[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Spd")) {
+                            partySpd[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Lck")) {
+                            partyLck[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Def")) {
+                            partyDef[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Res")) {
+                            partyRes[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("Mov")) {
+                            partyMov[index] = Integer.parseInt(value);
+                        }
+                    }
+                }
             }
 
             scanner.close();
+            
+            for (int i = 0; i < partyCount; i++) {
+
+                if (partyIds[i] == null) {
+                    continue;
+                }
+
+                //Apply Data after Reads
+                UnitStats loadedStats = new UnitStats(
+                    partyMaxHp[i],
+                    partyStr[i],
+                    partyMag[i],
+                    partySkl[i],
+                    partySpd[i],
+                    partyLck[i],
+                    partyDef[i],
+                    partyRes[i],
+                    partyMov[i]
+                );
+
+                applyPartyMemberData(
+                    partyIds[i],
+                    partyLevels[i],
+                    partyExps[i],
+                    loadedStats
+                );
+            }
 
             currentMap = overworldGameMap;
             currentState = GameState.OVERWORLD;
@@ -3419,6 +3499,41 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             System.out.println("Load failed.");
             e.printStackTrace();
         }
+    }
+    
+    //method helps apply leader ID when saving and updates them
+    private void applyPartyMemberData(String id, int level, int exp, UnitStats stats) {
+
+        PartyMember member = getPartyMemberById(id);
+
+        if (member == null) {
+            System.out.println("No party member found with id: " + id);
+            return;
+        }
+
+        member.setLevel(level);
+        member.setExperience(exp);
+        member.setStats(stats);
+    }
+    
+    //Writes any party member instead of just listing just names
+    private void writePartyMember(FileWriter writer, PartyMember member, int index) throws IOException {
+
+        UnitStats stats = member.getStats();
+
+        writer.write("party" + index + "Id=" + member.getId() + "\n");
+        writer.write("party" + index + "Level=" + member.getLevel() + "\n");
+        writer.write("party" + index + "Exp=" + member.getExperience() + "\n");
+
+        writer.write("party" + index + "MaxHp=" + stats.getMaxHp() + "\n");
+        writer.write("party" + index + "Str=" + stats.getStrength() + "\n");
+        writer.write("party" + index + "Mag=" + stats.getMagic() + "\n");
+        writer.write("party" + index + "Skl=" + stats.getSkill() + "\n");
+        writer.write("party" + index + "Spd=" + stats.getSpeed() + "\n");
+        writer.write("party" + index + "Lck=" + stats.getLuck() + "\n");
+        writer.write("party" + index + "Def=" + stats.getDefense() + "\n");
+        writer.write("party" + index + "Res=" + stats.getResistance() + "\n");
+        writer.write("party" + index + "Mov=" + stats.getMovement() + "\n");
     }
     
     
