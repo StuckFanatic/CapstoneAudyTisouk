@@ -95,6 +95,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] ruinsMap;
     private GameMap ruinsGameMap;
     
+
+    
     /*
      * NPC
      */
@@ -104,8 +106,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
      * CHAPTERS
      */
     
-    // Story progression
+    // Story progression prologue 0
     private int storyChapter = 0;
+    private boolean hasCreationSword = false;
+    private boolean creationAwakened = false;
+    
+    
     
     /*
      * QUESTS
@@ -688,17 +694,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    //new for exploration tiles
     private void interactInExploration(TileType tile) {
 
         if (tile == TileType.PEDESTAL) {
-            startDialogue(new DialogueLine[] {
-            		new DialogueLine("Dean", "Woah, is Is that a... a sword? I bet you wouldn't touch it Art.", DialogueSide.LEFT, DialogueFaction.ALLY),
-        	        new DialogueLine("Penelope", "It doesn't look safe guys... Hey Art! Don't actually touch it!", DialogueSide.RIGHT, DialogueFaction.ALLY),
-        	        new DialogueLine("Art", "I only want to see it closer...", DialogueSide.LEFT, DialogueFaction.ALLY),
-        	        new DialogueLine("Narrator", "A white light bursts through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC),
-        	        new DialogueLine("Narrator", "For a moment, time itself seems to stop.", DialogueSide.RIGHT, DialogueFaction.NPC)
-            }, GameState.EXPLORATION);
-
+            triggerCreationSwordEvent();
             return;
         }
 
@@ -1838,6 +1838,40 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         updateOverworldQuestTiles();
 
         // Future story-based world changes will go here below as I see fit
+    }
+    
+    //prologue
+    private void triggerCreationSwordEvent() {
+    	//Debug
+    	System.out.println("hasCreationSword = " + hasCreationSword);
+
+        if (hasCreationSword) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Art", "The pedestal is empty now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "I still feel something strange here.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        hasCreationSword = true;
+
+        Weapon rustyCreation = new Weapon("Rusty Creation", 1, 1, 2, 1, 4, 1, false);
+
+        PartyMember art = getPartyMemberById("leader");
+
+        if (art != null) {
+            art.addWeapon(rustyCreation);
+            art.equipWeapon(rustyCreation);
+        }
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Dean", "Is that... a sword?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Art, wait. Something feels wrong.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "It feels like it is calling to me.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Narrator", "Art obtained Rusty Creation.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Narrator", "A flash of white light tears through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.EXPLORATION);
     }
     
     
