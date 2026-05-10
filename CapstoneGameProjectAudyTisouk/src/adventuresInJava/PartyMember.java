@@ -1,5 +1,8 @@
 package adventuresInJava;
 
+import java.util.ArrayList;
+import java.util.List;
+
 //Allows more easier access to switching and making party
 public class PartyMember {
 
@@ -14,8 +17,12 @@ public class PartyMember {
     private GrowthRates growthRates;
     private CharacterClass characterClass;
     private Weapon weapon;
+    private List<Weapon> weapons;
+    private Weapon equippedWeapon;
 
     private String skillName;
+    
+
     
     public PartyMember(String id, String name, int level, int experience,
             UnitStats stats, GrowthRates growthRates,
@@ -31,7 +38,9 @@ public class PartyMember {
         this.stats = stats;
         this.growthRates = growthRates;
         this.characterClass = characterClass;
-        this.weapon = weapon;
+        this.weapons = new ArrayList<>();
+        this.weapons.add(weapon);
+        this.equippedWeapon = weapon;
         
         this.skillName = skillName;
     	
@@ -76,7 +85,25 @@ public class PartyMember {
 
     
     public Weapon getWeapon() {
-        return weapon;
+        return equippedWeapon;
+    }
+    
+    public List<Weapon> getWeapons() {
+        return weapons;
+    }
+
+    public Weapon getEquippedWeapon() {
+        return equippedWeapon;
+    }
+
+    public void equipWeapon(Weapon weapon) {
+        if (weapons.contains(weapon)) {
+            equippedWeapon = weapon;
+        }
+    }
+
+    public void addWeapon(Weapon weapon) {
+        weapons.add(weapon);
     }
     
 
