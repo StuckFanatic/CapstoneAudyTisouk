@@ -1033,7 +1033,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case OVERWORLD:
             	g.drawString("Overworld", panelX + 20, 30);
                 g.drawString("Move and explore.", panelX + 20, 55);
-                g.drawString(getStoryChapterName(), panelX + 20, 85);
+                g.drawString(getStoryChapterDisplayName(), panelX + 20, 85);
 
                 drawQuestLog(g, panelX, 140);
                 break;
@@ -1666,6 +1666,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             default:
                 return "Unknown Chapter";
+        }
+    }
+    
+    //added in to stop potential spoilers due to chapter names
+    private String getStoryChapterDisplayName() {
+
+        switch (storyChapter) {
+
+            case 0:
+                return "Prologue";
+
+            case 7:
+                return "Final Chapter";
+
+            default:
+                return "Chapter " + storyChapter;
         }
     }
     
