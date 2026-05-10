@@ -91,6 +91,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private GameMap overworldGameMap;
     private GameMap townGameMap;
     
+    //EXPLORATION
+    private Tile[][] ruinsMap;
+    private GameMap ruinsGameMap;
+    
     /*
      * NPC
      */
@@ -256,7 +260,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		TOWN,
 		BATTLE,
 		DIALOGUE,
-		SHOP
+		SHOP,
+		EXPLORATION
+		
 	}
     
     
@@ -275,6 +281,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         worldMap = new Tile[maxScreenCol][maxScreenRow];
         generateWorld();
+        generateTown();
+        generateRuinsMap();
         
        
     }
@@ -318,8 +326,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	else if (type == TileType.NPC) {
     		return "A townsperson. Press ENTER to talk.";
     	}
+    	
     	else if (type == TileType.SHOP) {
     		return "A Shop. Press ENTER to browse.";
+    	}
+    	//Cave
+    	else if (type == TileType.RUINS_FLOOR) {
+    	    return "Ancient stone floor worn smooth by time.";
+    	}
+    	
+    	else if (type == TileType.STONE_WALL) {
+    	    return "A ruined wall blocks the way.";
+    	}
+    	//Prologue Alter
+    	else if (type == TileType.PEDESTAL) {
+    	    return "An old pedestal. Something important rests here.";
     	}
     	
     	return "";
@@ -515,6 +536,44 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Prologue Ruins Map
+    private void generateRuinsMap() {
+
+        ruinsMap = new Tile[10][10];
+
+        int[][] layout = {
+            {1,1,1,1,1,1,1,1,1,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,1,1,0,0,1,1,0,1},
+            {1,0,1,0,0,0,0,1,0,1},
+            {1,0,0,0,2,0,0,0,0,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,1,0,0,0,0,1,0,1},
+            {1,0,1,1,0,0,1,1,0,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,1,1,1,1,1,1,1,1,1}
+        };
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    ruinsMap[col][row] = new Tile(TileType.RUINS_FLOOR);
+                }
+                else if (value == 1) {
+                    ruinsMap[col][row] = new Tile(TileType.STONE_WALL);
+                }
+                else if (value == 2) {
+                    ruinsMap[col][row] = new Tile(TileType.PEDESTAL);
+                }
+            }
+        }
+
+        ruinsGameMap = new GameMap(ruinsMap, "Ancient Ruins");
+    }
+    
     
     
     //Explore tiles method- will add more?
@@ -586,6 +645,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		interactInTown(tile);
     		return;
     	}
+    	
+    	if (currentState == GameState.EXPLORATION) {
+    	    interactInExploration(tile);
+    	    return;
+    	}
 
     }
     
@@ -622,6 +686,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	if (tile == TileType.GRASS) {
     		System.out.println("There is nothing here.");
     	}
+    }
+    
+    private void interactInExploration(TileType tile) {
+
+        if (tile == TileType.PEDESTAL) {
+            startDialogue(new DialogueLine[] {
+            		new DialogueLine("Dean", "Woah, is Is that a... a sword? I bet you wouldn't touch it Art.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Penelope", "It doesn't look safe guys... Hey Art! Don't actually touch it!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+        	        new DialogueLine("Art", "I only want to see it closer...", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Narrator", "A white light bursts through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Narrator", "For a moment, time itself seems to stop.", DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        System.out.println("There is nothing to inspect here.");
     }
     
     
@@ -691,6 +772,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case SHOP:
     		updateShop();
     		break;
+    		
+    	case EXPLORATION:
+    	    updateExploration();
+    	    break;
+    	    
     	}
     	
     	//Timer each time an end turn occurs the banner will appear 
@@ -745,6 +831,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    private void updateExploration() {
+        // Empty for now
+    }
+    
     //Allows quests to change the tiles of into a quest marker and back
     private void updateOverworldQuestTiles() {
 
@@ -793,6 +883,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case SHOP:
     		drawShop(g);
     		break;
+    		
+    	case EXPLORATION:
+    	    drawExploration(g);
+    	    break;
 
         }
         drawGlobalUI(g);
@@ -884,6 +978,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("Dialogue", 20, panelY + 25);
                 g.drawString("ENTER to continue.", 20, panelY + 50);
                 break;
+                
+            case EXPLORATION:
+                g.drawString("State: Exploration", 20, panelY + 25);
+                g.drawString("Move freely.", 20, panelY + 50);
+                g.drawString("ENTER to inspect.", 20, panelY + 75);
+                break;
 
             case BATTLE:
             	
@@ -936,6 +1036,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case OVERWORLD:
             	
             case TOWN:
+            case EXPLORATION:
                 TileType currentTile = currentMap.getTiles()[player.col][player.row].getType();
                 g.drawString("Tile: " + currentTile, 280, panelY + 25);
                 drawWrappedText(g, getTileDescription(currentTile), 280, panelY + 50, 200, 18);
@@ -946,7 +1047,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case DIALOGUE:
 
             case BATTLE:
-            	
             	
             	BattleUnit displayUnit = selectedBattleUnit;
             	//updates display unit in bottom panel
@@ -981,6 +1081,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case SHOP:
             	
             case DIALOGUE:
+            	
+            case EXPLORATION:
+                g.drawString("Prompt", 520, panelY + 25);
+                g.drawString("Move with arrows", 520, panelY + 45);
+                g.drawString("ENTER to inspect", 520, panelY + 65);
+                break;
             	
             case BATTLE:
             	
@@ -1056,6 +1162,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case DIALOGUE:
                 g.drawString("Dialogue", panelX + 20, 30);
                 g.drawString("Press ENTER to continue.", panelX + 20, 55);
+                break;
+                
+            case EXPLORATION:
+                g.drawString("Exploration", panelX + 20, 30);
+                g.drawString(currentMap.getMapName(), panelX + 20, 55);
+                g.drawString("Inspect objects.", panelX + 20, 80);
                 break;
 
             case BATTLE:
@@ -1299,6 +1411,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.drawString("Town Shop", 320, 180);
         g.drawString("Welcome! Nothing is for sale yet.", 250, 240);
         g.drawString("Press ESC to return to town.", 250, 280);
+    }
+    
+    //Exploration Types
+    private void drawExploration(Graphics g) {
+        drawMap(g);
+        drawPlayer(g);
     }
     
     //Battle will use battle specific units not over world logic
@@ -3352,6 +3470,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         else if (previousState == GameState.SHOP) {
             drawShop(g);
         }
+        else if (previousState == GameState.EXPLORATION) {
+            drawExploration(g);
+        }
     }
     
     //Allows freedom of movement
@@ -3363,6 +3484,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return movementLeft > 0;
 
             case TOWN:
+                return true;
+                
+            case EXPLORATION:
                 return true;
                 
             //battle will be based on turns and unit type later
@@ -3729,6 +3853,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             repaint();
             return;
         }
+        //Exploration will delete the above later
+        if (code == KeyEvent.VK_R) {
+            currentMap = ruinsGameMap;
+            currentState = GameState.EXPLORATION;
+
+            player.col = 1;
+            player.row = 8;
+
+            repaint();
+            return;
+        }
 
         if (currentState == GameState.DIALOGUE) {
 
@@ -3772,15 +3907,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         if (code == KeyEvent.VK_ENTER) {
-            if (currentState == GameState.OVERWORLD || currentState == GameState.TOWN) {
+            if (currentState == GameState.OVERWORLD ||
+                currentState == GameState.TOWN ||
+                currentState == GameState.EXPLORATION) {
+
                 interactWithTile();
                 repaint();
                 return;
             }
-            
         }
         
         if (code == KeyEvent.VK_ESCAPE) {
+        	
+        	if (currentState == GameState.EXPLORATION) {
+                currentMap = overworldGameMap;
+                currentState = GameState.OVERWORLD;
+
+                player.col = 3;
+                player.row = 1;
+
+                repaint();
+                return;
+            }
 
             if (currentState == GameState.SHOP) {
                 currentState = GameState.TOWN;
@@ -4445,7 +4593,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
 
         if ((currentState == GameState.OVERWORLD 
-        		|| currentState == GameState.TOWN)
+        		|| currentState == GameState.TOWN
+        		|| currentState == GameState.EXPLORATION)
                 && canMove()) {
 
             int newCol = player.col;

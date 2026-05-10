@@ -12,7 +12,10 @@ public enum TileType {
 	EXIT,
 	NPC,
 	SHOP,
-	ENEMY
+	ENEMY,
+	RUINS_FLOOR,
+	STONE_WALL,
+	PEDESTAL
 	
 	
 	

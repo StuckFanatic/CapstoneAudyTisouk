@@ -1,8 +1,8 @@
-playerCol=3
-playerRow=1
+playerCol=2
+playerRow=3
 day=2
 gold=0
-storyChapter=1
+storyChapter=0
 banditQuestAccepted=false
 banditQuestCompleted=false
 banditQuestRewardClaimed=false

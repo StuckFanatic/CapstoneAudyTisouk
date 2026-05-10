@@ -26,6 +26,10 @@ public class Tile {
 			passable = false;
 			break;
 			
+		case STONE_WALL:
+		    passable = false;
+		    break;
+			
 		default:
 			passable = true;
 					
@@ -130,6 +134,24 @@ public class Tile {
 
 		    g.setColor(Color.WHITE);
 		    g.drawRect(x + 10, y + 10, 28, 20);
+		}
+		
+		else if (type == TileType.RUINS_FLOOR) {
+		    g.setColor(new Color(95, 95, 100));
+		    g.fillRect(x, y, tileSize, tileSize);
+		}
+		
+		else if (type == TileType.STONE_WALL) {
+		    g.setColor(new Color(45, 45, 50));
+		    g.fillRect(x, y, tileSize, tileSize);
+		}
+		
+		else if (type == TileType.PEDESTAL) {
+		    g.setColor(new Color(120, 120, 130));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(230, 230, 255));
+		    g.fillOval(x + 12, y + 12, tileSize - 24, tileSize - 24);
 		}
 		
 		
