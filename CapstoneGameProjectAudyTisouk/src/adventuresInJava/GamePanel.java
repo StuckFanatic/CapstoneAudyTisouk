@@ -1106,7 +1106,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		return "Survive " + surviveTurnTarget + " turns";
     	
     	case REACH_TILE:
-    		return "Reach the objective tile";
+    		//Prologue
+    	    if (currentBattleScenario != null &&
+    	        currentBattleScenario.getId().equals("prologue_ruins")) {
+    	        return "Reach the pedestal";
+    	    }
+
+    	    //Otherwise
+    	    return "Reach the objective tile";
     		
     	default:
     		return "Objective unknown";
@@ -1298,6 +1305,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void drawBattle(Graphics g) {
     	
     	drawMap(g);
+		drawObjectiveTile(g);
 		drawBattleMovementRange(g);
 		
 		//Draws Unit
@@ -1326,9 +1334,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		}
 		
 		drawBattleCursor(g);
-		drawBattlePhaseBanner(g);
-		drawTargetHighlight(g);
-		drawZoomCombat(g);
+	    drawTargetHighlight(g);
+	    drawZoomCombat(g);
+	    drawBattlePhaseBanner(g);
     	
     }
     
@@ -1515,6 +1523,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	currentObjective = scenario.getObjectiveType();
     	surviveTurnTarget = scenario.getSurviveTurnTarget();
     	currentBattleTurn = 1;
+    	
+    	if (scenario.getId().equals("prologue_ruins")) {
+    	    objectiveCol = 4;
+    	    objectiveRow = 4;
+    	    
+    	} else {
+    	    objectiveCol = -1;
+    	    objectiveRow = -1;
+    	}
     	
     	//Map will build from scenario layout
     	Tile[][] battleMap = new Tile[maxScreenCol][maxScreenRow];
@@ -2259,26 +2276,33 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
   //Checks if there is a player on the tile in the objective
     private void checkReachTileObjective() {
-    	
-    	//Clears Tile
-    	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
-    	    Tile clearedTile = new Tile(TileType.GRASS);
-    	    overworldGameMap.getTiles()[encounterSourceCol][encounterSourceRow] = clearedTile;
 
-    	    encounterSourceCol = -1;
-    	    encounterSourceRow = -1;
-    	}
-    	
-    	for (BattleUnit unit : playerBattleUnits) {
-    	    if (unit != null &&
-    	        unit.isAlive() &&
-    	        unit.getCol() == objectiveCol &&
-    	        unit.getRow() == objectiveRow) {
+        if (currentObjective != ObjectiveType.REACH_TILE) return;
 
-    	        handleBattleVictory();
-    	        return;
-    	    }
-    	}
+        for (BattleUnit unit : playerBattleUnits) {
+            if (unit != null &&
+                unit.isAlive() &&
+                unit.getCol() == objectiveCol &&
+                unit.getRow() == objectiveRow) {
+
+                handleBattleVictory();
+                return;
+            }
+        }
+    }
+    
+    //draws objective markers for reach tile missions
+    private void drawObjectiveTile(Graphics g) {
+
+        if (currentObjective != ObjectiveType.REACH_TILE) return;
+        if (objectiveCol < 0 || objectiveRow < 0) return;
+
+        int x = objectiveCol * tileSize;
+        int y = objectiveRow * tileSize;
+
+        g.setColor(Color.YELLOW);
+        g.drawRect(x, y, tileSize, tileSize);
+        g.drawRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
     }
     
     //Helps return player to over world correctly
@@ -2299,13 +2323,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	syncPartyProgressionFromBattle();
     	
         addBattleMessage("Victory!");
+        
+        //Auto Advance from prologue
+        if (currentBattleScenario != null &&
+                currentBattleScenario.getId().equals("prologue_ruins")) {
+                advanceStoryChapter(1);
+            }
 
         if (currentBattleScenario != null &&
             currentBattleScenario.getOutroDialogue() != null &&
             currentBattleScenario.getOutroDialogue().length > 0) {
 
             pendingReturnToOverworldAfterDialogue = true;
-            startDialogue(currentBattleScenario.getOutroDialogue(), GameState.OVERWORLD);
+            startDialogue(currentBattleScenario.getOutroDialogue(), GameState.BATTLE);
             return;
         }
 
@@ -3310,8 +3340,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Dialogue
     private void drawDialogue(Graphics g) {
     	
-    	drawMap(g);
-        drawPlayer(g);
+    	if (previousState == GameState.BATTLE) {
+            drawBattle(g);
+        }
+        else if (previousState == GameState.TOWN) {
+            drawTown(g);
+        }
+        else if (previousState == GameState.OVERWORLD) {
+            drawOverworld(g);
+        }
+        else if (previousState == GameState.SHOP) {
+            drawShop(g);
+        }
     }
     
     //Allows freedom of movement
@@ -3669,6 +3709,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (storyChapter > 7) {
                 storyChapter = 7;
+            }
+
+            repaint();
+            return;
+        }
+        
+        //Debug: Allows advancement to the prologue stage 
+        if (code == KeyEvent.VK_P) {
+            BattleScenario scenario = BattleScenarioLibrary.getScenario("prologue_ruins");
+
+            if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
+                pendingBattleScenario = scenario;
+                startDialogue(scenario.getIntroDialogue(), GameState.OVERWORLD);
+            } else {
+                loadBattleScenario(scenario);
             }
 
             repaint();

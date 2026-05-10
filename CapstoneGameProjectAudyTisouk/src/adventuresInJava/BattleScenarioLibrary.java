@@ -8,6 +8,10 @@ public class BattleScenarioLibrary {
 
 	public static BattleScenario getScenario(String scenarioId) {
 		
+		if (scenarioId.equals("prologue_ruins")) {
+		    return createPrologueRuins();
+		}
+		
 		if (scenarioId.equals("bandit_field")) {
 			return createBanditField();
 		}
@@ -122,6 +126,62 @@ public class BattleScenarioLibrary {
 	        outroDialogue
 	    );
 	}
+	
+	//Chapter 0 : Prologue/ Tutorial?
+	private static BattleScenario createPrologueRuins() {
+
+	    int[][] layout = {
+	        {2,2,2,2,2,2,2,2,2,2},
+	        {2,0,0,0,0,0,0,0,0,2},
+	        {2,0,3,3,0,0,3,3,0,2},
+	        {2,0,3,0,0,0,0,3,0,2},
+	        {2,0,0,0,4,4,0,0,0,2},
+	        {2,0,0,0,4,4,0,0,0,2},
+	        {2,0,3,0,0,0,0,3,0,2},
+	        {2,0,3,3,0,0,3,3,0,2},
+	        {2,0,0,0,0,0,0,0,0,2},
+	        {2,2,2,2,2,2,2,2,2,2}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 1, 8, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 8, false));
+	    playerSpawns.add(new UnitSpawn("mage", 3, 8, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("Dean", "I told you this place was real!", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "Dean, we shouldn't be here right now.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "It's fine Penelope. We'll just look around. Then we leave alright?", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "Fine. But if there is treasure, I saw it first.", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	        new DialogueLine("Dean", "Woah, is Is that a... a sword? I bet you wouldn't touch it Art.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "It doesn't look safe guys... Hey Art! Don't actually touch it!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "I only want to see it closer...", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Narrator", "A white light bursts through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Narrator", "For a moment, time itself seems to stop.", DialogueSide.RIGHT, DialogueFaction.NPC)
+	    };
+
+	    return new BattleScenario(
+	        "prologue_ruins",
+	        "Prologue Ruins",
+	        layout,
+	        ObjectiveType.REACH_TILE,
+	        0,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements,
+	        introDialogue,
+	        outroDialogue
+	    );
+	}
+	
+	
 	
 	
 }
