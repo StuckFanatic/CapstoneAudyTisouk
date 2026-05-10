@@ -97,6 +97,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private List<NPC> townNpcs = new ArrayList<>();
     
     /*
+     * CHAPTERS
+     */
+    
+    // Story progression
+    private int storyChapter = 0;
+    
+    /*
      * QUESTS
      */
     //Tile Completion
@@ -1024,18 +1031,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         switch(currentState) {
 
             case OVERWORLD:
-                g.drawString("Overworld", panelX + 20, 30);
+            	g.drawString("Overworld", panelX + 20, 30);
                 g.drawString("Move and explore.", panelX + 20, 55);
-                
-                drawQuestLog(g, panelX, 110);
+                g.drawString(getStoryChapterName(), panelX + 20, 85);
+
+                drawQuestLog(g, panelX, 140);
                 break;
 
             case TOWN:
                 g.drawString("Town", panelX + 20, 30);
                 g.drawString("Talk, shop, or leave.", panelX + 20, 55);
                 g.drawString("Gold: " + gold, panelX + 20, 85);
+                g.drawString(getStoryChapterName(), panelX + 20, 105);
                 
-                drawQuestLog(g, panelX, 110);
+                drawQuestLog(g, panelX, 140);
                 break;
 
             case SHOP:
@@ -1626,6 +1635,60 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    //Chapters to the game; could be hidden but UI and dialogue can display the current story state
+    private String getStoryChapterName() {
+
+        switch (storyChapter) {
+
+            case 0:
+                return "Prologue: The Sword in the Ruins";
+
+            case 1:
+                return "Chapter 1: Cerebella's Decline";
+
+            case 2:
+                return "Chapter 2: Checkmate";
+
+            case 3:
+                return "Chapter 3: The Merchant's Trap";
+
+            case 4:
+                return "Chapter 4: False Prophet";
+
+            case 5:
+                return "Chapter 5: The Torturer's Shrine";
+
+            case 6:
+                return "Chapter 6: The Broken Hero";
+
+            case 7:
+                return "Final Chapter: Rewrite";
+
+            default:
+                return "Unknown Chapter";
+        }
+    }
+    
+    //story changes, the over world may need to change too
+    private void advanceStoryChapter(int newChapter) {
+
+        storyChapter = newChapter;
+
+        updateStoryWorldState();
+
+        System.out.println("Story advanced to: " + getStoryChapterName());
+    }
+    
+    //Story-chapter world change
+    private void updateStoryWorldState() {
+
+        if (overworldGameMap == null) return;
+
+        updateOverworldQuestTiles();
+
+        // Future story-based world changes will go here below as I see fit
+    }
+    
     
     //Quest accept helper
     private void acceptBanditQuest() {
@@ -1725,14 +1788,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         
         // Special multi-speaker towns person conversation
+        //DEbug: Test when advancing chapters for new dialogue testing
         if (npc.getName().equals("Townsperson")) {
-        	startDialogue(new DialogueLine[] {
-        		    new DialogueLine("Townsperson", "Beautiful weather today.", DialogueSide.RIGHT, DialogueFaction.NPC),
-        		    new DialogueLine("Leader", "It is peaceful here.", DialogueSide.LEFT, DialogueFaction.ALLY),
-        		    new DialogueLine("Townsperson", "Peaceful for now, at least.", DialogueSide.RIGHT, DialogueFaction.NPC)
-        		}, GameState.TOWN);
+        	
+        	if (storyChapter == 0) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Townsperson", "You children should stay away from those ruins.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                    new DialogueLine("Leader", "We were just looking around.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                }, GameState.TOWN);
 
-            return;
+                return;
+            }
+
+            if (storyChapter >= 1) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Townsperson", "The crops have been failing lately.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                    new DialogueLine("Leader", "Something feels wrong in Cerebella.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                }, GameState.TOWN);
+
+                return;
+            }
         }
 
         
@@ -1745,6 +1820,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         // Quest NPC dialogue
         if (npc.getQuestId().equals("bandit_quest")) {
+        	
+        	if (storyChapter < 2) {
+                startDialogue(npc.getName(), new String[] {
+                    "The roads are quiet for now.",
+                    "Still, something feels uneasy these days."
+                }, GameState.TOWN);
+
+                return;
+            }
 
             if (!banditQuestAccepted) {
                 acceptBanditQuest();
@@ -1760,6 +1844,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             if (banditQuestCompleted && !banditQuestRewardClaimed) {
                 gold += 100;
                 banditQuestRewardClaimed = true;
+
+                advanceStoryChapter(3);
 
                 startDialogue(npc.getName(), new String[] {
                     "You dealt with the bandits?",
@@ -3243,6 +3329,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("playerRow=" + player.row + "\n");
             writer.write("day=" + day + "\n");
             writer.write("gold=" + gold + "\n");
+            writer.write("storyChapter=" + storyChapter + "\n");
                      
             //Quest
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
@@ -3324,6 +3411,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("gold")) {
                     gold = Integer.parseInt(value);
+                }
+                else if (key.equals("storyChapter")) {
+                    storyChapter = Integer.parseInt(value);
                 }
                 
                 //leader
@@ -3490,8 +3580,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             currentMap = overworldGameMap;
             currentState = GameState.OVERWORLD;
-
-            updateOverworldQuestTiles();
+            
+            updateStoryWorldState();
 
             System.out.println("Game loaded.");
 
@@ -3543,14 +3633,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         int code = e.getKeyCode();
         
+        //Save
         if (code == KeyEvent.VK_S) {
             saveGame();
             repaint();
             return;
         }
 
+        //Load
         if (code == KeyEvent.VK_L) {
             loadGame();
+            repaint();
+            return;
+        }
+        
+        //Advances Chapters for testing
+        if (code == KeyEvent.VK_C) {
+            advanceStoryChapter(storyChapter + 1);
+
+            if (storyChapter > 7) {
+                storyChapter = 7;
+            }
+
             repaint();
             return;
         }
