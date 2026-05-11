@@ -1,6 +1,6 @@
 playerCol=2
-playerRow=1
-day=10
+playerRow=8
+day=13
 gold=0
 storyChapter=0
 hasCreationSword=true
@@ -45,4 +45,4 @@ party2Lck=4
 party2Def=1
 party2Res=3
 party2Mov=4
-leaderEquippedWeapon=rusty_creation
+leaderEquippedWeapon=iron_sword
