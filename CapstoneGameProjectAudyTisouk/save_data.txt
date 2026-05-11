@@ -1,6 +1,6 @@
 playerCol=2
-playerRow=8
-day=6
+playerRow=1
+day=10
 gold=0
 storyChapter=0
 hasCreationSword=true

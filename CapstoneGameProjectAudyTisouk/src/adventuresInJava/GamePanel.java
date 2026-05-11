@@ -95,6 +95,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] ruinsMap;
     private GameMap ruinsGameMap;
     
+    //Equipment
+    private int equipmentMenuIndex = 0;
+    private GameState equipmentReturnState = GameState.OVERWORLD;
+    
 
     
     /*
@@ -259,15 +263,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
-    
-    //Temporary
+
 	private enum GameState {
 		OVERWORLD,
 		TOWN,
 		BATTLE,
 		DIALOGUE,
 		SHOP,
-		EXPLORATION
+		EXPLORATION,
+		EQUIPMENT
 		
 	}
     
@@ -777,7 +781,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    updateExploration();
     	    break;
     	    
+    	case EQUIPMENT:
+    	    updateEquipment();
+    	    break;
+    	    
     	}
+    	
+    	
     	
     	//Timer each time an end turn occurs the banner will appear 
     	if(dayBannerTimer > 0) {
@@ -832,7 +842,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     private void updateExploration() {
-        // Empty for now
+    	
+    }
+    
+    private void updateEquipment() {
+    	
     }
     
     //Allows quests to change the tiles of into a quest marker and back
@@ -886,6 +900,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	case EXPLORATION:
     	    drawExploration(g);
+    	    break;
+    	    
+    	case EQUIPMENT:
+    	    drawEquipment(g);
     	    break;
 
         }
@@ -984,6 +1002,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("Move freely.", 20, panelY + 50);
                 g.drawString("ENTER to inspect.", 20, panelY + 75);
                 break;
+                
+            case EQUIPMENT:
+                g.drawString("State: Equipment", 20, panelY + 25);
+                g.drawString("Choose weapon.", 20, panelY + 50);
+                g.drawString("ENTER equip, ESC close", 20, panelY + 75);
+                break;
 
             case BATTLE:
             	
@@ -1045,6 +1069,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case SHOP:
             	
             case DIALOGUE:
+            	
+            case EQUIPMENT:
 
             case BATTLE:
             	
@@ -1087,6 +1113,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("Move with arrows", 520, panelY + 45);
                 g.drawString("ENTER to inspect", 520, panelY + 65);
                 break;
+                
+            case EQUIPMENT:
             	
             case BATTLE:
             	
@@ -1169,6 +1197,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString(currentMap.getMapName(), panelX + 20, 55);
                 g.drawString("Inspect objects.", panelX + 20, 80);
                 break;
+                
+            case EQUIPMENT:
+                g.drawString("Equipment", panelX + 20, 30);
+                g.drawString("Choose a weapon.", panelX + 20, 55);
+                g.drawString("ENTER equip", panelX + 20, 80);
+                g.drawString("ESC close", panelX + 20, 105);
+                break;
 
             case BATTLE:
                 g.drawString("Battle", panelX + 20, 30);
@@ -1230,6 +1265,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	default:
     		return "Objective unknown";
     	}
+    }
+    
+    //Equipment
+    private void openEquipmentMenu() {
+        equipmentReturnState = currentState;
+        currentState = GameState.EQUIPMENT;
+        equipmentMenuIndex = 0;
     }
     
     
@@ -1417,6 +1459,83 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void drawExploration(Graphics g) {
         drawMap(g);
         drawPlayer(g);
+    }
+    
+    //Equipment is it own big UI thing 
+    private void drawEquipment(Graphics g) {
+
+        // Draw the scene behind the menu
+        if (equipmentReturnState == GameState.OVERWORLD) {
+            drawOverworld(g);
+        } else if (equipmentReturnState == GameState.TOWN) {
+            drawTown(g);
+        } else if (equipmentReturnState == GameState.EXPLORATION) {
+            drawExploration(g);
+        }
+
+        // Dark overlay
+        g.setColor(new Color(0, 0, 0, 180));
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        PartyMember art = getPartyMemberById("leader");
+
+        int menuX = 120;
+        int menuY = 80;
+        int menuWidth = 420;
+        int menuHeight = 300;
+
+        g.setColor(new Color(25, 25, 30));
+        g.fillRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.drawString("Equipment - Leader", menuX + 20, menuY + 30);
+
+        if (art == null) {
+            g.drawString("No leader found.", menuX + 20, menuY + 60);
+            return;
+        }
+
+        g.drawString("Equipped: " + art.getEquippedWeapon().getName(), menuX + 20, menuY + 55);
+
+        List<Weapon> weapons = art.getWeapons();
+
+        if (weapons.isEmpty()) {
+            g.drawString("No weapons.", menuX + 20, menuY + 90);
+            return;
+        }
+
+        for (int i = 0; i < weapons.size(); i++) {
+            Weapon weapon = weapons.get(i);
+
+            if (i == equipmentMenuIndex) {
+                g.setColor(Color.YELLOW);
+            } else if (weapon == art.getEquippedWeapon()) {
+                g.setColor(new Color(80, 160, 255));
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == equipmentMenuIndex) ? "> " : "  ";
+            String equippedMark = (weapon == art.getEquippedWeapon()) ? " [E]" : "";
+
+            g.drawString(prefix + weapon.getName() + equippedMark, menuX + 30, menuY + 90 + (i * 25));
+        }
+
+        // Selected weapon details
+        Weapon selected = weapons.get(equipmentMenuIndex);
+
+        g.setColor(Color.WHITE);
+        int detailY = menuY + 190;
+
+        g.drawString("Selected Weapon", menuX + 20, detailY);
+        g.drawString("Range: " + selected.getMinRange() + "-" + selected.getMaxRange(), menuX + 20, detailY + 25);
+        g.drawString("Hit Bonus: +" + selected.getAttackBonus(), menuX + 20, detailY + 50);
+        g.drawString("Damage: " + selected.getDamageDiceCount() + "d" +
+                selected.getDamageDiceSides() + " + " + selected.getDamageBonus(), menuX + 20, detailY + 75);
+
+        g.drawString("ENTER equip | ESC close", menuX + 220, detailY + 75);
     }
     
     //Battle will use battle specific units not over world logic
@@ -4002,6 +4121,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             repaint();
             return;
         }
+        
+        //Over world Equip Swap
+        if (code == KeyEvent.VK_E) {
+            if (currentState == GameState.OVERWORLD ||
+                currentState == GameState.TOWN ||
+                currentState == GameState.EXPLORATION) {
+
+                openEquipmentMenu();
+                repaint();
+                return;
+            }
+        }
 
         if (currentState == GameState.DIALOGUE) {
 
@@ -4039,6 +4170,65 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     dialogueNextCol = -1;
                     dialogueNextRow = -1;
                 }
+            }
+
+            return;
+        }
+        
+        //Gives the equipment menu controls to operate
+        if (currentState == GameState.EQUIPMENT) {
+
+            PartyMember art = getPartyMemberById("leader");
+
+            if (art == null) {
+                currentState = equipmentReturnState;
+                repaint();
+                return;
+            }
+
+            List<Weapon> weapons = art.getWeapons();
+
+            if (code == KeyEvent.VK_ESCAPE) {
+                currentState = equipmentReturnState;
+                repaint();
+                return;
+            }
+
+            if (weapons.isEmpty()) {
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_UP) {
+                equipmentMenuIndex--;
+
+                if (equipmentMenuIndex < 0) {
+                    equipmentMenuIndex = weapons.size() - 1;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                equipmentMenuIndex++;
+
+                if (equipmentMenuIndex >= weapons.size()) {
+                    equipmentMenuIndex = 0;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER) {
+                Weapon selectedWeapon = weapons.get(equipmentMenuIndex);
+                art.equipWeapon(selectedWeapon);
+
+                System.out.println("Equipped " + selectedWeapon.getName());
+
+                repaint();
+                return;
             }
 
             return;
