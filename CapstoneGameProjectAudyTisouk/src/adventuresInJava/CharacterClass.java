@@ -8,12 +8,15 @@ public class CharacterClass {
 	private int armorClass;
 	private int movementRange;
 	
-	public CharacterClass(String name, int maxHp, int armorClass, int movementRange) {
+	private WeaponType[] allowedWeaponTypes;
+	
+	public CharacterClass(String name, int maxHp, int armorClass, int movementRange, WeaponType[] allowedWeaponTypes) {
 		
 		this.name = name;
 		this.maxHp = maxHp;
 		this.armorClass = armorClass;
 		this.movementRange = movementRange;
+		this.allowedWeaponTypes = allowedWeaponTypes;
 		
 	}
 	
@@ -35,6 +38,25 @@ public class CharacterClass {
 	public int getMovementRange() {
 		
 		return movementRange;
+	}
+	
+	public boolean canUseWeaponType(WeaponType weaponType) {
+
+	    if (allowedWeaponTypes == null) {
+	        return false;
+	    }
+
+	    for (WeaponType type : allowedWeaponTypes) {
+	        if (type == weaponType) {
+	            return true;
+	        }
+	    }
+
+	    return false;
+	}
+	
+	public WeaponType[] getAllowedWeaponTypes() {
+	    return allowedWeaponTypes;
 	}
 	
 	

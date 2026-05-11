@@ -95,6 +95,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] ruinsMap;
     private GameMap ruinsGameMap;
     
+    //SHOP
+    private boolean selectingShopBuyer = true;
+    private int shopBuyerIndex = 0;
+    private int shopItemIndex = 0;
+    private List<ShopItem> shopItems = new ArrayList<>();
+    
     //Equipment
     private int equipmentUnitIndex = 0; //which party member is selected
     private int equipmentWeaponIndex = 0;//Which weapon is selected
@@ -126,7 +132,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int encounterSourceCol = -1;
     private int encounterSourceRow = -1;
     
-    private int gold = 0;
+    private int gold = 500; 
     private boolean banditQuestRewardClaimed = false;
     
     //Quest Flags
@@ -290,6 +296,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         player = new Player(tileSize);
         
         createPartyMembers();
+        createShopInventory();
         
         worldMap = new Tile[maxScreenCol][maxScreenRow];
         generateWorld();
@@ -450,9 +457,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	int[][] layout = {
 
     	        {1,1,1,1,1,1,1,1,1,1},
+    	        {1,0,0,0,4,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,0,0,3,0,3,4,0,0,1},
+    	        {1,0,0,3,0,3,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
@@ -691,9 +698,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	
     	if (tile == TileType.SHOP) {
-            currentState = GameState.SHOP;
-            return;
-        }
+    	    currentState = GameState.SHOP;
+    	    selectingShopBuyer = true;
+    	    shopBuyerIndex = 0;
+    	    shopItemIndex = 0;
+    	    return;
+    	}
     	
     	if (tile == TileType.GRASS) {
     		System.out.println("There is nothing here.");
@@ -1191,7 +1201,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             case SHOP:
                 g.drawString("Shop", panelX + 20, 30);
-                g.drawString("Nothing for sale yet.", panelX + 20, 55);
+                g.drawString("Gold: " + gold, panelX + 20, 55);
                 g.drawString("ESC to leave.", panelX + 20, 80);
                 break;
 
@@ -1478,17 +1488,229 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
-    
+    //DRAWS SHOP
     private void drawShop(Graphics g) {
 
-        g.setColor(new Color(60, 40, 20));
+        g.setColor(new Color(45, 30, 20));
         g.fillRect(0, 0, getWidth(), getHeight());
 
+        int menuX = 80;
+        int menuY = 70;
+        int menuWidth = 560;
+        int menuHeight = 360;
+
+        g.setColor(new Color(25, 25, 30));
+        g.fillRect(menuX, menuY, menuWidth, menuHeight);
+
         g.setColor(Color.WHITE);
-        g.drawString("Town Shop", 320, 180);
-        g.drawString("Welcome! Nothing is for sale yet.", 250, 240);
-        g.drawString("Press ESC to return to town.", 250, 280);
+        g.drawRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.drawString("Town Weapon Shop", menuX + 20, menuY + 30);
+        g.drawString("Gold: " + gold, menuX + 430, menuY + 30);
+
+        if (selectingShopBuyer) {
+            drawShopBuyerSelection(g, menuX, menuY, menuWidth, menuHeight);
+        } else {
+            drawShopItemSelection(g, menuX, menuY, menuWidth, menuHeight);
+        }
     }
+    
+    
+    
+    private void drawShopItemSelection(Graphics g, int menuX, int menuY, int menuWidth, int menuHeight) {
+
+        PartyMember buyer = getSelectedShopBuyer();
+
+        g.setColor(Color.WHITE);
+
+        if (buyer == null) {
+            g.drawString("No buyer selected.", menuX + 20, menuY + 65);
+            return;
+        }
+
+        g.drawString("Buying For: " + buyer.getName(), menuX + 20, menuY + 65);
+        g.drawString("Class: " + buyer.getCharacterClass().getName(), menuX + 220, menuY + 65);
+
+        List<ShopItem> availableItems = getShopItemsForBuyer(buyer);
+
+        if (availableItems.isEmpty()) {
+            g.drawString("No weapons available for this class.", menuX + 20, menuY + 100);
+            g.drawString("ESC back", menuX + 20, menuY + menuHeight - 25);
+            return;
+        }
+
+        for (int i = 0; i < availableItems.size(); i++) {
+            ShopItem item = availableItems.get(i);
+            
+
+            if (i == shopItemIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == shopItemIndex) ? "> " : "  ";
+
+            g.drawString(prefix + item.getDisplayName(), menuX + 40, menuY + 100 + (i * 30));
+            g.drawString(item.getPrice() + "g", menuX + 250, menuY + 100 + (i * 30));
+        }
+
+        if (!shopItems.isEmpty()) {
+            ShopItem selectedItem = availableItems.get(shopItemIndex);
+            Weapon selectedWeapon = createWeaponById(selectedItem.getWeaponId());
+
+            if (selectedWeapon != null) {
+                int detailY = menuY + 220;
+
+                g.setColor(Color.WHITE);
+                g.drawString("Selected: " + selectedWeapon.getName(), menuX + 20, detailY);
+                g.drawString("Range: " + selectedWeapon.getMinRange() + "-" + selectedWeapon.getMaxRange(), menuX + 20, detailY + 25);
+                g.drawString("Hit Bonus: +" + selectedWeapon.getAttackBonus(), menuX + 20, detailY + 50);
+                g.drawString(
+                    "Damage: " + selectedWeapon.getDamageDiceCount() + "d" +
+                    selectedWeapon.getDamageDiceSides() + " + " + selectedWeapon.getDamageBonus(),
+                    menuX + 20,
+                    detailY + 75
+                );
+
+                String type = selectedWeapon.isMagical() ? "Magic" : "Physical";
+                g.drawString("Type: " + type, menuX + 250, detailY + 25);
+            }
+        }
+
+        g.setColor(Color.WHITE);
+        g.drawString("ENTER buy | ESC back", menuX + 20, menuY + menuHeight - 25);
+    }
+    
+    
+    private void drawShopBuyerSelection(Graphics g, int menuX, int menuY, int menuWidth, int menuHeight) {
+
+        g.setColor(Color.WHITE);
+        g.drawString("Choose Buyer", menuX + 20, menuY + 65);
+
+        for (int i = 0; i < partyMembers.size(); i++) {
+            PartyMember member = partyMembers.get(i);
+
+            if (i == shopBuyerIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == shopBuyerIndex) ? "> " : "  ";
+
+            String weaponName = "None";
+            if (member.getEquippedWeapon() != null) {
+                weaponName = member.getEquippedWeapon().getName();
+            }
+
+            g.drawString(prefix + member.getName(), menuX + 40, menuY + 100 + (i * 30));
+
+            g.setColor(Color.LIGHT_GRAY);
+            g.drawString("Equipped: " + weaponName, menuX + 220, menuY + 100 + (i * 30));
+        }
+
+        g.setColor(Color.WHITE);
+        g.drawString("ENTER choose | ESC leave", menuX + 20, menuY + menuHeight - 25);
+    }
+    
+    //SHOP HERE
+    private void createShopInventory() {
+
+        shopItems.clear();
+
+        shopItems.add(new ShopItem("steel_sword", "Steel Sword", 80));
+        shopItems.add(new ShopItem("long_bow", "Long Bow", 90));
+        shopItems.add(new ShopItem("fire_tome_plus", "Fire Tome+", 100));
+    }
+    
+    //Stops Items from being bought by wrong members of the party
+    private List<ShopItem> getShopItemsForBuyer(PartyMember buyer) {
+
+        List<ShopItem> filteredItems = new ArrayList<>();
+
+        if (buyer == null) {
+            return filteredItems;
+        }
+
+        CharacterClass characterClass = buyer.getCharacterClass();
+
+        for (ShopItem item : shopItems) {
+            Weapon weapon = createWeaponById(item.getWeaponId());
+
+            if (weapon != null &&
+                characterClass.canUseWeaponType(weapon.getWeaponType())) {
+
+                filteredItems.add(item);
+            }
+        }
+
+        return filteredItems;
+    }
+    
+    private PartyMember getSelectedShopBuyer() {
+
+        if (partyMembers == null || partyMembers.isEmpty()) {
+            return null;
+        }
+
+        if (shopBuyerIndex < 0) {
+            shopBuyerIndex = 0;
+        }
+
+        if (shopBuyerIndex >= partyMembers.size()) {
+            shopBuyerIndex = partyMembers.size() - 1;
+        }
+
+        return partyMembers.get(shopBuyerIndex);
+    }
+    
+    //ONLY sell usable weapons to the selected character
+    private void buySelectedShopItem() {
+
+        PartyMember buyer = getSelectedShopBuyer();
+
+        if (buyer == null) {
+            return;
+        }
+
+        List<ShopItem> availableItems = getShopItemsForBuyer(buyer);
+
+        if (availableItems.isEmpty()) {
+            System.out.println("No usable weapons for this class.");
+            return;
+        }
+
+        if (shopItemIndex < 0 || shopItemIndex >= availableItems.size()) {
+            shopItemIndex = 0;
+        }
+
+        ShopItem item = availableItems.get(shopItemIndex);
+
+        if (gold < item.getPrice()) {
+            System.out.println("Not enough gold.");
+            return;
+        }
+
+        Weapon weapon = createWeaponById(item.getWeaponId());
+
+        if (weapon == null) {
+            System.out.println("Weapon not found: " + item.getWeaponId());
+            return;
+        }
+
+        // Final safety check
+        if (!buyer.getCharacterClass().canUseWeaponType(weapon.getWeaponType())) {
+            System.out.println(buyer.getName() + " cannot use " + weapon.getName() + ".");
+            return;
+        }
+
+        gold -= item.getPrice();
+        buyer.addWeapon(weapon);
+
+        System.out.println(buyer.getName() + " bought " + weapon.getName() + " for " + item.getPrice() + " gold.");
+    }
+    
     
     //Exploration Types
     private void drawExploration(Graphics g) {
@@ -1688,9 +1910,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	Weapon banditAxe = createWeaponById("bandit_axe");
     	Weapon enemyBow = createWeaponById("hunter_bow");
 		
-		//Class Name, Max HP, Armor Class, Movement Range
-		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
-		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5);
+		//Class Name, Max HP, Armor Class, Movement Range, Weapon Type
+		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4, new WeaponType[] { WeaponType.AXE });
+		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5, new WeaponType[] { WeaponType.BOW });
 		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
@@ -1725,9 +1947,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	Weapon fireTome = createWeaponById("fire_tome");
         
         //Class Name, Max HP, Armor Class, Movement Range
-        CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
-        CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5);
-        CharacterClass mageClass = new CharacterClass("Mage", 8, 10, 4);
+        CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4, new WeaponType[] { WeaponType.SWORD });
+        CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5, new WeaponType[] { WeaponType.BOW });
+        CharacterClass mageClass = new CharacterClass("Mage", 8, 10, 4, new WeaponType[] { WeaponType.TOME });
         
         //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
         GrowthRates leaderGrowths = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
@@ -1804,36 +2026,48 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Weapons list
     //#, #, #, #, #, #,
-	//Weapon ID, Weapon Name, Minimum range, Max range, Attack bonus, # Of  die thrown, # Of sides per die, Damage bonus, Is magic
+	//Weapon ID, Weapon Name, Weapon Type, Minimum range, Max range, Attack bonus, # Of  die thrown, # Of sides per die, Damage bonus, Is magic
     private Weapon createWeaponById(String weaponId) {
 
     	//Warriors
         if (weaponId.equals("iron_sword")) {
-            return new Weapon("iron_sword", "Iron Sword", 1, 1, 3, 1, 6, 2, false);
+            return new Weapon("iron_sword", "Iron Sword", WeaponType.SWORD, 1, 1, 3, 1, 6, 2, false);
+        }
+        
+        if (weaponId.equals("steel_sword")) {
+            return new Weapon("steel_sword", "Steel Sword", WeaponType.SWORD, 1, 1, 2, 1, 8, 2, false);
         }
 
         //Archers
         if (weaponId.equals("short_bow")) {
-            return new Weapon("short_bow", "Short Bow", 2, 2, 2, 1, 6, 1, false);
+            return new Weapon("short_bow", "Short Bow", WeaponType.BOW, 2, 2, 2, 1, 6, 1, false);
+        }
+        
+        if (weaponId.equals("long_bow")) {
+            return new Weapon("long_bow", "Long Bow", WeaponType.BOW, 2, 3, 2, 1, 8, 1, false);
         }
         
         if (weaponId.equals("hunter_bow")) {
-            return new Weapon("hunter_bow", "Hunter Bow", 2, 2, 2, 1, 6, 1, false);
+            return new Weapon("hunter_bow", "Hunter Bow", WeaponType.BOW, 2, 2, 2, 1, 6, 1, false);
         }
 
         //Mage
         if (weaponId.equals("fire_tome")) {
-            return new Weapon("fire_tome", "Fire Tome", 1, 2, 3, 1, 6, 2, true);
+            return new Weapon("fire_tome", "Fire Tome", WeaponType.TOME, 1, 2, 3, 1, 6, 2, true);
+        }
+        
+        if (weaponId.equals("fire_tome_plus")) {
+            return new Weapon("fire_tome_plus", "Fire Tome+", WeaponType.TOME, 1, 2, 3, 1, 8, 2, true);
         }
 
         //Bandits
         if (weaponId.equals("bandit_axe")) {
-            return new Weapon("bandit_axe", "Bandit Axe", 1, 1, 2, 1, 8, 1, false);
+            return new Weapon("bandit_axe", "Bandit Axe", WeaponType.AXE, 1, 1, 2, 1, 8, 1, false);
         }
 
         //Art Forger unique
         if (weaponId.equals("rusty_creation")) {
-            return new Weapon("rusty_creation", "Rusty Creation", 1, 1, 2, 1, 4, 1, false);
+            return new Weapon("rusty_creation", "Rusty Creation",WeaponType.SWORD, 1, 1, 2, 1, 4, 1, false);
         }
 
         return null;
@@ -4377,6 +4611,102 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 selectedMember.equipWeapon(selectedWeapon);
 
                 System.out.println(selectedMember.getName() + " equipped " + selectedWeapon.getName());
+
+                repaint();
+                return;
+            }
+
+            return;
+        }
+        
+        //Shop Menu Control for selecting party member
+        if (currentState == GameState.SHOP) {
+
+            if (code == KeyEvent.VK_ESCAPE) {
+
+                if (!selectingShopBuyer) {
+                    selectingShopBuyer = true;
+                    shopItemIndex = 0;
+                } else {
+                    currentState = GameState.TOWN;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (selectingShopBuyer) {
+
+                if (code == KeyEvent.VK_UP) {
+                    shopBuyerIndex--;
+
+                    if (shopBuyerIndex < 0) {
+                        shopBuyerIndex = partyMembers.size() - 1;
+                    }
+
+                    repaint();
+                    return;
+                }
+
+                if (code == KeyEvent.VK_DOWN) {
+                    shopBuyerIndex++;
+
+                    if (shopBuyerIndex >= partyMembers.size()) {
+                        shopBuyerIndex = 0;
+                    }
+
+                    repaint();
+                    return;
+                }
+
+                if (code == KeyEvent.VK_ENTER) {
+                    selectingShopBuyer = false;
+                    shopItemIndex = 0;
+
+                    repaint();
+                    return;
+                }
+
+                return;
+            }
+
+            // Selecting items AFTER selecting who
+            PartyMember buyer = getSelectedShopBuyer();
+            List<ShopItem> availableItems = getShopItemsForBuyer(buyer);
+
+            if (availableItems.isEmpty()) {
+                if (code == KeyEvent.VK_ESCAPE) {
+                    selectingShopBuyer = true;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_UP) {
+                shopItemIndex--;
+
+                if (shopItemIndex < 0) {
+                    shopItemIndex = availableItems.size() - 1;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                shopItemIndex++;
+
+                if (shopItemIndex >= availableItems.size()) {
+                    shopItemIndex = 0;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER) {
+                buySelectedShopItem();
 
                 repaint();
                 return;

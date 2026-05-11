@@ -13,11 +13,15 @@ public class Weapon {
 	private int damageBonus;
 	private boolean magical;
 	
-	public Weapon(String id, String name, int minRange, int maxRange, int attackBonus,
+	//Shop
+	private WeaponType weaponType;
+	
+	public Weapon(String id, String name, WeaponType weaponType, int minRange, int maxRange, int attackBonus,
 			int damageDiceCount, int damageDiceSides, int damageBonus, boolean magical) {
 		
 		this.id = id;
 		this.name = name;
+		this.weaponType = weaponType;
 		this.minRange = minRange;
 		this.maxRange = maxRange;
 		this.attackBonus = attackBonus;
@@ -35,6 +39,10 @@ public class Weapon {
 	public String getName() {
 		
 		return name;
+	}
+	
+	public WeaponType getWeaponType() {
+	    return weaponType;
 	}
 	
 	public int getMinRange() {
