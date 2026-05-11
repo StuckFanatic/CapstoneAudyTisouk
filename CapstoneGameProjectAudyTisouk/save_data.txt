@@ -1,8 +1,10 @@
 playerCol=2
-playerRow=5
-day=1
+playerRow=8
+day=6
 gold=0
 storyChapter=0
+hasCreationSword=true
+creationAwakened=false
 banditQuestAccepted=false
 banditQuestCompleted=false
 banditQuestRewardClaimed=false
@@ -43,3 +45,4 @@ party2Lck=4
 party2Def=1
 party2Res=3
 party2Mov=4
+leaderEquippedWeapon=rusty_creation

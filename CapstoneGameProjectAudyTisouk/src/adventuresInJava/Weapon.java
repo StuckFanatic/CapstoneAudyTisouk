@@ -3,6 +3,7 @@ package adventuresInJava;
 //Weapons of mass destruction
 public class Weapon {
 
+	private String id;
 	private String name;
 	private int minRange;
 	private int maxRange;
@@ -12,9 +13,10 @@ public class Weapon {
 	private int damageBonus;
 	private boolean magical;
 	
-	public Weapon(String name, int minRange, int maxRange, int attackBonus,
+	public Weapon(String id, String name, int minRange, int maxRange, int attackBonus,
 			int damageDiceCount, int damageDiceSides, int damageBonus, boolean magical) {
 		
+		this.id = id;
 		this.name = name;
 		this.minRange = minRange;
 		this.maxRange = maxRange;
@@ -24,6 +26,10 @@ public class Weapon {
 		this.damageBonus = damageBonus;
 		this.magical = magical;
 		
+	}
+	
+	public String getId() {
+	    return id;
 	}
 	
 	public String getName() {

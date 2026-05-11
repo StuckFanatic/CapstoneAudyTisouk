@@ -1458,6 +1458,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Character Creations
     //Own helper to stop hard coding units in creation on battle start
     private BattleUnit createUnitFromId(String unitId, int col, int row, boolean enemy) {
     	
@@ -1467,10 +1468,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    return createBattleUnitFromPartyMember(partyMember, col, row); //hard coded leader/archer replaced with a call
     	}
     	
-		//#, #, #, #, #, #,
-		//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
-		Weapon banditAxe = new Weapon("Bandit Axe", 1, 1, 2, 1, 8, 1, false);
-		Weapon enemyBow = new Weapon("Hunter Bow", 2, 2, 2, 1, 6, 1, false);
+    	Weapon banditAxe = createWeaponById("bandit_axe");
+    	Weapon enemyBow = createWeaponById("hunter_bow");
 		
 		//Class Name, Max HP, Armor Class, Movement Range
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4);
@@ -1503,11 +1502,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	partyMembers.clear();
 
-    	//#, #, #, #, #, #,
-    	//Weapon Name, minimum range, max range, attack bonus, # of  die thrown, # of sides per die, damage bonus, is magic
-        Weapon ironSword = new Weapon("Iron Sword", 1, 1, 3, 1, 6, 2, false);
-        Weapon shortBow = new Weapon("Short Bow", 2, 2, 2, 1, 6, 1, false);
-        Weapon fireTome = new Weapon("Fire Tome", 1, 2, 3, 1, 6, 2, true);
+    	
+    	Weapon ironSword = createWeaponById("iron_sword");
+    	Weapon shortBow = createWeaponById("short_bow");
+    	Weapon fireTome = createWeaponById("fire_tome");
         
         //Class Name, Max HP, Armor Class, Movement Range
         CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4);
@@ -1585,6 +1583,43 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         unit.setExperience(member.getExperience());
 
         return unit;
+    }
+    
+    //Weapons list
+    //#, #, #, #, #, #,
+	//Weapon ID, Weapon Name, Minimum range, Max range, Attack bonus, # Of  die thrown, # Of sides per die, Damage bonus, Is magic
+    private Weapon createWeaponById(String weaponId) {
+
+    	//Warriors
+        if (weaponId.equals("iron_sword")) {
+            return new Weapon("iron_sword", "Iron Sword", 1, 1, 3, 1, 6, 2, false);
+        }
+
+        //Archers
+        if (weaponId.equals("short_bow")) {
+            return new Weapon("short_bow", "Short Bow", 2, 2, 2, 1, 6, 1, false);
+        }
+        
+        if (weaponId.equals("hunter_bow")) {
+            return new Weapon("hunter_bow", "Hunter Bow", 2, 2, 2, 1, 6, 1, false);
+        }
+
+        //Mage
+        if (weaponId.equals("fire_tome")) {
+            return new Weapon("fire_tome", "Fire Tome", 1, 2, 3, 1, 6, 2, true);
+        }
+
+        //Bandits
+        if (weaponId.equals("bandit_axe")) {
+            return new Weapon("bandit_axe", "Bandit Axe", 1, 1, 2, 1, 8, 1, false);
+        }
+
+        //Art Forger unique
+        if (weaponId.equals("rusty_creation")) {
+            return new Weapon("rusty_creation", "Rusty Creation", 1, 1, 2, 1, 4, 1, false);
+        }
+
+        return null;
     }
     
     //Allows party member by the same ID in more maps/ spawns
@@ -1856,7 +1891,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         hasCreationSword = true;
 
-        Weapon rustyCreation = new Weapon("Rusty Creation", 1, 1, 2, 1, 4, 1, false);
+        Weapon rustyCreation = createWeaponById("rusty_creation");
 
         PartyMember art = getPartyMemberById("leader");
 
@@ -1874,6 +1909,55 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }, GameState.EXPLORATION);
     }
     
+    //Importantly loads in creation when saving and loading while preventing duplicate Rusty Creation copies
+    private void restoreCreationWeaponAfterLoad(String leaderEquippedWeaponId) {
+
+        PartyMember art = getPartyMemberById("leader");
+
+        if (art == null) {
+            return;
+        }
+
+        if (hasCreationSword) {
+            Weapon rustyCreation = createWeaponById("rusty_creation");
+
+            if (rustyCreation != null && !partyMemberHasWeapon(art, "rusty_creation")) {
+                art.addWeapon(rustyCreation);
+            }
+        }
+
+        if (leaderEquippedWeaponId != null && !leaderEquippedWeaponId.isEmpty()) {
+            Weapon weaponToEquip = findWeaponOnPartyMember(art, leaderEquippedWeaponId);
+
+            if (weaponToEquip != null) {
+                art.equipWeapon(weaponToEquip);
+            }
+        }
+    }
+    
+    //Makes sure weapons are loaded properly
+    private boolean partyMemberHasWeapon(PartyMember member, String weaponId) {
+
+        for (Weapon weapon : member.getWeapons()) {
+            if (weapon.getId().equals(weaponId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    //not allow re-equipping saved weapons
+    private Weapon findWeaponOnPartyMember(PartyMember member, String weaponId) {
+
+        for (Weapon weapon : member.getWeapons()) {
+            if (weapon.getId().equals(weaponId)) {
+                return weapon;
+            }
+        }
+
+        return null;
+    }
     
     //Quest accept helper
     private void acceptBanditQuest() {
@@ -3544,6 +3628,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("day=" + day + "\n");
             writer.write("gold=" + gold + "\n");
             writer.write("storyChapter=" + storyChapter + "\n");
+            writer.write("hasCreationSword=" + hasCreationSword + "\n");
+            writer.write("creationAwakened=" + creationAwakened + "\n");
                      
             //Quest
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
@@ -3555,6 +3641,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             for (int i = 0; i < partyMembers.size(); i++) {
                 writePartyMember(writer, partyMembers.get(i), i);
+            }
+            
+            PartyMember art = getPartyMemberById("leader");
+
+            //Records whether Art currently has Iron Sword or Rusty Creation equipped
+            if (art != null && art.getEquippedWeapon() != null) {
+                writer.write("leaderEquippedWeapon=" + art.getEquippedWeapon().getId() + "\n");
             }
 
             writer.close();
@@ -3581,6 +3674,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             Scanner scanner = new Scanner(file);
             
             int partyCount = 0;
+            String leaderEquippedWeaponId = "";
 
             //TEMP
             String[] partyIds = new String[20];
@@ -3629,6 +3723,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 else if (key.equals("storyChapter")) {
                     storyChapter = Integer.parseInt(value);
                 }
+                else if (key.equals("leaderEquippedWeapon")) {
+                    leaderEquippedWeaponId = value;
+                }
+                else if (key.equals("hasCreationSword")) {
+                    hasCreationSword = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("creationAwakened")) {
+                    creationAwakened = Boolean.parseBoolean(value);
+                }
+                
                 
                 //leader
                 else if (key.equals("leaderLevel")) {
@@ -3713,11 +3817,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 
                 else if (key.startsWith("party")) {
 
-                    // Example keys:
-                    // party0Id
-                    // party0Level
-                    // party0MaxHp
-
                     String numberPart = key.replaceAll("[^0-9]", "");
 
                     if (!numberPart.isEmpty()) {
@@ -3764,6 +3863,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }
 
             scanner.close();
+         
             
             for (int i = 0; i < partyCount; i++) {
 
@@ -3792,8 +3892,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 );
             }
 
+            //Loaded After creation
+            restoreCreationWeaponAfterLoad(leaderEquippedWeaponId);
+            
             currentMap = overworldGameMap;
             currentState = GameState.OVERWORLD;
+            
             
             updateStoryWorldState();
 
