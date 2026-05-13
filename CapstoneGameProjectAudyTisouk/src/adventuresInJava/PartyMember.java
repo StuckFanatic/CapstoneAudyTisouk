@@ -103,7 +103,28 @@ public class PartyMember {
     }
 
     public void addWeapon(Weapon weapon) {
-        weapons.add(weapon);
+        if (weapon == null) {
+            return;
+        }
+
+        if (!hasWeapon(weapon.getId())) {
+            weapons.add(weapon);
+        }
+    }
+    
+    public boolean hasWeapon(String weaponId) {
+        for (Weapon weapon : weapons) {
+            if (weapon.getId().equals(weaponId)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    public void clearWeapons() {
+        weapons.clear();
+        equippedWeapon = null;
     }
     
 

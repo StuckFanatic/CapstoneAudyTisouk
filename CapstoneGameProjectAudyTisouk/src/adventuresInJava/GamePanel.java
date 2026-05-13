@@ -4095,7 +4095,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }
             
             PartyMember art = getPartyMemberById("leader");
-
             //Records whether Art currently has Iron Sword or Rusty Creation equipped
             if (art != null && art.getEquippedWeapon() != null) {
                 writer.write("leaderEquippedWeapon=" + art.getEquippedWeapon().getId() + "\n");
@@ -4127,10 +4126,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             int partyCount = 0;
             String leaderEquippedWeaponId = "";
 
-            //TEMP
             String[] partyIds = new String[20];
             int[] partyLevels = new int[20];
             int[] partyExps = new int[20];
+            int[] partyWeaponCounts = new int[20];
+            String[][] partyWeaponIds = new String[20][20];
+            String[] partyEquippedWeaponIds = new String[20];
 
             int[] partyMaxHp = new int[20];
             int[] partyStr = new int[20];
@@ -4309,13 +4310,38 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                         else if (key.endsWith("Mov")) {
                             partyMov[index] = Integer.parseInt(value);
                         }
+                        else if (key.endsWith("WeaponCount")) {
+                            partyWeaponCounts[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("EquippedWeapon")) {
+                            partyEquippedWeaponIds[index] = value;
+                        }
+                        
+                      //Parses individual weapon IDs for each individual party member
+                        else if (key.contains("Weapon")) {
+
+                            if (!key.endsWith("WeaponCount") && !key.endsWith("EquippedWeapon")) {
+
+                                int weaponWordIndex = key.indexOf("Weapon");
+
+                                String partyIndexText = key.substring(5, weaponWordIndex);
+                                String weaponIndexText = key.substring(weaponWordIndex + "Weapon".length());
+
+                                if (!partyIndexText.isEmpty() && !weaponIndexText.isEmpty()) {
+                                    int partyIndex = Integer.parseInt(partyIndexText);
+                                    int weaponIndex = Integer.parseInt(weaponIndexText);
+
+                                    partyWeaponIds[partyIndex][weaponIndex] = value;
+                                }
+                            }
+                        }
                     }
                 }
             }
 
             scanner.close();
          
-            
+            //Party Reading for stats
             for (int i = 0; i < partyCount; i++) {
 
                 if (partyIds[i] == null) {
@@ -4342,9 +4368,55 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     loadedStats
                 );
             }
+            
+            //Reading Loop for Weapons
+            for (int i = 0; i < partyCount; i++) {
 
-            //Loaded After creation
-            restoreCreationWeaponAfterLoad(leaderEquippedWeaponId);
+                if (partyIds[i] == null) {
+                    continue;
+                }
+
+                PartyMember member = getPartyMemberById(partyIds[i]);
+
+                if (member == null) {
+                    continue;
+                }
+
+                member.clearWeapons();
+
+                for (int w = 0; w < partyWeaponCounts[i]; w++) {
+                    String weaponId = partyWeaponIds[i][w];
+
+                    if (weaponId != null && !weaponId.isEmpty()) {
+                        Weapon weapon = createWeaponById(weaponId);
+
+                        if (weapon != null) {
+                            member.addWeapon(weapon);
+                            
+                            
+                        }
+                    }
+                }
+                
+                if (member.getWeapons().isEmpty()) {
+                    Weapon fallbackWeapon = createDefaultWeaponForPartyMember(member);
+
+                    if (fallbackWeapon != null) {
+                        member.addWeapon(fallbackWeapon);
+                        member.equipWeapon(fallbackWeapon);
+                    }
+                }
+
+                String equippedId = partyEquippedWeaponIds[i];
+
+                if (equippedId != null && !equippedId.isEmpty()) {
+                    Weapon equippedWeapon = findWeaponOnPartyMember(member, equippedId);
+
+                    if (equippedWeapon != null) {
+                        member.equipWeapon(equippedWeapon);
+                    }
+                }
+            }
             
             currentMap = overworldGameMap;
             currentState = GameState.OVERWORLD;
@@ -4358,6 +4430,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             System.out.println("Load failed.");
             e.printStackTrace();
         }
+    }
+    
+    //This prevents a party member from having no weapon if something goes wrong with the save file
+    private Weapon createDefaultWeaponForPartyMember(PartyMember member) {
+
+        if (member.getId().equals("leader")) {
+            return createWeaponById("iron_sword");
+        }
+
+        if (member.getId().equals("archer_ally")) {
+            return createWeaponById("short_bow");
+        }
+
+        if (member.getId().equals("mage")) {
+            return createWeaponById("fire_tome");
+        }
+
+        return null;
     }
     
     //method helps apply leader ID when saving and updates them
@@ -4393,6 +4483,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         writer.write("party" + index + "Def=" + stats.getDefense() + "\n");
         writer.write("party" + index + "Res=" + stats.getResistance() + "\n");
         writer.write("party" + index + "Mov=" + stats.getMovement() + "\n");
+        
+        //Loads and unloads weapons upon loading and saving
+        List<Weapon> weapons = member.getWeapons();
+
+        writer.write("party" + index + "WeaponCount=" + weapons.size() + "\n");
+
+        for (int i = 0; i < weapons.size(); i++) {
+            writer.write("party" + index + "Weapon" + i + "=" + weapons.get(i).getId() + "\n");
+        }
+
+        if (member.getEquippedWeapon() != null) {
+            writer.write("party" + index + "EquippedWeapon=" + member.getEquippedWeapon().getId() + "\n");
+        }
     }
     
     
