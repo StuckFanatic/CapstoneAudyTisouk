@@ -101,11 +101,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int shopItemIndex = 0;
     private List<ShopItem> shopItems = new ArrayList<>();
     
-    //Equipment
+    //Equipment MENU
     private int equipmentUnitIndex = 0; //which party member is selected
     private int equipmentWeaponIndex = 0;//Which weapon is selected
     private boolean selectingEquipmentUnit = true; //When choosing a character
     private GameState equipmentReturnState = GameState.OVERWORLD;
+    
+    //STATUS MENU
+    private int statusMenuIndex = 0;
+    private GameState statusReturnState = GameState.OVERWORLD;
     
 
     
@@ -279,7 +283,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		DIALOGUE,
 		SHOP,
 		EXPLORATION,
-		EQUIPMENT
+		EQUIPMENT,
+		STATUS
 		
 	}
     
@@ -797,6 +802,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    updateEquipment();
     	    break;
     	    
+    	case STATUS:
+    	    updateStatus();
+    	    break;
+    	    
     	}
     	
     	
@@ -861,6 +870,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    private void updateStatus() {
+    	
+    }
+    
     //Allows quests to change the tiles of into a quest marker and back
     private void updateOverworldQuestTiles() {
 
@@ -917,9 +930,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case EQUIPMENT:
     	    drawEquipment(g);
     	    break;
+    	    
+    	case STATUS:
+    	    drawStatus(g);
+    	    break;
 
         }
-        drawGlobalUI(g);
+        if (currentState != GameState.STATUS &&
+        	    currentState != GameState.EQUIPMENT) {
+        	    drawGlobalUI(g);
+        	}
         
         if(currentState == GameState.DIALOGUE) {
             dialogueManager.draw(g, screenWidth, screenHeight);
@@ -1026,6 +1046,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 g.drawString("ENTER confirm, ESC back", 20, panelY + 75);
                 break;
+                
+            case STATUS:
+                g.drawString("State: Status", 20, panelY + 25);
+                g.drawString("Inspect party members.", 20, panelY + 50);
+                g.drawString("UP/DOWN select, ESC close", 20, panelY + 75);
+                break;
 
             case BATTLE:
             	
@@ -1089,6 +1115,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case DIALOGUE:
             	
             case EQUIPMENT:
+            	
+            case STATUS:
 
             case BATTLE:
             	
@@ -1133,6 +1161,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 break;
                 
             case EQUIPMENT:
+            	
+            case STATUS:
             	
             case BATTLE:
             	
@@ -1228,6 +1258,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("ENTER confirm", panelX + 20, 80);
                 g.drawString("ESC back/close", panelX + 20, 105);
                 break;
+                
+            case STATUS:
+                g.drawString("Status", panelX + 20, 30);
+                g.drawString("View party stats.", panelX + 20, 55);
+                g.drawString("ESC close", panelX + 20, 80);
+                break;
 
             case BATTLE:
                 g.drawString("Battle", panelX + 20, 30);
@@ -1317,6 +1353,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         return partyMembers.get(equipmentUnitIndex);
+    }
+    
+    //Status Menu just like equipment menu system
+    private void openStatusScreen() {
+        statusReturnState = currentState;
+        currentState = GameState.STATUS;
+        statusMenuIndex = 0;
     }
     
     
@@ -1856,7 +1899,144 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.drawString("Type: " + damageType, menuX + 220, detailY + 25);
 
         g.drawString("ENTER equip | ESC back", menuX + 220, detailY + 75);
+        
     }
+    
+    //draws the overlay for STATUS
+    private void drawStatus(Graphics g) {
+
+        // Draw scene behind the status screen
+        if (statusReturnState == GameState.OVERWORLD) {
+            drawOverworld(g);
+        } else if (statusReturnState == GameState.TOWN) {
+            drawTown(g);
+        } else if (statusReturnState == GameState.EXPLORATION) {
+            drawExploration(g);
+        }
+
+        // Dark overlay
+        g.setColor(new Color(0, 0, 0, 180));
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        int menuX = 80;
+        int menuY = 60;
+        int menuWidth = 580;
+        int menuHeight = 400;
+
+        g.setColor(new Color(25, 25, 30));
+        g.fillRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.drawString("Party Status", menuX + 20, menuY + 30);
+
+        if (partyMembers == null || partyMembers.isEmpty()) {
+            g.drawString("No party members.", menuX + 20, menuY + 65);
+            return;
+        }
+
+        drawStatusPartyList(g, menuX, menuY);
+        drawStatusDetails(g, menuX, menuY);
+
+        g.setColor(Color.WHITE);
+        g.drawString("UP/DOWN select | ESC close", menuX + 20, menuY + menuHeight - 20);
+        
+    }
+    
+    
+    private void drawStatusPartyList(Graphics g, int menuX, int menuY) {
+
+        int listX = menuX + 20;
+        int listY = menuY + 70;
+
+        g.setColor(Color.WHITE);
+        g.drawString("Members", listX, listY - 25);
+
+        for (int i = 0; i < partyMembers.size(); i++) {
+            PartyMember member = partyMembers.get(i);
+
+            if (i == statusMenuIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == statusMenuIndex) ? "> " : "  ";
+            g.drawString(prefix + member.getName(), listX, listY + (i * 28));
+        }
+    }
+    
+    
+    private void drawStatusDetails(Graphics g, int menuX, int menuY) {
+
+        if (statusMenuIndex < 0 || statusMenuIndex >= partyMembers.size()) {
+            statusMenuIndex = 0;
+        }
+
+        PartyMember member = partyMembers.get(statusMenuIndex);
+        UnitStats stats = member.getStats();
+
+        int detailX = menuX + 210;
+        int detailY = menuY + 70;
+
+        g.setColor(Color.WHITE);
+
+        g.drawString("Name: " + member.getName(), detailX, detailY);
+        g.drawString("Class: " + member.getCharacterClass().getName(), detailX, detailY + 25);
+        g.drawString("Level: " + member.getLevel(), detailX, detailY + 50);
+        g.drawString("EXP: " + member.getExperience(), detailX, detailY + 75);
+
+        String weaponName = "None";
+        if (member.getEquippedWeapon() != null) {
+            weaponName = member.getEquippedWeapon().getName();
+        }
+
+        g.drawString("Weapon: " + weaponName, detailX, detailY + 100);
+        g.drawString("Skill: " + member.getSkillName(), detailX, detailY + 125);
+
+        // Stats column 1
+        int statX1 = detailX;
+        int statY = detailY + 165;
+
+        g.drawString("HP: " + stats.getMaxHp(), statX1, statY);
+        g.drawString("STR: " + stats.getStrength(), statX1, statY + 25);
+        g.drawString("MAG: " + stats.getMagic(), statX1, statY + 50);
+        g.drawString("SKL: " + stats.getSkill(), statX1, statY + 75);
+        g.drawString("SPD: " + stats.getSpeed(), statX1, statY + 100);
+
+        // Stats column 2
+        int statX2 = detailX + 120;
+
+        g.drawString("LCK: " + stats.getLuck(), statX2, statY);
+        g.drawString("DEF: " + stats.getDefense(), statX2, statY + 25);
+        g.drawString("RES: " + stats.getResistance(), statX2, statY + 50);
+        g.drawString("MOV: " + stats.getMovement(), statX2, statY + 75);
+
+        // Weapon details
+        if (member.getEquippedWeapon() != null) {
+            Weapon weapon = member.getEquippedWeapon();
+
+            int weaponX = detailX + 260;
+
+            g.drawString("Weapon Info", weaponX, detailY);
+            g.drawString("Range: " + weapon.getMinRange() + "-" + weapon.getMaxRange(), weaponX, detailY + 25);
+            g.drawString("Hit: +" + weapon.getAttackBonus(), weaponX, detailY + 50);
+            g.drawString(
+                "Damage: " + weapon.getDamageDiceCount() + "d" +
+                weapon.getDamageDiceSides() + " + " + weapon.getDamageBonus(),
+                weaponX,
+                detailY + 75
+            );
+
+            String type = weapon.isMagical() ? "Magic" : "Physical";
+            g.drawString("Type: " + type, weaponX, detailY + 100);
+            g.drawString("Wpn Type: " + weapon.getWeaponType(), weaponX, detailY + 125);
+        }
+        
+    }
+    
+    
     
     //Battle will use battle specific units not over world logic
     private void drawBattle(Graphics g) {
@@ -4532,19 +4712,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         
         //Debug: Allows advancement to the prologue stage 
-        if (code == KeyEvent.VK_P) {
-            BattleScenario scenario = BattleScenarioLibrary.getScenario("prologue_ruins");
-
-            if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
-                pendingBattleScenario = scenario;
-                startDialogue(scenario.getIntroDialogue(), GameState.OVERWORLD);
-            } else {
-                loadBattleScenario(scenario);
-            }
-
-            repaint();
-            return;
-        }
+//        if (code == KeyEvent.VK_P) {
+//            BattleScenario scenario = BattleScenarioLibrary.getScenario("prologue_ruins");
+//
+//            if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
+//                pendingBattleScenario = scenario;
+//                startDialogue(scenario.getIntroDialogue(), GameState.OVERWORLD);
+//            } else {
+//                loadBattleScenario(scenario);
+//            }
+//
+//            repaint();
+//            return;
+//        }
+        
         //Exploration will delete the above later
         if (code == KeyEvent.VK_R) {
             currentMap = ruinsGameMap;
@@ -4557,7 +4738,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
-        //Over world Equip Swap
+        //open status screen
+        if (code == KeyEvent.VK_P) {
+            if (currentState == GameState.OVERWORLD ||
+                currentState == GameState.TOWN ||
+                currentState == GameState.EXPLORATION) {
+
+                openStatusScreen();
+                repaint();
+                return;
+            }
+        }
+        
+        //Equip Swap
         if (code == KeyEvent.VK_E) {
             if (currentState == GameState.OVERWORLD ||
                 currentState == GameState.TOWN ||
@@ -4605,6 +4798,46 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     dialogueNextCol = -1;
                     dialogueNextRow = -1;
                 }
+            }
+
+            return;
+        }
+        
+      //Status input handling
+        if (currentState == GameState.STATUS) {
+
+            if (code == KeyEvent.VK_ESCAPE) {
+                currentState = statusReturnState;
+                repaint();
+                return;
+            }
+
+            if (partyMembers == null || partyMembers.isEmpty()) {
+                currentState = statusReturnState;
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_UP) {
+                statusMenuIndex--;
+
+                if (statusMenuIndex < 0) {
+                    statusMenuIndex = partyMembers.size() - 1;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                statusMenuIndex++;
+
+                if (statusMenuIndex >= partyMembers.size()) {
+                    statusMenuIndex = 0;
+                }
+
+                repaint();
+                return;
             }
 
             return;
@@ -4721,6 +4954,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             return;
         }
+        
         
         //Shop Menu Control for selecting party member
         if (currentState == GameState.SHOP) {
