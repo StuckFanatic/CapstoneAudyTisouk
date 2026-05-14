@@ -4390,12 +4390,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             for (int i = 0; i < partyMembers.size(); i++) {
                 writePartyMember(writer, partyMembers.get(i), i);
             }
-            
-            PartyMember art = getPartyMemberById("leader");
-            //Records whether Art currently has Iron Sword or Rusty Creation equipped
-            if (art != null && art.getEquippedWeapon() != null) {
-                writer.write("leaderEquippedWeapon=" + art.getEquippedWeapon().getId() + "\n");
-            }
 
             writer.close();
 
@@ -4421,18 +4415,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             Scanner scanner = new Scanner(file);
             
             int partyCount = 0;
-            String leaderEquippedWeaponId = "";
 
             String[] partyIds = new String[20];
             int[] partyLevels = new int[20];
             int[] partyExps = new int[20];
-            int[] partyWeaponCounts = new int[20];
-            String[][] partyWeaponIds = new String[20][20];
-            String[] partyEquippedWeaponIds = new String[20];
 
             int[] partyMaxHp = new int[20];
             int[] partyMaxMana = new int[20];
             int[] partyCurrentMana = new int[20];
+
             int[] partyStr = new int[20];
             int[] partyMag = new int[20];
             int[] partySkl = new int[20];
@@ -4441,6 +4432,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             int[] partyDef = new int[20];
             int[] partyRes = new int[20];
             int[] partyMov = new int[20];
+
+            int[] partyWeaponCounts = new int[20];
+            String[][] partyWeaponIds = new String[20][20];
+            String[] partyEquippedWeaponIds = new String[20];
 
             while (scanner.hasNextLine()) {
             	
@@ -4459,9 +4454,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 if (key.equals("playerCol")) {
                     player.col = Integer.parseInt(value);
                 }
-                else if (key.equals("partyCount")) {
-                    partyCount = Integer.parseInt(value);
-                }
                 else if (key.equals("playerRow")) {
                     player.row = Integer.parseInt(value);
                 }
@@ -4474,14 +4466,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 else if (key.equals("storyChapter")) {
                     storyChapter = Integer.parseInt(value);
                 }
-                else if (key.equals("leaderEquippedWeapon")) {
-                    leaderEquippedWeaponId = value;
-                }
                 else if (key.equals("hasCreationSword")) {
                     hasCreationSword = Boolean.parseBoolean(value);
                 }
                 else if (key.equals("creationAwakened")) {
                     creationAwakened = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("partyCount")) {
+                    partyCount = Integer.parseInt(value);
+                }
+                //Active Quests
+                else if (key.equals("banditQuestAccepted")) {
+                    banditQuestAccepted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("banditQuestCompleted")) {
+                    banditQuestCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("banditQuestRewardClaimed")) {
+                    banditQuestRewardClaimed = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -4553,17 +4555,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("archerMov")) {
                     archerMember.getStats().setMovement(Integer.parseInt(value));
-                }
-                
-                //Active Quests
-                else if (key.equals("banditQuestAccepted")) {
-                    banditQuestAccepted = Boolean.parseBoolean(value);
-                }
-                else if (key.equals("banditQuestCompleted")) {
-                    banditQuestCompleted = Boolean.parseBoolean(value);
-                }
-                else if (key.equals("banditQuestRewardClaimed")) {
-                    banditQuestRewardClaimed = Boolean.parseBoolean(value);
                 }
                 
                 else if (key.startsWith("party")) {
@@ -4785,6 +4776,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         writer.write("party" + index + "MaxHp=" + stats.getMaxHp() + "\n");
         writer.write("party" + index + "MaxMana=" + stats.getMaxMana() + "\n");
         writer.write("party" + index + "CurrentMana=" + stats.getCurrentMana() + "\n");
+
         writer.write("party" + index + "Str=" + stats.getStrength() + "\n");
         writer.write("party" + index + "Mag=" + stats.getMagic() + "\n");
         writer.write("party" + index + "Skl=" + stats.getSkill() + "\n");
@@ -4793,8 +4785,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         writer.write("party" + index + "Def=" + stats.getDefense() + "\n");
         writer.write("party" + index + "Res=" + stats.getResistance() + "\n");
         writer.write("party" + index + "Mov=" + stats.getMovement() + "\n");
-        
-        //Loads and unloads weapons upon loading and saving
+
+        //Loads and unloads weapons when saving and loading back in
         List<Weapon> weapons = member.getWeapons();
 
         writer.write("party" + index + "WeaponCount=" + weapons.size() + "\n");
@@ -4807,7 +4799,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("party" + index + "EquippedWeapon=" + member.getEquippedWeapon().getId() + "\n");
         }
     }
-    
     
     //keys need to be pressed for movement
     @Override
