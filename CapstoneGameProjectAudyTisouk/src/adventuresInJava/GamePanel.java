@@ -1128,11 +1128,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	
                 if (displayUnit != null) {
                     g.drawString("Player: " + displayUnit.getName(), 280, panelY + 25);
-                    g.drawString("Class: " + displayUnit.getCharacterClass().getName(), 280, panelY + 45);
-                    g.drawString("HP: " + displayUnit.getHp() + "/" + displayUnit.getMaxHp(), 280, panelY + 65);
-                    g.drawString("Weapon: " + displayUnit.getWeapon().getName(), 280, panelY + 85);
-                    g.drawString("AC: " + displayUnit.getArmorClass(), 280, panelY + 105);
-                    g.drawString("LV: " + displayUnit.getLevel() + " EXP: " + displayUnit.getExperience(), 280, panelY + 125);
+                    g.drawString("HP: " + displayUnit.getHp() + "/" + displayUnit.getMaxHp(), 280, panelY + 45);
+                    g.drawString("Weapon: " + displayUnit.getWeapon().getName(), 280, panelY + 65);
+                    g.drawString("MP: " + displayUnit.getStats().getCurrentMana() + "/" + displayUnit.getStats().getMaxMana(), 280, panelY + 85);
+                    g.drawString("LV: " + displayUnit.getLevel() + " EXP: " + displayUnit.getExperience(), 280, panelY + 105);
                     
                 }
                 break;
@@ -1981,7 +1980,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         int detailY = menuY + 70;
 
         g.setColor(Color.WHITE);
-
+        //g.drawString("AC: " + displayUnit.getArmorClass(), 280, panelY + 105); //AC FOR LATER
         g.drawString("Name: " + member.getName(), detailX, detailY);
         g.drawString("Class: " + member.getCharacterClass().getName(), detailX, detailY + 25);
         g.drawString("Level: " + member.getLevel(), detailX, detailY + 50);
@@ -2000,10 +1999,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         int statY = detailY + 165;
 
         g.drawString("HP: " + stats.getMaxHp(), statX1, statY);
-        g.drawString("STR: " + stats.getStrength(), statX1, statY + 25);
-        g.drawString("MAG: " + stats.getMagic(), statX1, statY + 50);
-        g.drawString("SKL: " + stats.getSkill(), statX1, statY + 75);
-        g.drawString("SPD: " + stats.getSpeed(), statX1, statY + 100);
+        g.drawString("MP: " + stats.getCurrentMana() + "/" + stats.getMaxMana(), statX1, statY + 25);
+        g.drawString("STR: " + stats.getStrength(), statX1, statY + 50);
+        g.drawString("MAG: " + stats.getMagic(), statX1, statY + 75);
+        g.drawString("SKL: " + stats.getSkill(), statX1, statY + 100);
+        g.drawString("SPD: " + stats.getSpeed(), statX1, statY + 125);
 
         // Stats column 2
         int statX2 = detailX + 120;
@@ -2100,8 +2100,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		GrowthRates hunterGrowths = new GrowthRates(60, 35, 0, 55, 50, 25, 15, 20);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
-		UnitStats banditStats = new UnitStats(10, 4, 0, 3, 3, 1, 1, 0, 4);
-		UnitStats hunterStats = new UnitStats(9, 3, 0, 5, 5, 2, 1, 1, 5);
+		UnitStats banditStats = new UnitStats(10, 0, 4, 0, 3, 3, 1, 1, 0, 4);
+		UnitStats hunterStats = new UnitStats(9, 2, 3, 0, 5, 5, 2, 1, 1, 5);
 		
 
 		if (unitId.equals("bandit")) {
@@ -2136,10 +2136,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         GrowthRates archerGrowths = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
         GrowthRates mageGrowths = new GrowthRates(50, 10, 60, 45, 45, 40, 15, 45);
         
-        //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
-        UnitStats leaderStats = new UnitStats(12, 4, 0, 4, 4, 2, 2, 1, 4);
-        UnitStats archerStats = new UnitStats(10, 3, 0, 5, 5, 3, 1, 2, 5);
-        UnitStats mageStats = new UnitStats(8, 0, 5, 4, 4, 4, 1, 3, 4);
+        //Health, Mana, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
+        UnitStats leaderStats = new UnitStats(12, 5, 4, 0, 4, 4, 2, 2, 1, 4);
+        UnitStats archerStats = new UnitStats(10, 3, 3, 0, 5, 5, 3, 1, 2, 5);
+        UnitStats mageStats = new UnitStats(8, 12, 0, 5, 4, 4, 4, 1, 3, 4);
 
         leaderMember = new PartyMember(
             "leader",
@@ -2845,7 +2845,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	int boxX = panelX + 20;
     	int boxY = mapHeight - 170;
     	int boxWidth = rightPanelWidth - 40;
-    	int boxHeight = 140;
+    	int boxHeight = 160;
+    	int manaCost = getSkillManaCost(skillAttacker.getSkillName());
     	
     	g.setColor(new Color(30, 30, 30, 230));
     	g.fillRect(boxX, boxY, boxWidth, boxHeight);
@@ -2864,8 +2865,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		g.drawString("Effect: +2 hit bonus", boxX + 15, boxY + 80);
     	}
     	
-    	g.drawString("Enter confirm", boxX + 15, boxY + 100);
-    	g.drawString("ESC cancel", boxX + 15, boxY + 120);
+    	g.drawString("Cost: " + manaCost + " MP", boxX + 15, boxY + 100);
+    	g.drawString("Enter confirm", boxX + 15, boxY + 120);
+    	g.drawString("ESC cancel", boxX + 15, boxY + 140);
     	
     }
     
@@ -3626,22 +3628,49 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             performPreciseShot(attacker, defender);
             return;
         }
+        
+        if (skillName.equals("Fire Bolt")) {
+            performFireBolt(attacker, defender);
+            return;
+        }
 
         addBattleMessage(attacker.getName() + " has no usable skill.");
+    }
+    
+    //Gets and uses mana for skills 
+    private int getSkillManaCost(String skillName) {
+
+        if (skillName.equals("Power Strike")) {
+            return 2;
+        }
+
+        if (skillName.equals("Precise Shot")) {
+            return 2;
+        }
+
+        if (skillName.equals("Fire Bolt")) {
+            return 4;
+        }
+
+        return 0;
     }
     
     //Stronger Version of a normal strike
     private void performPowerStrike(BattleUnit attacker, BattleUnit defender) {
     	
+    	resetLastAttackResult();
     	Weapon weapon = attacker.getWeapon();
     	
     	int statHitBonus = attacker.getStats().getSkill() / 2; //Skill effects hit rating
     	int roll = random.nextInt(20) + 1; //1 through 20
     	int totalAttack = roll + weapon.getAttackBonus() + statHitBonus;
+    	int defenderAc = getTotalArmorClass(defender);
     	
     	addBattleMessage(attacker.getName() + " used Power Strike");
-    	
-    	if (totalAttack >= defender.getArmorClass()) {
+
+    	if (totalAttack >= defenderAc) {
+    		
+    		lastAttackHit = true;
     		
     		int baseDamage = rollWeaponDamage(weapon);
     		int attackStat = attacker.getStats().getStrength();
@@ -3651,12 +3680,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		if (damage < 0) damage = 0;
     	
     		defender.takeDamage(damage);
+    		lastAttackDamage = damage;
     		
     		addBattleMessage("Power Strike Hit!");
     		addBattleMessage(defender.getName() + " took " + damage + " damage.");
     		
     		
     	} else {
+    		lastAttackHit = false;
     		addBattleMessage("Power Strike Missed!");
     	}
     }
@@ -3664,15 +3695,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //More accurate than a regular shot
     private void performPreciseShot(BattleUnit attacker, BattleUnit defender) {
     	
+    	resetLastAttackResult();
     	Weapon weapon = attacker.getWeapon();
     	
     	int statHitBonus = attacker.getStats().getSkill() / 2;
     	int roll = random.nextInt(20) + 1;
     	int totalAttack = roll + weapon.getAttackBonus() + statHitBonus + 10;
+    	int defenderAc = getTotalArmorClass(defender);
     	
     	addBattleMessage(attacker.getName() + " used Precise Shot");
-    	
-    	if (totalAttack >= defender.getArmorClass()) {
+
+    	if (totalAttack >= defenderAc) {
+    		
+    		lastAttackHit = true;
     		
     		int baseDamage = rollWeaponDamage(weapon);
     		int attackStat = attacker.getStats().getStrength();
@@ -3682,14 +3717,95 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		if (damage < 0) damage = 0;
     	
     		defender.takeDamage(damage);
+    		lastAttackDamage = damage;
     		
     		addBattleMessage("Precise Shot Hit!");
     		addBattleMessage(defender.getName() + " took " + damage + " damage.");
     		
     		
     	} else {
+    		lastAttackHit = false;
     		addBattleMessage("Precise Shot Missed!");
     	}
+    }
+    
+    //Mage
+    private void performFireBolt(BattleUnit attacker, BattleUnit defender) {
+
+        resetLastAttackResult();
+
+        Weapon weapon = attacker.getWeapon();
+
+        int statHitBonus = attacker.getStats().getSkill() / 2;
+        int roll = random.nextInt(20) + 1;
+
+        // Fire Bolt gets a small hit bonus because it is a focused spell
+        int totalAttack = roll + weapon.getAttackBonus() + statHitBonus + 1;
+
+        int defenderAc = getTotalArmorClass(defender);
+
+        addBattleMessage(attacker.getName() + " cast Fire Bolt!");
+
+        if (totalAttack >= defenderAc) {
+
+            lastAttackHit = true;
+
+            int baseDamage = rollWeaponDamage(weapon);
+            int attackStat = attacker.getStats().getMagic();
+            int defenseStat = defender.getStats().getResistance();
+
+            int damage = baseDamage + attackStat + 2 - defenseStat;
+
+            if (damage < 0) {
+                damage = 0;
+            }
+
+            // Crit still uses Luck
+            int critRoll = random.nextInt(100) + 1;
+            int critChance = calculateCritChance(attacker);
+
+            if (critRoll <= critChance) {
+                lastAttackCrit = true;
+                damage *= 2;
+            }
+
+            if (damage >= defender.getHp()) {
+                if (tryLuckyBreak(defender)) {
+                    lastAttackLuckyBreak = true;
+                    lastAttackDamage = 0;
+
+                    defender.setHp(1);
+
+                    addBattleMessage("Fire Bolt hit!");
+                    if (lastAttackCrit) {
+                        addBattleMessage("Critical hit!");
+                    }
+                    addBattleMessage(defender.getName() + " triggered Lucky Break!");
+                    return;
+                }
+            }
+
+            defender.takeDamage(damage);
+            lastAttackDamage = damage;
+
+            addBattleMessage("Fire Bolt hit!");
+            if (lastAttackCrit) {
+                addBattleMessage("Critical hit!");
+            }
+            addBattleMessage(defender.getName() + " took " + damage + " damage.");
+
+        } else {
+            lastAttackHit = false;
+            addBattleMessage("Fire Bolt missed!");
+        }
+    }
+    
+    
+    private void resetLastAttackResult() {
+        lastAttackHit = false;
+        lastAttackCrit = false;
+        lastAttackLuckyBreak = false;
+        lastAttackDamage = 0;
     }
     
     
@@ -3698,6 +3814,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean performAttack(BattleUnit attacker, BattleUnit defender) {
     	
     	System.out.println("performAttack called");
+    	resetLastAttackResult();
     	Weapon weapon = attacker.getWeapon();
     	
     	lastAttackHit = false;
@@ -4180,26 +4297,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //helper will allow text defender to show when countering
     private void showZoomResultText(String actionName, boolean hit, boolean crit, boolean luckyBreak, int damage, boolean isSkill) {
-    	
-    	if (!hit) {
-    		showZoomFloatingText(isSkill ? "Skill Miss!" : "Miss!", mapWidth / 2 - 40, 180);
-    		return;
-    	}
-    	
-    	if (!crit) {
-    		showZoomFloatingText("Critical!", mapWidth / 2 - 45, 140);
-    		return;
-    		
-    	} else {
-        		showZoomFloatingText(isSkill ? actionName + "!" : "Hit!", mapWidth / 2 - 25, 160);
-        	}
-    	
-    		showZoomFloatingText2("-" + damage, mapWidth / 2 - 10, 200);
-    	
-    		if (luckyBreak) {
-    			showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 120);
-    			showZoomFloatingText("1 HP", mapWidth / 2 - 10, 220);
-    		}
+
+        if (!hit) {
+            showZoomFloatingText(isSkill ? "Skill Miss!" : "Miss!", mapWidth / 2 - 40, 180);
+            return;
+        }
+
+        if (luckyBreak) {
+            showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 140);
+            showZoomFloatingText2("1 HP", mapWidth / 2 - 10, 200);
+            return;
+        }
+
+        if (crit) {
+            showZoomFloatingText("Critical!", mapWidth / 2 - 45, 160);
+            showZoomFloatingText2("-" + damage, mapWidth / 2 - 10, 200);
+            return;
+        }
+
+        showZoomFloatingText(isSkill ? actionName + "!" : "Hit!", mapWidth / 2 - 25, 160);
+        showZoomFloatingText2("-" + damage, mapWidth / 2 - 10, 200);
     }
     
     
@@ -4314,6 +4431,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             String[] partyEquippedWeaponIds = new String[20];
 
             int[] partyMaxHp = new int[20];
+            int[] partyMaxMana = new int[20];
+            int[] partyCurrentMana = new int[20];
             int[] partyStr = new int[20];
             int[] partyMag = new int[20];
             int[] partySkl = new int[20];
@@ -4466,6 +4585,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                         else if (key.endsWith("MaxHp")) {
                             partyMaxHp[index] = Integer.parseInt(value);
                         }
+                        else if (key.endsWith("MaxMana")) {
+                            partyMaxMana[index] = Integer.parseInt(value);
+                        }
+                        else if (key.endsWith("CurrentMana")) {
+                            partyCurrentMana[index] = Integer.parseInt(value);
+                        }
                         else if (key.endsWith("Str")) {
                             partyStr[index] = Integer.parseInt(value);
                         }
@@ -4531,6 +4656,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 //Apply Data after Reads
                 UnitStats loadedStats = new UnitStats(
                     partyMaxHp[i],
+                    partyMaxMana[i],
                     partyStr[i],
                     partyMag[i],
                     partySkl[i],
@@ -4541,6 +4667,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     partyMov[i]
                 );
 
+                loadedStats.setCurrentMana(partyCurrentMana[i]);
+                
                 applyPartyMemberData(
                     partyIds[i],
                     partyLevels[i],
@@ -4655,6 +4783,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         writer.write("party" + index + "Exp=" + member.getExperience() + "\n");
 
         writer.write("party" + index + "MaxHp=" + stats.getMaxHp() + "\n");
+        writer.write("party" + index + "MaxMana=" + stats.getMaxMana() + "\n");
+        writer.write("party" + index + "CurrentMana=" + stats.getCurrentMana() + "\n");
         writer.write("party" + index + "Str=" + stats.getStrength() + "\n");
         writer.write("party" + index + "Mag=" + stats.getMagic() + "\n");
         writer.write("party" + index + "Skl=" + stats.getSkill() + "\n");
@@ -5103,94 +5233,67 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		//First Enter is attacker
         	    if (code == KeyEvent.VK_ENTER) {
 
-        	        if (!zoomAttackResolved) {
+        	    	if (!zoomAttackResolved) {
 
-        	            if (zoomIsSkill) {
-        	                performSkill(zoomAttacker, zoomDefender);
-        	                zoomAttacker.setSkillUsed(true);
-        	                
-        	                if (!zoomIsSkill) {
-        	                	
-            	            	
-            	            	if (!lastAttackHit) {
-            	            		showZoomFloatingText("Miss!", mapWidth / 2 - 30, 180);
-            	            		
-            	            	} else {
-            	            		
-            	            		if (lastAttackCrit) {
-            	            			showZoomFloatingText("Critical!", mapWidth / 2 - 45, 160);
-            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
-            	            			
-            	            		} else {
-            	            			showZoomFloatingText("Hit!", mapWidth / 2 - 20, 160);
-            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
-            	            		}
-            	            		
-            	            		if (lastAttackLuckyBreak) {
-            	            			showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 140);
-            	            			showZoomFloatingText2("1 HP", mapWidth / 2 - 10, 220); //can delete for effect to just say LB
-            	            		}
-            	            	}
-        	                }
-        	                
-        	            } else {
-        	                performAttack(zoomAttacker, zoomDefender);
-        	                
-        	              //Float text logic will give us the floating text
-            	            if (!zoomIsSkill) {
-        	                	
-            	            	
-            	            	if (!lastAttackHit) {
-            	            		showZoomFloatingText("Miss!", mapWidth / 2 - 30, 180);
-            	            		
-            	            	} else {
-            	            		if (lastAttackCrit) {
-            	            			showZoomFloatingText("Critical!", mapWidth / 2 - 45, 160);
-            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
-            	            			
-            	            		} else {
-            	            			showZoomFloatingText("Hit!", mapWidth / 2 - 20, 160);
-            	            			showZoomFloatingText2("-" + lastAttackDamage, mapWidth / 2 - 10, 200);
-            	            		}
-            	            		
-            	            		if (lastAttackLuckyBreak) {
-            	            			showZoomFloatingText("Lucky Break!", mapWidth / 2 - 55, 140);
-            	            			showZoomFloatingText2("1 HP", mapWidth / 2 - 10, 220); //can delete for effect to just say LB
-            	            		}
-            	            	}
-        	                }
-        	            }
-        	            
+        	    	    if (zoomIsSkill) {
 
-        	            zoomAttacker.setHasActed(true);
-        	            zoomAttacker.gainExperience(10);
+        	    	        int manaCost = getSkillManaCost(zoomAttacker.getSkillName());
 
-        	            if (!zoomDefender.isAlive()) {
-        	                zoomAttacker.gainExperience(25);
-        	                addBattleMessage(zoomDefender.getName() + " was defeated!");
-        	            }
+        	    	        if (!zoomAttacker.getStats().hasEnoughMana(manaCost)) {
+        	    	            addBattleMessage("Not enough mana.");
 
-        	            checkLevelUp(zoomAttacker);
+        	    	            battleZoomCombatOpen = false;
+        	    	            zoomAttacker = null;
+        	    	            zoomDefender = null;
+        	    	            zoomActionName = "";
+        	    	            zoomIsSkill = false;
+        	    	            zoomAttackResolved = false;
 
-        	            showZoomResultText(
-        	                zoomActionName,
-        	                lastAttackHit,
-        	                lastAttackCrit,
-        	                lastAttackLuckyBreak,
-        	                lastAttackDamage,
-        	                zoomIsSkill
-        	            );
+        	    	            selectedBattleUnit = null;
+        	    	            battleUnitSelected = false;
 
-        	            zoomAttackResolved = true;
+        	    	            selectedUnitStartCol = -1;
+        	    	            selectedUnitStartRow = -1;
 
-        	            // Counter attack only if defender survives and can counter
-        	            if (zoomDefender.isAlive() && canCounterattack(zoomAttacker, zoomDefender)) {
-        	                zoomCounterPending = true;
-        	            }
+        	    	            repaint();
+        	    	            return;
+        	    	        }
 
-        	            repaint();
-        	            return;
-        	        }
+        	    	        zoomAttacker.getStats().spendMana(manaCost);
+        	    	        performSkill(zoomAttacker, zoomDefender);
+
+        	    	    } else {
+        	    	        performAttack(zoomAttacker, zoomDefender);
+        	    	    }
+
+        	    	    zoomAttacker.setHasActed(true);
+        	    	    zoomAttacker.gainExperience(10);
+
+        	    	    if (!zoomDefender.isAlive()) {
+        	    	        zoomAttacker.gainExperience(25);
+        	    	        addBattleMessage(zoomDefender.getName() + " was defeated!");
+        	    	    }
+
+        	    	    checkLevelUp(zoomAttacker);
+
+        	    	    showZoomResultText(
+        	    	        zoomActionName,
+        	    	        lastAttackHit,
+        	    	        lastAttackCrit,
+        	    	        lastAttackLuckyBreak,
+        	    	        lastAttackDamage,
+        	    	        zoomIsSkill
+        	    	    );
+
+        	    	    zoomAttackResolved = true;
+
+        	    	    if (zoomDefender.isAlive() && canCounterattack(zoomAttacker, zoomDefender)) {
+        	    	        zoomCounterPending = true;
+        	    	    }
+
+        	    	    repaint();
+        	    	    return;
+        	    	}
         	        
         	        
         	        // First Wait until counter floating text finishes before allowing close
@@ -5311,18 +5414,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	    }
 
         	    if (code == KeyEvent.VK_ENTER) {
-        	    	
-        			openZoomCombat(skillAttacker, skillDefender, false, skillAttacker.getSkillName());
-        			
-        			battleSkillPreviewOpen = false;
-        			battleSkillTargetSelectOpen = false;
-        			
-        			skillAttacker = null;
-        			skillDefender = null;
-        			
-        			repaint();
-        			return;
-        	        
+
+        	        openZoomCombat(skillAttacker, skillDefender, true, skillAttacker.getSkillName());
+
+        	        battleSkillPreviewOpen = false;
+        	        battleSkillTargetSelectOpen = false;
+
+        	        skillAttacker = null;
+        	        skillDefender = null;
+
+        	        repaint();
+        	        return;
         	    }
         	}
         	
@@ -5541,9 +5643,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				        repaint();
     				        return;
     				    }
+    				    
+    				    int manaCost = getSkillManaCost(selectedBattleUnit.getSkillName());
 
-    				    if (selectedBattleUnit.hasUsedSkill()) {
-    				        addBattleMessage(selectedBattleUnit.getSkillName() + " has already been used.");
+    				    if (!selectedBattleUnit.getStats().hasEnoughMana(manaCost)) {
+    				        addBattleMessage("Not enough mana.");
     				        repaint();
     				        return;
     				    }

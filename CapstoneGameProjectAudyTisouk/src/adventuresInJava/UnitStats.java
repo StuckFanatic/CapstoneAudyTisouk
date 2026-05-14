@@ -4,6 +4,8 @@ package adventuresInJava;
 public class UnitStats {
 
 	private int maxHp;
+	private int maxMana;
+	private int currentMana;
 	private int strength;
 	private int magic;
 	private int skill;
@@ -15,9 +17,11 @@ public class UnitStats {
 	
 	
 	
-	public UnitStats(int maxHp, int strength, int magic, int skill, int speed, int luck, int defense, int resistance, int movement) {
+	public UnitStats(int maxHp,int maxMana, int strength, int magic, int skill, int speed, int luck, int defense, int resistance, int movement) {
 		
 		this.maxHp = maxHp;
+		this.maxMana = maxMana;
+		this.currentMana = maxMana;
 		this.strength = strength;
 		this.magic = magic;
 		this.skill = skill;
@@ -33,6 +37,42 @@ public class UnitStats {
 	public int getMaxHp() {
 		
 		return maxHp;
+	}
+	
+	public int getMaxMana() {
+	    return maxMana;
+	}
+
+	public int getCurrentMana() {
+	    return currentMana;
+	}
+
+	public void setMaxMana(int maxMana) {
+	    this.maxMana = maxMana;
+	}
+
+	public void setCurrentMana(int currentMana) {
+	    this.currentMana = currentMana;
+
+	    if (this.currentMana < 0) {
+	        this.currentMana = 0;
+	    }
+
+	    if (this.currentMana > maxMana) {
+	        this.currentMana = maxMana;
+	    }
+	}
+	
+	public boolean hasEnoughMana(int cost) {
+	    return currentMana >= cost;
+	}
+
+	public void spendMana(int cost) {
+	    setCurrentMana(currentMana - cost);
+	}
+
+	public void restoreManaToFull() {
+	    currentMana = maxMana;
 	}
 	
 	public int getStrength() {
