@@ -169,6 +169,15 @@ public class BattleUnit {
 		}
 	}
 	
+	//Penelope
+	public void heal(int amount) {
+	    hp += amount;
+
+	    if (hp > maxHp) {
+	        hp = maxHp;
+	    }
+	}
+	
 	public boolean isAlive() {
 		
 		return hp > 0;

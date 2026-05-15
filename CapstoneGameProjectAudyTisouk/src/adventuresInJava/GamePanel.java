@@ -211,6 +211,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private List<BattleUnit> availableTargets = new ArrayList<>();
     private int currentTargetIndex = 0;
     
+    //Ally Target Preview
+    private boolean battleHealTargetSelectOpen = false;
+    private boolean battleHealPreviewOpen = false;
+
+    //healing targets
+    private BattleUnit healCaster = null;
+    private BattleUnit healTarget = null;
+    
     //Objective Typing
     //Defeat All
     private ObjectiveType currentObjective = ObjectiveType.DEFEAT_ALL;
@@ -1060,7 +1068,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	g.drawString(getObjectiveText(), 20, panelY + 45);
             	g.drawString("Turn " + currentBattleTurn, 20, panelY + 65);
             	
-            	if (battleZoomCombatOpen) {
+            	if (battleHealPreviewOpen) {
+            	    g.drawString("Heal Preview", 20, panelY + 90);
+            	    g.drawString("ENTER confirm, ESC cancel", 20, panelY + 110);
+
+            	} else if (battleHealTargetSelectOpen) {
+            	    g.drawString("Select Heal Target", 20, panelY + 90);
+            	    g.drawString("Arrow keys switch allies", 20, panelY + 110);
+            	
+            	} else if (battleZoomCombatOpen) {
             	    g.drawString("Zoom Combat", 20, panelY + 90);
 
             	    if (!zoomAttackResolved) {
@@ -1283,12 +1299,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 } else if (battleSkillPreviewOpen && skillAttacker != null && skillDefender != null) {
                     drawSkillPreview(g, panelX, panelY);
+                    
+                } else if (battleHealPreviewOpen && healCaster != null && healTarget != null) {
+                    drawHealPreview(g, panelX, panelY);
 
                 } else if (battleTargetSelectOpen && !availableTargets.isEmpty()) {
                     drawTargetSelection(g, panelX, panelY);
 
                 } else if (battleSkillTargetSelectOpen && !availableTargets.isEmpty()) {
                     drawSkillTargetSelection(g, panelX, panelY);
+                    
+                } else if (battleHealTargetSelectOpen && !availableTargets.isEmpty()) {
+                    drawHealTargetSelection(g, panelX, panelY);
+
 
                 } else {
                     drawBattleActionMenu(g);
@@ -2072,6 +2095,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		
 		drawBattleCursor(g);
 	    drawTargetHighlight(g);
+	    drawHealTargetHighlight(g);
 	    drawZoomCombat(g);
 	    drawBattlePhaseBanner(g);
     	
@@ -2124,26 +2148,32 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	Weapon ironSword = createWeaponById("iron_sword");
     	Weapon shortBow = createWeaponById("short_bow");
-    	Weapon fireTome = createWeaponById("fire_tome");
+    	//Weapon fireTome = createWeaponById("fire_tome");
+    	Weapon trainingStaff = createWeaponById("training_staff");
         
         //Class Name, Max HP, Armor Class, Movement Range
         CharacterClass fighterClass = new CharacterClass("Fighter", 12, 12, 4, new WeaponType[] { WeaponType.SWORD });
         CharacterClass archerClass = new CharacterClass("Archer", 10, 11, 5, new WeaponType[] { WeaponType.BOW });
-        CharacterClass mageClass = new CharacterClass("Mage", 8, 10, 4, new WeaponType[] { WeaponType.TOME });
+        CharacterClass penelopeClass = new CharacterClass("Cleric", 9, 10, 4, new WeaponType[] { WeaponType.STAFF, WeaponType.TOME });
+        //CharacterClass mageClass = new CharacterClass("Mage", 8, 10, 4, new WeaponType[] { WeaponType.TOME });
         
         //Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
         GrowthRates leaderGrowths = new GrowthRates(80, 55, 10, 50, 45, 35, 30, 20);
         GrowthRates archerGrowths = new GrowthRates(65, 40, 5, 60, 55, 40, 20, 25);
-        GrowthRates mageGrowths = new GrowthRates(50, 10, 60, 45, 45, 40, 15, 45);
+        //GrowthRates mageGrowths = new GrowthRates(50, 10, 60, 45, 45, 40, 15, 45);
+        GrowthRates penelopeGrowths = new GrowthRates(60, 10, 45, 55, 45, 50, 20, 50);
         
         //Health, Mana, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
         UnitStats leaderStats = new UnitStats(12, 5, 4, 0, 4, 4, 2, 2, 1, 4);
         UnitStats archerStats = new UnitStats(10, 3, 3, 0, 5, 5, 3, 1, 2, 5);
-        UnitStats mageStats = new UnitStats(8, 12, 0, 5, 4, 4, 4, 1, 3, 4);
+        //UnitStats mageStats = new UnitStats(8, 12, 0, 5, 4, 4, 4, 1, 3, 4);
+        UnitStats penelopeStats = new UnitStats(10, 14, 0, 4, 5, 4, 5, 1, 4, 4);
 
+        
+        //Units
         leaderMember = new PartyMember(
             "leader",
-            "Leader",
+            "Art Forger",
             1,
             0,
             leaderStats,
@@ -2155,7 +2185,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         archerMember = new PartyMember(
             "archer_ally",
-            "Archer Ally",
+            "Dean Lokka",
             1,
             0,
             archerStats,
@@ -2167,14 +2197,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         mageMember = new PartyMember(
         	    "mage",
-        	    "Mage",
+        	    "Penelope Godwinson",
         	    1,
         	    0,
-        	    mageStats,
-        	    mageGrowths,
-        	    mageClass,
-        	    fireTome,
-        	    "Fire Bolt"
+        	    penelopeStats,
+        	    penelopeGrowths,
+        	    penelopeClass,
+        	    trainingStaff,
+        	    "Heal"
         	);
         
         partyMembers.add(leaderMember);
@@ -2238,6 +2268,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (weaponId.equals("fire_tome_plus")) {
             return new Weapon("fire_tome_plus", "Fire Tome+", WeaponType.TOME, 1, 2, 3, 1, 8, 2, true);
+        }
+        
+        //Cleric
+        if (weaponId.equals("training_staff")) {
+            return new Weapon("training_staff", "Training Staff", WeaponType.STAFF, 1, 1, 2, 1, 4, 1, true);
         }
 
         //Bandits
@@ -2871,6 +2906,72 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Same as Skills but strictly for healing
+    private void drawHealPreview(Graphics g, int panelX, int panelY) {
+
+        int boxX = panelX + 20;
+        int boxY = mapHeight - 170;
+        int boxWidth = rightPanelWidth - 40;
+        int boxHeight = 140;
+
+        g.setColor(new Color(30, 30, 30, 230));
+        g.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(boxX, boxY, boxWidth, boxHeight);
+
+        int minHeal = calculateMinHeal(healCaster);
+        int maxHeal = calculateMaxHeal(healCaster);
+        int manaCost = getSkillManaCost("Heal");
+
+        g.drawString("Heal Preview", boxX + 15, boxY + 20);
+        g.drawString(healCaster.getName() + " -> " + healTarget.getName(), boxX + 15, boxY + 40);
+        g.drawString("Skill: Heal", boxX + 15, boxY + 60);
+        g.drawString("Restores: " + minHeal + " - " + maxHeal + " HP", boxX + 15, boxY + 80);
+        g.drawString("Cost: " + manaCost + " MP", boxX + 15, boxY + 100);
+        g.drawString("ENTER confirm", boxX + 15, boxY + 120);
+        
+        
+    }
+    
+    //draws the targets for healing avaliable
+    private void drawHealTargetSelection(Graphics g, int panelX, int panelY) {
+
+        int boxX = panelX + 20;
+        int boxY = mapHeight - 160;
+        int boxWidth = rightPanelWidth - 40;
+        int boxHeight = 120;
+
+        g.setColor(new Color(30, 30, 30, 230));
+        g.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(boxX, boxY, boxWidth, boxHeight);
+
+        BattleUnit target = availableTargets.get(currentTargetIndex);
+
+        g.drawString("Select Heal Target", boxX + 15, boxY + 20);
+        g.drawString("Target: " + target.getName(), boxX + 15, boxY + 45);
+        g.drawString("HP: " + target.getHp() + "/" + target.getMaxHp(), boxX + 15, boxY + 65);
+        g.drawString("ENTER confirm", boxX + 15, boxY + 90);
+        g.drawString("ESC cancel", boxX + 15, boxY + 110);
+        
+    }
+    
+    private void drawHealTargetHighlight(Graphics g) {
+
+        if (!battleHealTargetSelectOpen || availableTargets.isEmpty()) {
+            return;
+        }
+
+        BattleUnit target = availableTargets.get(currentTargetIndex);
+
+        g.setColor(new Color(80, 220, 120));
+        g.drawRect(target.getCol() * tileSize, target.getRow() * tileSize, tileSize, tileSize);
+        g.drawRect(target.getCol() * tileSize + 1, target.getRow() * tileSize + 1, tileSize - 2, tileSize - 2);
+        
+    }
+    
     
     private void drawBattleActionMenu(Graphics g) {
     	
@@ -2928,6 +3029,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return distance >= weapon.getMinRange() && distance <= weapon.getMaxRange();
     	
     }
+    
     
     private boolean isSkillInRange(BattleUnit attacker, BattleUnit defender) {
     	
@@ -3008,6 +3110,45 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	return targets;
     	
+    }
+    
+    //Allies in range of healing or support skills
+    private List<BattleUnit> getAlliesInRange(BattleUnit caster, int range) {
+
+        List<BattleUnit> allies = new ArrayList<>();
+
+        if (caster == null) {
+            return allies;
+        }
+
+        for (BattleUnit unit : playerBattleUnits) {
+
+            if (unit == null || !unit.isAlive()) {
+                continue;
+            }
+
+            if (unit == caster) {
+                continue; // for now do not allow self-heal
+            }
+            
+            if (unit.getHp() >= unit.getMaxHp()) {
+                continue; //Allows the UI to pick only injured allies 
+            }
+
+            int distance = Math.abs(caster.getCol() - unit.getCol())
+                         + Math.abs(caster.getRow() - unit.getRow());
+
+            if (distance <= range) {
+                allies.add(unit);
+            }
+        }
+
+        return allies;
+    }
+    
+    //Skill menu branch decide whether to target enemies or allies
+    private boolean isHealingSkill(String skillName) {
+        return skillName.equals("Heal");
     }
     
     //battle phase banner during turn switch
@@ -3651,6 +3792,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (skillName.equals("Fire Bolt")) {
             return 4;
         }
+        
+        if (skillName.equals("Heal")) {
+            return 4;
+        }
 
         return 0;
     }
@@ -3950,6 +4095,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    //Min heal
+    private int calculateMinHeal(BattleUnit healer) {
+        return 1 + healer.getStats().getMagic();
+    }
+    
+
+    //Max heal
+    private int calculateMaxHeal(BattleUnit healer) {
+        return 6 + healer.getStats().getMagic();
+    }
+    
     //Counter Attack gives defenders chance to hit back
     private boolean canCounterattack(BattleUnit attacker, BattleUnit defender) {
     	
@@ -3969,6 +4125,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	totalDamage += weapon.getDamageBonus();
     	
     	return totalDamage;
+    }
+    
+    //healing methods
+    private int rollHealAmount(BattleUnit healer) {
+        int roll = random.nextInt(6) + 1;
+        return roll + healer.getStats().getMagic();
     }
     
     //Critical Strike chance 
@@ -5365,6 +5527,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	    return;
         	}
         	
+        	//support zoom does not happen. Maybe will add in future
+        	if (battleHealPreviewOpen) {
+
+        	    if (code == KeyEvent.VK_ESCAPE) {
+        	        battleHealPreviewOpen = false;
+        	        battleHealTargetSelectOpen = true;
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_ENTER) {
+
+        	        int manaCost = getSkillManaCost(healCaster.getSkillName());
+
+        	        if (!healCaster.getStats().hasEnoughMana(manaCost)) {
+        	            addBattleMessage("Not enough mana.");
+        	            battleHealPreviewOpen = false;
+        	            battleActionMenuOpen = true;
+        	            repaint();
+        	            return;
+        	        }
+
+        	        healCaster.getStats().spendMana(manaCost);
+
+        	        int healAmount = rollHealAmount(healCaster);
+        	        healTarget.heal(healAmount);
+
+        	        addBattleMessage(healCaster.getName() + " used Heal.");
+        	        addBattleMessage(healTarget.getName() + " recovered " + healAmount + " HP.");
+
+        	        healCaster.setHasActed(true);
+
+        	        battleHealPreviewOpen = false;
+        	        battleHealTargetSelectOpen = false;
+
+        	        healCaster = null;
+        	        healTarget = null;
+
+        	        selectedBattleUnit = null;
+        	        battleUnitSelected = false;
+
+        	        selectedUnitStartCol = -1;
+        	        selectedUnitStartRow = -1;
+
+        	        repaint();
+        	        checkBattleEnd();
+
+        	        if (currentState == GameState.BATTLE && allPlayerUnitsHaveActed()) {
+        	            endPlayerPhase();
+        	        }
+
+        	        return;
+        	    }
+        	}
+        	
         	
         	//Battle Preview Before the actual menu first
         	if (battleAttackPreviewOpen) {
@@ -5479,8 +5697,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		
         	}
         	
+        	//Battle Skill Heal before the menu
+        	if (battleHealTargetSelectOpen) {
+
+        	    if (code == KeyEvent.VK_ESCAPE) {
+        	        battleHealTargetSelectOpen = false;
+        	        battleActionMenuOpen = true;
+
+        	        healCaster = null;
+        	        healTarget = null;
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_UP || code == KeyEvent.VK_LEFT) {
+        	        currentTargetIndex--;
+
+        	        if (currentTargetIndex < 0) {
+        	            currentTargetIndex = availableTargets.size() - 1;
+        	        }
+
+        	        healCaster = selectedBattleUnit;
+        	        healTarget = availableTargets.get(currentTargetIndex);
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_RIGHT) {
+        	        currentTargetIndex++;
+
+        	        if (currentTargetIndex >= availableTargets.size()) {
+        	            currentTargetIndex = 0;
+        	        }
+
+        	        healCaster = selectedBattleUnit;
+        	        healTarget = availableTargets.get(currentTargetIndex);
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_ENTER) {
+        	        battleHealTargetSelectOpen = false;
+        	        battleHealPreviewOpen = true;
+
+        	        healCaster = selectedBattleUnit;
+        	        healTarget = availableTargets.get(currentTargetIndex);
+
+        	        repaint();
+        	        return;
+        	    }
+        	}
         	
-        	//Battle Skill before the menu
+        	
+        	//Battle Skill Attack before the menu
         	if (battleSkillTargetSelectOpen) {
         		
         		if (code == KeyEvent.VK_ESCAPE) {
@@ -5634,8 +5906,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				        repaint();
     				        return;
     				    }
-    				    
-    				    int manaCost = getSkillManaCost(selectedBattleUnit.getSkillName());
+
+    				    String skillName = selectedBattleUnit.getSkillName();
+    				    int manaCost = getSkillManaCost(skillName);
 
     				    if (!selectedBattleUnit.getStats().hasEnoughMana(manaCost)) {
     				        addBattleMessage("Not enough mana.");
@@ -5643,11 +5916,35 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     				        return;
     				    }
 
+    				    if (isHealingSkill(skillName)) {
+
+    				        availableTargets = getAlliesInRange(selectedBattleUnit, 1);
+
+    				        if (!availableTargets.isEmpty()) {
+
+    				            battleHealTargetSelectOpen = true;
+    				            battleActionMenuOpen = false;
+    				            currentTargetIndex = 0;
+
+    				            healCaster = selectedBattleUnit;
+    				            healTarget = availableTargets.get(currentTargetIndex);
+
+    				            repaint();
+    				            return;
+
+    				        } else {
+    				            addBattleMessage("No ally in range to heal.");
+    				            repaint();
+    				            return;
+    				        }
+    				    }
+
+    				    // Non-healing skills still target enemies
     				    availableTargets = getEnemiesInRange(selectedBattleUnit);
 
     				    if (!availableTargets.isEmpty()) {
 
-    				        // Clear normal attack state
+    				    	// Clear normal attack state
     				        battleAttackPreviewOpen = false;
     				        previewAttacker = null;
     				        previewDefender = null;
