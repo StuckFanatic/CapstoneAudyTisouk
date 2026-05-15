@@ -111,6 +111,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int statusMenuIndex = 0;
     private GameState statusReturnState = GameState.OVERWORLD;
     
+    //CAMP MENU
+    private String[] campMenuOptions = {"Rest", "Talk", "Leave"};
+    private int campMenuIndex = 0;
+    
 
     
     /*
@@ -292,7 +296,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		SHOP,
 		EXPLORATION,
 		EQUIPMENT,
-		STATUS
+		STATUS,
+		CAMP
 		
 	}
     
@@ -723,6 +728,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    //Campsite
+    private void openCamp() {
+        currentState = GameState.CAMP;
+        campMenuIndex = 0;
+    }
+    
     //new for exploration tiles
     private void interactInExploration(TileType tile) {
 
@@ -814,6 +825,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    updateStatus();
     	    break;
     	    
+    	case CAMP:
+    	    updateCamp();
+    	    break;
+    	    
     	}
     	
     	
@@ -882,6 +897,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     }
     
+    private void updateCamp() {
+    	
+    }
+    
     //Allows quests to change the tiles of into a quest marker and back
     private void updateOverworldQuestTiles() {
 
@@ -942,10 +961,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case STATUS:
     	    drawStatus(g);
     	    break;
+    	    
+    	case CAMP:
+    	    drawCamp(g);
+    	    break;
 
         }
+        
         if (currentState != GameState.STATUS &&
-        	    currentState != GameState.EQUIPMENT) {
+        	    currentState != GameState.EQUIPMENT &&
+        	    currentState != GameState.CAMP &&
+        	    currentState != GameState.DIALOGUE) {
         	    drawGlobalUI(g);
         	}
         
@@ -1060,6 +1086,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("Inspect party members.", 20, panelY + 50);
                 g.drawString("UP/DOWN select, ESC close", 20, panelY + 75);
                 break;
+                
+            case CAMP:
+            	break;
 
             case BATTLE:
             	
@@ -1133,6 +1162,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case EQUIPMENT:
             	
             case STATUS:
+            	
+            case CAMP:
+   
 
             case BATTLE:
             	
@@ -1178,6 +1210,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case EQUIPMENT:
             	
             case STATUS:
+            	
+            case CAMP:
+            
             	
             case BATTLE:
             	
@@ -1279,6 +1314,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("View party stats.", panelX + 20, 55);
                 g.drawString("ESC close", panelX + 20, 80);
                 break;
+                
+            case CAMP:
+            	break;
 
             case BATTLE:
                 g.drawString("Battle", panelX + 20, 30);
@@ -1383,6 +1421,53 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         currentState = GameState.STATUS;
         statusMenuIndex = 0;
     }
+    
+    //Campsite
+    //REST DIALOGUE TALK CAMP
+    // For now only restore max HP and MP.
+    private void restParty() {
+
+        for (PartyMember member : partyMembers) {
+            UnitStats stats = member.getStats();
+
+            stats.restoreManaToFull();
+        }
+
+        System.out.println("The party rested. MP restored.");
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Narrator", "The party rests beneath the quiet night sky.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Narrator", "Everyone's mana has been restored.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.CAMP);
+    }
+    
+    //CAMP conversations
+    private void startCampConversation() {
+
+    	//Dialogue of camp in prologue
+        if (storyChapter == 0) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "I still say ruins are better at night.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "That is exactly why we should not be here.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "We will rest, then head back before anyone notices.", DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+        }
+
+        //camp conversations in chapter 1
+        if (storyChapter >= 1) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "Another day, another heroic step toward glory.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Or another step toward getting ourselves hurt.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Both of you, get some rest. We move at dawn.", DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+        }
+    }
+    
+    
     
     
     //Three Start Dialogues, Simple and Full
@@ -2057,6 +2142,68 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             g.drawString("Wpn Type: " + weapon.getWeaponType(), weaponX, detailY + 125);
         }
         
+    }
+    
+    //backround setting for campsite 
+    private void drawCampBackground(Graphics g) {
+
+        // Background
+        g.setColor(new Color(10, 15, 30));
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Stars / simple atmosphere
+        g.setColor(Color.WHITE);
+        g.fillOval(80, 60, 3, 3);
+        g.fillOval(180, 90, 2, 2);
+        g.fillOval(300, 50, 3, 3);
+        g.fillOval(430, 80, 2, 2);
+
+        // Campfire
+        int fireX = mapWidth / 2 - 20;
+        int fireY = mapHeight / 2;
+
+        g.setColor(new Color(120, 70, 30));
+        g.fillRect(fireX - 15, fireY + 25, 70, 12);
+
+        g.setColor(new Color(255, 140, 30));
+        g.fillOval(fireX, fireY, 40, 50);
+
+        g.setColor(new Color(255, 220, 80));
+        g.fillOval(fireX + 10, fireY + 10, 20, 30);
+    }
+    
+    //drawing for Campsite and camp style
+    private void drawCamp(Graphics g) {
+
+        drawCampBackground(g);
+
+        // Menu panel
+        int menuX = mapWidth + 20;
+        int menuY = 100;
+        int menuWidth = rightPanelWidth - 40;
+        int menuHeight = 140;
+
+        g.setColor(new Color(25, 25, 35));
+        g.fillRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.drawString("Camp", menuX + 20, menuY + 25);
+
+        for (int i = 0; i < campMenuOptions.length; i++) {
+            if (i == campMenuIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == campMenuIndex) ? "> " : "  ";
+            g.drawString(prefix + campMenuOptions[i], menuX + 25, menuY + 55 + (i * 25));
+        }
+
+        g.setColor(Color.WHITE);
+        g.drawString("ENTER confirm", menuX + 20, menuY + 125);
     }
     
     
@@ -4501,6 +4648,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         else if (previousState == GameState.EXPLORATION) {
             drawExploration(g);
         }
+        else if (previousState == GameState.CAMP) {
+            drawCampBackground(g);
+        }
+    	
     }
     
     //Allows freedom of movement
@@ -5044,6 +5195,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return;
             }
         }
+        
+        //opens Camp
+        if (code == KeyEvent.VK_G) {
+            if (currentState == GameState.OVERWORLD ||
+                currentState == GameState.TOWN ||
+                currentState == GameState.EXPLORATION) {
+
+                openCamp();
+                repaint();
+                return;
+            }
+        }
 
         if (currentState == GameState.DIALOGUE) {
 
@@ -5231,6 +5394,61 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 System.out.println(selectedMember.getName() + " equipped " + selectedWeapon.getName());
 
+                repaint();
+                return;
+            }
+
+            return;
+        }
+        
+        if (currentState == GameState.CAMP) {
+
+            if (code == KeyEvent.VK_UP) {
+                campMenuIndex--;
+
+                if (campMenuIndex < 0) {
+                    campMenuIndex = campMenuOptions.length - 1;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                campMenuIndex++;
+
+                if (campMenuIndex >= campMenuOptions.length) {
+                    campMenuIndex = 0;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER) {
+                String selectedOption = campMenuOptions[campMenuIndex];
+
+                if (selectedOption.equals("Rest")) {
+                    restParty();
+                    repaint();
+                    return;
+                }
+
+                if (selectedOption.equals("Talk")) {
+                    startCampConversation();
+                    repaint();
+                    return;
+                }
+
+                if (selectedOption.equals("Leave")) {
+                    currentState = GameState.OVERWORLD;
+                    repaint();
+                    return;
+                }
+            }
+
+            if (code == KeyEvent.VK_ESCAPE) {
+                currentState = GameState.OVERWORLD;
                 repaint();
                 return;
             }
