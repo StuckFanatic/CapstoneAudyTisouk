@@ -95,6 +95,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] ruinsMap;
     private GameMap ruinsGameMap;
     
+    //Prologue part 1
+    private Tile[][] prologueForestMap;
+    private GameMap prologueForestGameMap;
+    
     //SHOP
     private boolean selectingShopBuyer = true;
     private int shopBuyerIndex = 0;
@@ -140,6 +144,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int storyChapter = 0;
     private boolean hasCreationSword = false;
     private boolean creationAwakened = false;
+    
+    //Prologue in steps
+    //    0 = Forest path
+    //    1 = Camp before ruins
+    //    2 = Ruins exploration
+    //    3 = Sword obtained
+    //    4 = Return to village
+    //    5 = Prologue complete
+    private int prologueStep = 0;
+    private boolean pendingPrologueReturnHome = false;
+    private boolean pendingPrologueChapterOne = false;
     
     
     
@@ -330,6 +345,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         generateWorld();
         generateTown();
         generateRuinsMap();
+        generatePrologueForestMap();
         
        
     }
@@ -621,6 +637,50 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         ruinsGameMap = new GameMap(ruinsMap, "Ancient Ruins");
     }
     
+    //Prologue map is a winding path with many trees around and about to a unknown location
+    private void generatePrologueForestMap() {
+
+        prologueForestMap = new Tile[10][10];
+
+        int[][] layout = {
+            {1,1,1,1,1,1,1,1,1,1},
+            {1,3,3,0,0,0,0,3,3,1},
+            {1,3,0,0,4,4,0,0,3,1},
+            {1,0,0,3,3,4,4,0,0,1},
+            {1,0,3,3,0,0,4,4,0,1},
+            {1,0,0,0,0,3,3,4,0,1},
+            {1,3,3,0,0,0,0,4,0,1},
+            {1,3,0,0,3,3,0,4,0,1},
+            {1,0,0,0,0,0,0,4,2,1},
+            {1,1,1,1,1,1,1,1,1,1}
+        };
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    prologueForestMap[col][row] = new Tile(TileType.GRASS);
+                }
+                else if (value == 1) {
+                    prologueForestMap[col][row] = new Tile(TileType.FOREST);
+                }
+                else if (value == 2) {
+                    prologueForestMap[col][row] = new Tile(TileType.EXIT);
+                }
+                else if (value == 3) {
+                    prologueForestMap[col][row] = new Tile(TileType.FOREST);
+                }
+                else if (value == 4) {
+                    prologueForestMap[col][row] = new Tile(TileType.ROAD);
+                }
+            }
+        }
+
+        prologueForestGameMap = new GameMap(prologueForestMap, "Cerebella Forest Path");
+    }
+    
     
     
     //Explore tiles method- will add more?
@@ -746,6 +806,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //new for exploration tiles
     private void interactInExploration(TileType tile) {
+
+    	if (tile == TileType.EXIT) {
+
+            if (storyChapter == 0 && prologueStep == 0) {
+                startPrologueCamp();
+                return;
+            }
+            
+            if (storyChapter == 0 && prologueStep == 4) {
+                completePrologue();
+                return;
+            }
+
+            System.out.println("There is nowhere to go right now.");
+            return;
+        }
 
         if (tile == TileType.PEDESTAL) {
             triggerCreationSwordEvent();
@@ -1716,6 +1792,139 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         dialogueManager.startDialogue(speakerName, lines);
     }
     
+    /*
+     * START OF PROLOGUE
+     * Begining of story here?
+     */
+    
+    private void startPrologue() {
+
+        storyChapter = 0;
+        prologueStep = 0;
+
+        currentMap = prologueForestGameMap;
+        currentState = GameState.EXPLORATION;
+
+        player.col = 1;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Dean", "Come on, Art! The ruins are just past the old forest road.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "We shouldn't be this far from the village.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Just a look around, then we go home. That was the deal.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "That was your deal. I agreed to the exciting version.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+        }, GameState.EXPLORATION);
+        
+    }
+    
+    //Camping before next part of Prologue
+    private void startPrologueCamp() {
+
+        prologueStep = 1;
+
+        currentState = GameState.CAMP;
+        campMenuIndex = 0;
+
+        startDialogue(new DialogueLine[] {
+        	new DialogueLine("Penelope", "I can't beleive we're camping in the middle of nowhere.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Penelope real adventurers always camp before discovering something amazing.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Kids probably tell someone where they are going first. Deans Mom is scary.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Sorry Penelope. I think it's fine. I mean we've gotten in worse because of Dean before. We're still alive.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Hey!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Look, we can sleep for one night. Tomorrow, we reach the ruins and then head home.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Tomorrow, we find treasure!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "We're so in trouble.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            
+        }, GameState.CAMP);
+        
+    }
+    
+    
+    private void enterPrologueRuins() {
+
+        prologueStep = 2;
+
+        currentMap = ruinsGameMap;
+        currentState = GameState.EXPLORATION;
+
+        player.col = 1;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Dean", "There it is. I told you the ruins were real.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "It feels colder here.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Stay close. We will look around and leave together.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Together, yes. Leaving quickly, maybe not.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+        }, GameState.EXPLORATION);
+        
+    }
+    
+    //Return Home
+    private void startPrologueReturnHome() {
+
+        prologueStep = 4;
+
+        currentMap = prologueForestGameMap;
+        currentState = GameState.EXPLORATION;
+
+        player.col = 8;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Penelope", "Art... are you alright?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "I think so. I just... heard something.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "You picked up a glowing sword from an ancient ruin and 'heard something' is what you lead with?", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Dean.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Right. Serious faces. I can do serious.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "We should go home. Now.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Yes, let's get home.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.EXPLORATION);
+        
+        
+    }
+    
+    //Part 5 Finale before chapter switch
+    private void completePrologue() {
+
+        prologueStep = 5;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "The children returned to Cerebella before dawn.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "No one believed their story of the white light.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "But from that day forward, the old sword never truly left Art's side. Almost like a charm.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Years passed.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.EXPLORATION);
+
+        pendingPrologueChapterOne = true;
+        
+    }
+    
+    //Auto Advances now to Chapter one after the above part 5 finishes
+    private void startChapterOne() {
+
+        advanceStoryChapter(1);
+
+        currentMap = overworldGameMap;
+        currentState = GameState.OVERWORLD;
+
+        player.col = 2;
+        player.row = 5;
+
+        movementLeft = maxMovement;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Narrator", "Years later, Cerebella had changed.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Narrator", "The crops grew weaker. Animals vanished into the woods. Travelers spoke of shadows on the roads.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "Something is wrong. It has been for a long time.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.OVERWORLD);
+        
+    }
  
 
 	private void drawOverworld(Graphics g) {
@@ -2975,6 +3184,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         hasCreationSword = true;
+        prologueStep = 3;
+        pendingPrologueReturnHome = true;
 
         Weapon rustyCreation = createWeaponById("rusty_creation");
 
@@ -4962,8 +5173,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("day=" + day + "\n");
             writer.write("gold=" + gold + "\n");
             writer.write("storyChapter=" + storyChapter + "\n");
+            //prologue step
+            writer.write("prologueStep=" + prologueStep + "\n");
             writer.write("hasCreationSword=" + hasCreationSword + "\n");
             writer.write("creationAwakened=" + creationAwakened + "\n");
+            
+            
             
             //Camp bond data
             writer.write("penelopeBond=" + penelopeBond + "\n");
@@ -5057,6 +5272,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("storyChapter")) {
                     storyChapter = Integer.parseInt(value);
+                }
+                else if (key.equals("prologueStep")) {
+                    prologueStep = Integer.parseInt(value);
                 }
                 else if (key.equals("hasCreationSword")) {
                     hasCreationSword = Boolean.parseBoolean(value);
@@ -5436,20 +5654,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
-        //Debug: Allows advancement to the prologue stage 
-//        if (code == KeyEvent.VK_P) {
-//            BattleScenario scenario = BattleScenarioLibrary.getScenario("prologue_ruins");
-//
-//            if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
-//                pendingBattleScenario = scenario;
-//                startDialogue(scenario.getIntroDialogue(), GameState.OVERWORLD);
-//            } else {
-//                loadBattleScenario(scenario);
-//            }
-//
-//            repaint();
-//            return;
-//        }
+        if (code == KeyEvent.VK_P) {
+            startPrologue(); //Will be tied to new game unpon starting the game
+            repaint();
+            return;
+        }
+        
+
         
         //Exploration will delete the above later
         if (code == KeyEvent.VK_R) {
@@ -5519,6 +5730,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	//Out
                 	if (pendingReturnToOverworldAfterDialogue) {
                 	    returnToOverworldAfterBattle();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	//Post sword dialogue
+                	if (pendingPrologueReturnHome) {
+                	    pendingPrologueReturnHome = false;
+                	    startPrologueReturnHome();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingPrologueChapterOne) {
+                	    pendingPrologueChapterOne = false;
+                	    startChapterOne();
                 	    repaint();
                 	    return;
                 	}
@@ -5793,6 +6019,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
 
                 if (selectedOption.equals("Leave")) {
+                	
+                	//Just for the prologue
+                	if (storyChapter == 0 && prologueStep == 1) {
+                        enterPrologueRuins();
+                        repaint();
+                        return;
+                    }
+                	
                     currentState = GameState.OVERWORLD;
                     repaint();
                     return;
