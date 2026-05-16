@@ -1572,7 +1572,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 new DialogueLine("Dean", "Not anymore. We left home with weapons and a purpose. That is at least 30 Percent heroic already.", 
                 		DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Art", "I still feel like I am figuring out the purpose part.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Dean", "That is fine. You figure out the purpose. I will work on the heroic entrance.", 
+                new DialogueLine("Dean", "That's fine. You figure out the purpose. I will work on the heroic entrance.", 
                 		DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Art", "Don't trip during it.", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Dean", "If I do, I'll make it look intentional.", DialogueSide.RIGHT, DialogueFaction.ALLY)
@@ -1614,7 +1614,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 new DialogueLine("Art", "I know. I am still deciding whether Dean would survive being told no.", 
                 		DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "Hehe. He'd complain loudly.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Art", "You are worried about the ruins?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You're worried about the ruins?", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "A little.", DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Art", "Only a little?", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "Mmmm...More than a little.", DialogueSide.RIGHT, DialogueFaction.ALLY),
@@ -2403,7 +2403,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         int menuX = mapWidth + 20;
         int menuY = 100;
         int menuWidth = rightPanelWidth - 40;
-        int menuHeight = 140;
+        int menuHeight = 200;
 
         g.setColor(new Color(25, 25, 35));
         g.fillRect(menuX, menuY, menuWidth, menuHeight);
@@ -2430,7 +2430,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         g.setColor(Color.WHITE);
-        g.drawString("ENTER confirm", menuX + 20, menuY + 125);
+        g.drawString("ENTER confirm", menuX + 20, menuY + 155);
+        
         
     }
     
@@ -2465,9 +2466,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             String prefix = (i == campBondIndex) ? "> " : "  ";
             g.drawString(prefix + member.getName(), menuX + 25, menuY + 55 + (i * 25));
         }
-
+        g.setColor(Color.LIGHT_GRAY);
+        g.drawString("Dean Bond: " + deanBond, menuX + 20, menuY + 155);
+        g.drawString("Penelope Bond: " + penelopeBond, menuX + 20, menuY + 175);
+        
         g.setColor(Color.WHITE);
         g.drawString("ENTER talk | ESC back", menuX + 20, menuY + 125);
+        
+        
+
         
     }
     
@@ -4957,6 +4964,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("storyChapter=" + storyChapter + "\n");
             writer.write("hasCreationSword=" + hasCreationSword + "\n");
             writer.write("creationAwakened=" + creationAwakened + "\n");
+            
+            //Camp bond data
+            writer.write("penelopeBond=" + penelopeBond + "\n");
+            writer.write("deanBond=" + deanBond + "\n");
+            writer.write("penelopeLastTalkedChapter=" + penelopeLastTalkedChapter + "\n");
+            writer.write("deanLastTalkedChapter=" + deanLastTalkedChapter + "\n");
                      
             //Quest
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
@@ -5050,6 +5063,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("creationAwakened")) {
                     creationAwakened = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("penelopeBond")) {
+                    penelopeBond = Integer.parseInt(value);
+                }
+                else if (key.equals("deanBond")) {
+                    deanBond = Integer.parseInt(value);
+                }
+                else if (key.equals("penelopeLastTalkedChapter")) {
+                    penelopeLastTalkedChapter = Integer.parseInt(value);
+                }
+                else if (key.equals("deanLastTalkedChapter")) {
+                    deanLastTalkedChapter = Integer.parseInt(value);
                 }
                 else if (key.equals("partyCount")) {
                     partyCount = Integer.parseInt(value);
