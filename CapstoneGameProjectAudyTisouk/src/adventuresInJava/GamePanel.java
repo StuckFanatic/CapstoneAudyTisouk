@@ -112,8 +112,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private GameState statusReturnState = GameState.OVERWORLD;
     
     //CAMP MENU
-    private String[] campMenuOptions = {"Rest", "Talk", "Leave"};
+    private String[] campMenuOptions = {"Rest", "Gather", "Bond", "Leave"};
     private int campMenuIndex = 0;
+    
+    //BONDS
+    private boolean campBondMenuOpen = false;
+    private int campBondIndex = 0;
+    
+    private int penelopeBond = 0;
+    private int deanBond = 0;
+
+    private int penelopeLastTalkedChapter = -1;
+    private int deanLastTalkedChapter = -1;
     
 
     
@@ -1441,30 +1451,242 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }, GameState.CAMP);
     }
     
-    //CAMP conversations
-    private void startCampConversation() {
+    //CAMP conversations for ALL
+    private void startCampGatherConversation() {
 
-    	//Dialogue of camp in prologue
         if (storyChapter == 0) {
             startDialogue(new DialogueLine[] {
-                new DialogueLine("Dean", "I still say ruins are better at night.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Penelope", "That is exactly why we should not be here.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Art", "We will rest, then head back before anyone notices.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                new DialogueLine("Dean", "I still say this is the best idea that I have ever had.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "That isn't a very long list.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "HEY! It has at least three things on it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Name one that did not get us in trouble.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", ".....", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Look you're both focusing on the wrong part.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "We found ruins. Real ruins. This is how stories begin.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Stories also have warnings at the beginning.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "We'll be diligent. We leave if things get bad.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Reasonable, cautious, and boring. That's why we balance each other out.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "I'm not sure that this is balance.", DialogueSide.RIGHT, DialogueFaction.ALLY)
             }, GameState.CAMP);
 
             return;
+            
         }
 
-        //camp conversations in chapter 1
         if (storyChapter >= 1) {
             startDialogue(new DialogueLine[] {
-                new DialogueLine("Dean", "Another day, another heroic step toward glory.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Penelope", "Or another step toward getting ourselves hurt.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Art", "Both of you, get some rest. We move at dawn.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                new DialogueLine("Dean", "So. First official camp as wandering adventurers.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "We're calling ourselves adventurers already?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Of course. It sounds better than 'three people who left home and are not sure what they are doing.'", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "That might be more accurate for us.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Accuracy is less important than presentation.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Food, medicine, and sleep are also important.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Penelope is right you know.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "She usually is. It's terrible for my lore.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "We can figure this out one day at a time.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "That sounds manageable Art.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "And heroic. Do not forget heroic.", DialogueSide.LEFT, DialogueFaction.ALLY)
             }, GameState.CAMP);
 
             return;
         }
+        
+        
+    }
+    
+    //Personal Dialogue Starters
+    private void startPersonalCampConversation(PartyMember member) {
+
+        if (member.getId().equals("archer_ally")) {
+            startDeanCampConversation();
+            return;
+        }
+
+        if (member.getId().equals("mage")) {
+            startPenelopeCampConversation();
+            return;
+        }
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine(member.getName(), "There is not much to say tonight.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then rest while you can.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.CAMP);
+    }
+    
+  //START OF DEAN CONVO
+    private void startDeanCampConversation() {
+
+    	//Last talked to
+        if (deanLastTalkedChapter == storyChapter) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "Art! You came back for more heroic wisdom?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Is that what you're calling it?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Of course. I have been practicing my future legendary speeches.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Should I be worried?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Only if you are standing too close when I strike a dramatic pose. Ha HA!", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+        }
+
+        deanLastTalkedChapter = storyChapter;
+        deanBond++;
+
+        //Prologue Dean
+        if (storyChapter == 0) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "Can you believe we actually found ruins?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Real ruins, Art. The kind heroes discover before something amazing happens.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Or the kind people tell kids not to enter because the floor might collapse.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "That is exactly what makes it exciting.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You and I have very different ideas of exciting.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Come on. You can't tell me you have never wanted something bigger than Cerebella.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Hmm. I have thought about it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "See? That is the beginning of every great story.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I don't know if I want a great story.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Don't worry I'll want enough for the both of us.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+            
+        }
+
+        //Chapter 1 Dean
+        if (storyChapter >= 1) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "This is it, Art. Actual quests. Actual daaaanger. Actual chances to become known across the lands.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You sound too happy about the danger part.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "I'm happy about the hero part. Danger is just the part before people cheer.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "That isn't usually how danger works.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Maybe not for normal people.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "And we are not normal people?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Not anymore. We left home with weapons and a purpose. That is at least 30 Percent heroic already.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I still feel like I am figuring out the purpose part.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "That is fine. You figure out the purpose. I will work on the heroic entrance.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Don't trip during it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "If I do, I'll make it look intentional.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+            
+        }
+        
+    }
+    
+    //START OF PENELOPE CONVO
+    private void startPenelopeCampConversation() {
+
+        if (penelopeLastTalkedChapter == storyChapter) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "You should rest too, Art.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I will.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "You say that, but then you keep checking everyone's supplies.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Someone has to.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Then let someone check on you for once.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I trust you for that.", DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+        }
+
+        penelopeLastTalkedChapter = storyChapter;
+        penelopeBond++;
+
+        //Pro
+        if (storyChapter == 0) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "Art... do you think we should tell someone where we went?", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Probably.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "That was not very reassuring.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I know. I am still deciding whether Dean would survive being told no.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Hehe. He'd complain loudly.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You are worried about the ruins?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "A little.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Only a little?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Mmmm...More than a little.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "But if you two insist on going forward, then I am going with you.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You don't have to you know.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "I know. That is why I am choosing to.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+            
+        }
+
+        //Chapter 1
+        if (storyChapter >= 1) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "I checked everyone's bandages. We are running lower than I would like.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You've been keeping track of all that?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Someone has to.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "You sound like me.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Maybe that is why I worry about you.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I'm alright.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "You always say that before you do something reckless for someone else.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Well, don't think helping Dean calms you down.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "It doesn't. But don't forget that you are someone too.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "...I will try to remember that.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Good. Because if you forget, I'll remind you.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+            
+        }
+    }
+    
+    private PartyMember getSelectedBondMember() {
+
+        List<PartyMember> bondOptions = getBondOptions();
+
+        if (bondOptions.isEmpty()) {
+            return null;
+        }
+
+        if (campBondIndex < 0) {
+            campBondIndex = 0;
+        }
+
+        if (campBondIndex >= bondOptions.size()) {
+            campBondIndex = bondOptions.size() - 1;
+        }
+
+        return bondOptions.get(campBondIndex);
+        
+    }
+    
+    //Everyone except Art from the party list will show up. Cannot bond with self
+    private List<PartyMember> getBondOptions() {
+
+        List<PartyMember> options = new ArrayList<>();
+
+        for (PartyMember member : partyMembers) {
+            if (member == null) continue;
+
+            // Art should not bond with himself in this menu
+            if (member.getId().equals("leader")) continue;
+
+            options.add(member);
+        }
+
+        return options;
+        
     }
     
     
@@ -2190,6 +2412,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.drawRect(menuX, menuY, menuWidth, menuHeight);
 
         g.drawString("Camp", menuX + 20, menuY + 25);
+        
+        if (campBondMenuOpen) {
+            drawCampBondMenu(g, menuX, menuY, menuWidth, menuHeight);
+            return;
+        }
 
         for (int i = 0; i < campMenuOptions.length; i++) {
             if (i == campMenuIndex) {
@@ -2204,6 +2431,44 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         g.setColor(Color.WHITE);
         g.drawString("ENTER confirm", menuX + 20, menuY + 125);
+        
+    }
+    
+    
+    
+    private void drawCampBondMenu(Graphics g, int menuX, int menuY, int menuWidth, int menuHeight) {
+
+        List<PartyMember> bondOptions = getBondOptions();
+
+        g.setColor(new Color(25, 25, 35));
+        g.fillRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.drawString("Bond", menuX + 20, menuY + 25);
+
+        if (bondOptions.isEmpty()) {
+            g.drawString("No one is available.", menuX + 20, menuY + 60);
+            return;
+        }
+
+        for (int i = 0; i < bondOptions.size(); i++) {
+            PartyMember member = bondOptions.get(i);
+
+            if (i == campBondIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == campBondIndex) ? "> " : "  ";
+            g.drawString(prefix + member.getName(), menuX + 25, menuY + 55 + (i * 25));
+        }
+
+        g.setColor(Color.WHITE);
+        g.drawString("ENTER talk | ESC back", menuX + 20, menuY + 125);
+        
     }
     
     
@@ -2875,7 +3140,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	
         	if (storyChapter == 0) {
                 startDialogue(new DialogueLine[] {
-                    new DialogueLine("Townsperson", "You children should stay away from those ruins.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                    new DialogueLine("Townsperson", "You children should stay away from those ruins.", 
+                    		DialogueSide.RIGHT, DialogueFaction.NPC),
                     new DialogueLine("Leader", "We were just looking around.", DialogueSide.LEFT, DialogueFaction.ALLY)
                 }, GameState.TOWN);
 
@@ -5402,6 +5668,60 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         
         if (currentState == GameState.CAMP) {
+        	
+        	//Submenu for bonds
+        	if (campBondMenuOpen) {
+
+        	    List<PartyMember> bondOptions = getBondOptions();
+
+        	    if (code == KeyEvent.VK_ESCAPE) {
+        	        campBondMenuOpen = false;
+        	        campBondIndex = 0;
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (bondOptions.isEmpty()) {
+        	        campBondMenuOpen = false;
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_UP) {
+        	        campBondIndex--;
+
+        	        if (campBondIndex < 0) {
+        	            campBondIndex = bondOptions.size() - 1;
+        	        }
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_DOWN) {
+        	        campBondIndex++;
+
+        	        if (campBondIndex >= bondOptions.size()) {
+        	            campBondIndex = 0;
+        	        }
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_ENTER) {
+        	        PartyMember selected = getSelectedBondMember();
+
+        	        if (selected != null) {
+        	            startPersonalCampConversation(selected);
+        	        }
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    return;
+        	}
 
             if (code == KeyEvent.VK_UP) {
                 campMenuIndex--;
@@ -5434,8 +5754,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     return;
                 }
 
-                if (selectedOption.equals("Talk")) {
-                    startCampConversation();
+                if (selectedOption.equals("Gather")) {
+                    startCampGatherConversation();
+                    repaint();
+                    return;
+                }
+
+                if (selectedOption.equals("Bond")) {
+                    campBondMenuOpen = true;
+                    campBondIndex = 0;
                     repaint();
                     return;
                 }
