@@ -700,7 +700,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     	if (tile == TileType.TOWN) {
 
-    		startDialogue("Narrator", new String[] {
+    		startDialogue("", new String[] {
     			    "Welcome to the town.",
     			    "We appreciate your stay."
     			}, GameState.TOWN, townGameMap, 5, 8);
@@ -1522,8 +1522,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         System.out.println("The party rested. MP restored.");
 
         startDialogue(new DialogueLine[] {
-            new DialogueLine("Narrator", "The party rests beneath the quiet night sky.", DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("Narrator", "Everyone's mana has been restored.", DialogueSide.RIGHT, DialogueFaction.NPC)
+            new DialogueLine("", "The party rests beneath the quiet night sky.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Everyone's mana has been restored.", DialogueSide.RIGHT, DialogueFaction.NPC)
         }, GameState.CAMP);
     }
     
@@ -1875,7 +1875,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         player.row = 8;
 
         startDialogue(new DialogueLine[] {
-            new DialogueLine("Penelope", "Art... are you alright?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+        	new DialogueLine("", "Art awakens on the floor. He gets up slowly.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	new DialogueLine("Art", "Uhhg. My head", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Art... are you alright? You were knocked down for 10 minutes", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Art", "I think so. I just... heard something.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Dean", "You picked up a glowing sword from an ancient ruin and 'heard something' is what you lead with?", 
             		DialogueSide.RIGHT, DialogueFaction.ALLY),
@@ -1919,8 +1922,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         movementLeft = maxMovement;
 
         startDialogue(new DialogueLine[] {
-            new DialogueLine("Narrator", "Years later, Cerebella had changed.", DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("Narrator", "The crops grew weaker. Animals vanished into the woods. Travelers spoke of shadows on the roads.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Years later, Cerebella had changed.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The crops grew weaker. Animals vanished into the woods. Travelers spoke of shadows on the roads.", DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Art", "Something is wrong. It has been for a long time.", DialogueSide.LEFT, DialogueFaction.ALLY)
         }, GameState.OVERWORLD);
         
@@ -3200,8 +3203,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Dean", "Is that... a sword?", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "Art, wait. Something feels wrong.", DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Art", "It feels like it is calling to me.", DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Narrator", "Art obtained Rusty Creation.", DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("Narrator", "A flash of white light tears through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC)
+            new DialogueLine("", "Art obtained Rusty Creation.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "A flash of white light tears through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC)
         }, GameState.EXPLORATION);
     }
     
