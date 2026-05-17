@@ -145,6 +145,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean hasCreationSword = false;
     private boolean creationAwakened = false;
     
+    private boolean inspectedOldHeroesMural = false;
+    private boolean inspectedWhiteBladeMural = false;
+    private boolean inspectedBrokenHourMural = false;
+    
     //Prologue in steps
     //    0 = Forest path
     //    1 = Camp before ruins
@@ -405,6 +409,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	else if (type == TileType.PEDESTAL) {
     	    return "An old pedestal. Something important rests here.";
     	}
+    	//For all event types for now
+    	else if (type == TileType.EVENT) {
+    	    return "Something here can be inspected.";
+    	}
     	
     	return "";
     	
@@ -607,10 +615,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         int[][] layout = {
             {1,1,1,1,1,1,1,1,1,1},
             {1,0,0,0,0,0,0,0,0,1},
-            {1,0,1,1,0,0,1,1,0,1},
+            {1,0,1,1,0,3,1,1,0,1},
             {1,0,1,0,0,0,0,1,0,1},
-            {1,0,0,0,2,0,0,0,0,1},
-            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,0,3,2,0,0,0,0,1},
+            {1,0,0,0,0,0,3,0,0,1},
             {1,0,1,0,0,0,0,1,0,1},
             {1,0,1,1,0,0,1,1,0,1},
             {1,0,0,0,0,0,0,0,0,1},
@@ -630,6 +638,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (value == 2) {
                     ruinsMap[col][row] = new Tile(TileType.PEDESTAL);
+                }
+                
+                //Event Inspectables
+                else if (value == 3) {
+                    Tile eventTile = new Tile(TileType.EVENT);
+
+                    if (col == 5 && row == 2) {
+                        eventTile.setEventId("mural_old_heroes");
+                    }
+                    else if (col == 3 && row == 4) {
+                        eventTile.setEventId("mural_white_blade");
+                    }
+                    else if (col == 6 && row == 5) {
+                        eventTile.setEventId("mural_broken_hour");
+                    }
+
+                    ruinsMap[col][row] = eventTile;
                 }
             }
         }
@@ -822,9 +847,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             System.out.println("There is nowhere to go right now.");
             return;
         }
+    	
 
         if (tile == TileType.PEDESTAL) {
             triggerCreationSwordEvent();
+            return;
+        }
+        
+        if (tile == TileType.EVENT) {
+            Tile currentTile = currentMap.getTiles()[player.col][player.row];
+            handleExplorationEvent(currentTile.getEventId());
             return;
         }
 
@@ -1725,6 +1757,67 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
             
         }
+        
+        
+    }
+    
+    
+    //THIS EVENT handler allows player to interact with the surrounding maps in exploration mode
+    private void handleExplorationEvent(String eventId) {
+
+        if (eventId == null || eventId.isEmpty()) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Art", "There is something here, but I cannot make sense of it.", DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        if (eventId.equals("mural_old_heroes")) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "Look! Figures carved into the wall.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "They look like heroes. Look, that one has a cape.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "They are standing against something... larger.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "The stone is too worn to tell what it is.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Still. Heroes in ruins. There ought to mean treasure is nearby.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        if (eventId.equals("mural_white_blade")) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Art", "This carving is different.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "A sword... surrounded by light.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Now that looks important.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "There's words below it, but I can only read part of them.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Hmmm.'When the dark tide rises... the white blade...'", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "The rest is gone.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Convenient. Old stuff always stop explaining things right when they get interesting.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        if (eventId.equals("mural_broken_hour")) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "This one makes me uneasy.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Why?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "The circle here... it looks like a clock, but the hands are shattered.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Maybe old people were bad at drawing clocks.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Dean.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "What? I am helping.", DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Art", "There is nothing else here.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.EXPLORATION);
     }
     
     private PartyMember getSelectedBondMember() {
@@ -5181,6 +5274,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("hasCreationSword=" + hasCreationSword + "\n");
             writer.write("creationAwakened=" + creationAwakened + "\n");
             
+            //Prologue Inspect Event
+            writer.write("inspectedOldHeroesMural=" + inspectedOldHeroesMural + "\n");
+            writer.write("inspectedWhiteBladeMural=" + inspectedWhiteBladeMural + "\n");
+            writer.write("inspectedBrokenHourMural=" + inspectedBrokenHourMural + "\n");
+            
             
             
             //Camp bond data
@@ -5284,6 +5382,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("creationAwakened")) {
                     creationAwakened = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedOldHeroesMural")) {
+                	inspectedOldHeroesMural = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedWhiteBladeMural")) {
+                	inspectedWhiteBladeMural = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedBrokenHourMural")) {
+                	inspectedBrokenHourMural = Boolean.parseBoolean(value);
                 }
                 else if (key.equals("penelopeBond")) {
                     penelopeBond = Integer.parseInt(value);

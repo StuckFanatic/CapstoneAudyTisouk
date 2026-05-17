@@ -11,6 +11,7 @@ public class Tile {
 	TileType type;
 	boolean passable;
 	private String scenarioId;
+	private String eventId;
 	
 	
 	public Tile(TileType type) {
@@ -18,6 +19,7 @@ public class Tile {
 		
 		this.type = type;
 		this.scenarioId = "";
+		this.eventId = "";
 		
 		//Water should NOT be able to be passed
 		switch(type) {
@@ -154,6 +156,15 @@ public class Tile {
 		    g.fillOval(x + 12, y + 12, tileSize - 24, tileSize - 24);
 		}
 		
+		else if (type == TileType.EVENT) {
+		    g.setColor(new Color(90, 80, 110));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(220, 220, 255));
+		    g.drawRect(x + 10, y + 10, tileSize - 20, tileSize - 20);
+		    g.drawString("?", x + 20, y + 30);
+		}
+		
 		
 		
 		
@@ -180,6 +191,15 @@ public class Tile {
 	public void setScenarioId(String scenarioId) {
 	    this.scenarioId = scenarioId;
 	}
+	
+	public String getEventId() {
+	    return eventId;
+	}
+
+	public void setEventId(String eventId) {
+	    this.eventId = eventId;
+	}
+	
 	
 	
 	
