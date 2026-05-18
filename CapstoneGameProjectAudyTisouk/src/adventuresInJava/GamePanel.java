@@ -65,6 +65,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int dayBannerTimer = 0;
     private final int DAY_BANNER_DURATION = 120; 
     
+    //Prologue white flash 
+    // Creation / story flash effect
+    private int whiteFlashTimer = 0;
+    private final int WHITE_FLASH_DURATION = 60;
+    
+	// Story transition overlay
+	private String storyTransitionText = ""; //Stores text on screen
+	private int storyTransitionTimer = 0; 
+	private final int STORY_TRANSITION_DURATION = 180;
+	private boolean pendingChapterOneStart = false; //ends
+    
     //Adds in Dialogue Manager to the game Panel Class
     private DialogueManager dialogueManager = new DialogueManager();
     private GameState previousState;
@@ -161,6 +172,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean pendingPrologueChapterOne = false;
     
     
+    /*
+     * CHAPTER 1 Story Progression
+     */
+    // Chapter 1 story flow in steps
+    private int chapterOneStep = 0;
+    private boolean pendingRecruitmentScene = false;
+    //Chapter 1 part 2
+    private boolean pendingAdventurerIdeaScene = false;
+    
+    
     
     /*
      * QUESTS
@@ -175,6 +196,30 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Quest Flags
     private boolean banditQuestAccepted = false;
     private boolean banditQuestCompleted = false;
+    
+    //Quest Accept and Confirmation
+    private boolean questConfirmOpen = false;
+    private int questConfirmIndex = 0;
+    private String pendingQuestName = "";
+    private String activeQuestName = "";
+    
+    //Chapter 1 Quests
+    private String[] questBoardOptions = {
+    	    "Cellar Rats",
+    	    "Missing Laundry",
+    	    "Flower Picking",
+    	    "Leave"
+    	};
+
+    private int questBoardIndex = 0;
+    
+    private boolean cellarRatsCompleted = false;
+    private boolean laundryCompleted = false;
+    private boolean flowersCompleted = false;
+    
+    
+    	
+    	
     
     /*
      * 
@@ -305,6 +350,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Introduction before combat
     private BattleScenario pendingBattleScenario = null;
+    private BattleScenario pendingScenarioIntroAfterQuestAccept = null;
     
     //This is for post battle dialogue and possibly scenes as well
     private boolean pendingReturnToOverworldAfterDialogue = false;
@@ -317,6 +363,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Current State of Game
     private GameState currentState = GameState.OVERWORLD;
 
+    //Game States that can be switched into from a button or tile
 	private enum GameState {
 		OVERWORLD,
 		TOWN,
@@ -326,7 +373,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		EXPLORATION,
 		EQUIPMENT,
 		STATUS,
-		CAMP
+		CAMP,
+		QUEST_BOARD
 		
 	}
     
@@ -412,6 +460,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//For all event types for now
     	else if (type == TileType.EVENT) {
     	    return "Something here can be inspected.";
+    	}
+    	
+    	//Quest Board
+    	else if (type == TileType.QUEST_BOARD) {
+    	    return "A board covered in local requests.";
     	}
     	
     	return "";
@@ -511,7 +564,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        {1,1,1,1,1,1,1,1,1,1},
     	        {1,0,0,0,4,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
-    	        {1,0,0,3,0,3,0,0,0,1},
+    	        {1,0,0,3,0,3,0,5,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
     	        {1,0,0,0,0,0,0,0,0,1},
@@ -542,6 +595,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			}
     			else if (value == 4) {
     				townMap[col][row] = new Tile(TileType.SHOP);
+    			}
+    			else if (value == 5) {
+    				townMap[col][row] = new Tile(TileType.QUEST_BOARD);
     			}
     			
     		}
@@ -818,6 +874,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    return;
     	}
     	
+    	if (tile == TileType.QUEST_BOARD) {
+    	    currentState = GameState.QUEST_BOARD;
+    	    questBoardIndex = 0;
+    	    return;
+    	}
+    	
     	if (tile == TileType.GRASS) {
     		System.out.println("There is nothing here.");
     	}
@@ -947,6 +1009,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    updateCamp();
     	    break;
     	    
+    	case QUEST_BOARD:
+    	    updateQuestBoard();
+    	    break;
+    	    
     	}
     	
     	
@@ -955,6 +1021,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	if(dayBannerTimer > 0) {
     	    dayBannerTimer--;
     	}
+    	
+    	//White flash for Creation
+    	if (whiteFlashTimer > 0) {
+    	    whiteFlashTimer--;
+    	}
+    	
+    	//Years Later
+    	if (storyTransitionTimer > 0) {
+    	    storyTransitionTimer--;
+
+    	    if (storyTransitionTimer == 0) {
+    	        finishStoryTransition();
+    	    }
+    	}
+    	
     	
     	//Battle Time pacer
     	if (battlePauseTimer > 0) {
@@ -1016,6 +1097,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     private void updateCamp() {
+    	
+    }
+    
+    private void updateQuestBoard() {
     	
     }
     
@@ -1083,19 +1168,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case CAMP:
     	    drawCamp(g);
     	    break;
+    	    
+    	case QUEST_BOARD:
+    	    drawQuestBoard(g);
+    	    break;
 
         }
         
         if (currentState != GameState.STATUS &&
         	    currentState != GameState.EQUIPMENT &&
         	    currentState != GameState.CAMP &&
-        	    currentState != GameState.DIALOGUE) {
+        	    currentState != GameState.DIALOGUE &&
+        	    currentState != GameState.QUEST_BOARD) {
         	    drawGlobalUI(g);
         	}
         
         if(currentState == GameState.DIALOGUE) {
             dialogueManager.draw(g, screenWidth, screenHeight);
         }
+        
+        drawWhiteFlash(g);
+        drawStoryTransition(g);
         
     }
     
@@ -1207,6 +1300,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 
             case CAMP:
             	break;
+            	
+            case QUEST_BOARD:
+            	break;
 
             case BATTLE:
             	
@@ -1282,6 +1378,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case STATUS:
             	
             case CAMP:
+            	
+            case QUEST_BOARD:
    
 
             case BATTLE:
@@ -1330,6 +1428,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case STATUS:
             	
             case CAMP:
+            	
+            case QUEST_BOARD:
             
             	
             case BATTLE:
@@ -1392,7 +1492,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 g.drawString("Town", panelX + 20, 30);
                 g.drawString("Talk, shop, or leave.", panelX + 20, 55);
                 g.drawString("Gold: " + gold, panelX + 20, 85);
-                g.drawString(getStoryChapterName(), panelX + 20, 105);
+                g.drawString(getStoryChapterDisplayName(), panelX + 20, 105);
                 
                 drawQuestLog(g, panelX, 140);
                 break;
@@ -1434,6 +1534,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 break;
                 
             case CAMP:
+            	break;
+            	
+            case QUEST_BOARD:
             	break;
 
             case BATTLE:
@@ -1538,6 +1641,30 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         statusReturnState = currentState;
         currentState = GameState.STATUS;
         statusMenuIndex = 0;
+    }
+    
+    //Three Start Dialogues, Simple and Full
+    private void startDialogue(String speakerName, String[] lines, GameState nextState) {
+        startDialogue(speakerName, lines, nextState, null, -1, -1);
+    }
+    
+    //Multiple Speakers
+    private void startDialogue(DialogueLine[] dialogueLines, GameState nextState) {
+        previousState = nextState;
+        currentState = GameState.DIALOGUE;
+        dialogueManager.startDialogue(dialogueLines);
+    }
+    
+    private void startDialogue(String speakerName, String[] lines, GameState nextState, GameMap nextMap, int nextCol, int nextRow) {
+
+        previousState = nextState;
+        currentState = GameState.DIALOGUE;
+
+        dialogueNextMap = nextMap;
+        dialogueNextCol = nextCol;
+        dialogueNextRow = nextRow;
+
+        dialogueManager.startDialogue(speakerName, lines);
     }
     
     //Campsite
@@ -1761,6 +1888,43 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
     }
     
+    private PartyMember getSelectedBondMember() {
+
+        List<PartyMember> bondOptions = getBondOptions();
+
+        if (bondOptions.isEmpty()) {
+            return null;
+        }
+
+        if (campBondIndex < 0) {
+            campBondIndex = 0;
+        }
+
+        if (campBondIndex >= bondOptions.size()) {
+            campBondIndex = bondOptions.size() - 1;
+        }
+
+        return bondOptions.get(campBondIndex);
+        
+    }
+    
+    //Everyone except Art from the party list will show up. Cannot bond with self
+    private List<PartyMember> getBondOptions() {
+
+        List<PartyMember> options = new ArrayList<>();
+
+        for (PartyMember member : partyMembers) {
+            if (member == null) continue;
+
+            // Art should not bond with himself in this menu
+            if (member.getId().equals("leader")) continue;
+
+            options.add(member);
+        }
+
+        return options;
+        
+    }
     
     //THIS EVENT handler allows player to interact with the surrounding maps in exploration mode
     private void handleExplorationEvent(String eventId) {
@@ -1820,74 +1984,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }, GameState.EXPLORATION);
     }
     
-    private PartyMember getSelectedBondMember() {
-
-        List<PartyMember> bondOptions = getBondOptions();
-
-        if (bondOptions.isEmpty()) {
-            return null;
-        }
-
-        if (campBondIndex < 0) {
-            campBondIndex = 0;
-        }
-
-        if (campBondIndex >= bondOptions.size()) {
-            campBondIndex = bondOptions.size() - 1;
-        }
-
-        return bondOptions.get(campBondIndex);
-        
-    }
-    
-    //Everyone except Art from the party list will show up. Cannot bond with self
-    private List<PartyMember> getBondOptions() {
-
-        List<PartyMember> options = new ArrayList<>();
-
-        for (PartyMember member : partyMembers) {
-            if (member == null) continue;
-
-            // Art should not bond with himself in this menu
-            if (member.getId().equals("leader")) continue;
-
-            options.add(member);
-        }
-
-        return options;
-        
-    }
-    
-    
-    
-    
-    //Three Start Dialogues, Simple and Full
-    private void startDialogue(String speakerName, String[] lines, GameState nextState) {
-        startDialogue(speakerName, lines, nextState, null, -1, -1);
-    }
-    
-    //Multiple Speakers
-    private void startDialogue(DialogueLine[] dialogueLines, GameState nextState) {
-        previousState = nextState;
-        currentState = GameState.DIALOGUE;
-        dialogueManager.startDialogue(dialogueLines);
-    }
-    
-    private void startDialogue(String speakerName, String[] lines, GameState nextState, GameMap nextMap, int nextCol, int nextRow) {
-
-        previousState = nextState;
-        currentState = GameState.DIALOGUE;
-
-        dialogueNextMap = nextMap;
-        dialogueNextCol = nextCol;
-        dialogueNextRow = nextRow;
-
-        dialogueManager.startDialogue(speakerName, lines);
-    }
     
     /*
+     * BEGINING OF STORY
      * START OF PROLOGUE
-     * Begining of story here?
+     * Begining of story here!
      */
     
     private void startPrologue() {
@@ -1919,7 +2020,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         campMenuIndex = 0;
 
         startDialogue(new DialogueLine[] {
-        	new DialogueLine("Penelope", "I can't beleive we're camping in the middle of nowhere.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	new DialogueLine("Penelope", "I can't believe we're camping in the middle of nowhere.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Dean", "Penelope real adventurers always camp before discovering something amazing.", 
             		DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "Kids probably tell someone where they are going first. Deans Mom is scary.", 
@@ -1972,8 +2073,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	new DialogueLine("Art", "Uhhg. My head", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "Art... are you alright? You were knocked down for 10 minutes", 
             		DialogueSide.RIGHT, DialogueFaction.ALLY),
-            new DialogueLine("Art", "I think so. I just... heard something.", DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Dean", "You picked up a glowing sword from an ancient ruin and 'heard something' is what you lead with?", 
+            new DialogueLine("Art", "I think so...", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Art picked up an old sword from an old ruin and never let go of it. What happened to spliting the loot?", 
             		DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Art", "Dean.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Dean", "Right. Serious faces. I can do serious.", DialogueSide.RIGHT, DialogueFaction.ALLY),
@@ -1992,9 +2093,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         startDialogue(new DialogueLine[] {
             new DialogueLine("", "The children returned to Cerebella before dawn.", DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("", "No one believed their story of the white light.", DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("", "But from that day forward, the old sword never truly left Art's side. Almost like a charm.", 
-            		DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("", "Years passed.", DialogueSide.RIGHT, DialogueFaction.NPC)
+            new DialogueLine("", "But from that day forward, the old sword never left Art's side.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC)
         }, GameState.EXPLORATION);
 
         pendingPrologueChapterOne = true;
@@ -2002,25 +2102,120 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //Auto Advances now to Chapter one after the above part 5 finishes
+    /*
+     * START OF CHAPTER 1 BEGINS HERE
+     * 
+     */
     private void startChapterOne() {
 
         advanceStoryChapter(1);
+        chapterOneStep = 0;
 
         currentMap = overworldGameMap;
         currentState = GameState.OVERWORLD;
 
-        player.col = 2;
+        player.col = 1;
         player.row = 5;
 
         movementLeft = maxMovement;
 
+        pendingRecruitmentScene = true;
+
         startDialogue(new DialogueLine[] {
-            new DialogueLine("", "Years later, Cerebella had changed.", DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("", "The crops grew weaker. Animals vanished into the woods. Travelers spoke of shadows on the roads.", DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("Art", "Something is wrong. It has been for a long time.", DialogueSide.LEFT, DialogueFaction.ALLY)
+            new DialogueLine("", "Time passed, and Cerebella changed.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The harvest grew weaker each year. Animals wandered away from the woods in strange numbers.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Merchants and travelers spoke of bandits, missing caravans, and roads that no longer felt safe.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "King Amon of Astoria sent recruiters from village to village, searching for anyone willing"
+            		+ " to join the kingdom's cause.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "However...", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.OVERWORLD);
+        
+        
+    }
+    
+    //Chapter 1 Step 1
+    private void startRecruitmentRejectionScene() {
+
+        chapterOneStep = 1;
+        pendingAdventurerIdeaScene = true;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Dean", "This is the third time this month!", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Third! I counted because Penelope said yelling 'again' was not specific enough.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Recruiter", "And for the third time, the answer is no.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Penelope", "Can we at least ask why this time sir?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Recruiter", "Sigh. Look you're undertrained, under-equipped, and this time one of you listed"
+            		+ " 'future legend' as relevant experience.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Penelope", "...Dean...", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Hey! It is relevant. Just early.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Recruiter", "Regardless, the king needs soldiers, not storybook volunteers.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Penelope", "We just want to help. Things are getting worse here.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Recruiter", "Then help by staying out of the army's way. NEXT!", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The three of them leave disgruntled.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "...If the army won't take us, we'll have to find another way.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Yeah, well I'm getting desperate here. I'm tired of hunting for the butcher. He always rips me.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "I'm sure we can volunteer at the church again.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Heroic and unpaid. Very traditional.", DialogueSide.LEFT, DialogueFaction.ALLY)
         }, GameState.OVERWORLD);
         
     }
+    
+    //CHAPTER 1 Step 2
+    private void startAdventurerIdeaScene() {
+
+        chapterOneStep = 2;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "After leaving the recruitment table, the three found a quiet spot away from the line.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "I cannot believe that guy. 'Storybook volunteers.' Who says that to someone's face?",
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Someone who doesn't  want us joining the army.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Yeah, well, message received. Loudly. Rudely. What terrible manners.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Getting angry at him won't change anything.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "I know that. I am just choosing to be angry in a very productive way.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Is this productive?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Not yet. Give me a minute.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Well, if the army's not going to take us, then we need another way to help.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Another way that doesn't involve Dean chasing glory with no plan.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Erm actually. I have an idea.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Is the idea 'run at the recruiter begging for them to take us'?", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "...Let me keep thinking.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "What about the adventurer registry?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "The one in the next town?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "People post work there. Real work. Escorting, hunting, repairs, missing goods. Things the army ignores.",
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "So instead of soldiers, we become adventurers.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Registered adventurers. There is a difference.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Right. Registered heroes with paperwork.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "It may not be glamorous, but it is a start.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Better idea than whatever Dean was about to do.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "For the record, my suggestion had courage, vision, and maybe a little shame.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then we'll save that for later.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Fine. But when we become famous, I'm telling people this was my idea.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Of course you are.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+        }, GameState.OVERWORLD);
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
  
 
 	private void drawOverworld(Graphics g) {
@@ -2066,6 +2261,88 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 				}
         	}
 		}
+	}
+	
+	private void drawWhiteFlash(Graphics g) {
+
+	    if (whiteFlashTimer <= 0) {
+	        return;
+	    }
+
+	    Graphics2D g2 = (Graphics2D) g;
+
+	    //Smooth, Seemless white flash that curbs out
+	    float progress = whiteFlashTimer / (float) WHITE_FLASH_DURATION;
+	    int alpha = (int)(255 * progress * progress);
+
+	    g2.setColor(new Color(255, 255, 255, alpha));
+	    g2.fillRect(0, 0, screenWidth, screenHeight);
+	    
+	}
+	
+	
+	private void startStoryTransition(String text) {
+	    storyTransitionText = text;
+	    storyTransitionTimer = STORY_TRANSITION_DURATION;
+	    
+	}
+	
+	//Transition to next part
+	private void finishStoryTransition() {
+
+	    if (pendingChapterOneStart) {
+	        pendingChapterOneStart = false;
+	        startChapterOne();
+	    }
+
+	    storyTransitionText = "";
+	}
+	
+	//Draws out the next chapter transition
+	private void drawStoryTransition(Graphics g) {
+
+	    if (storyTransitionTimer <= 0) {
+	        return;
+	    }
+
+	    Graphics2D g2 = (Graphics2D) g;
+	    Font originalFont = g2.getFont();
+
+	    // Full dark overlay
+	    g2.setColor(new Color(0, 0, 0, 230));
+	    g2.fillRect(0, 0, screenWidth, screenHeight);
+
+	    // Fade text slightly in/out
+	    float progress = storyTransitionTimer / (float) STORY_TRANSITION_DURATION;
+
+	    int alpha;
+
+	    if (progress > 0.75f) {
+	        // fade in
+	        alpha = (int)(255 * ((1f - progress) / 0.25f));
+	    } else if (progress < 0.25f) {
+	        // fade out
+	        alpha = (int)(255 * (progress / 0.25f));
+	    } else {
+	        // hold
+	        alpha = 255;
+	    }
+
+	    if (alpha < 0) alpha = 0;
+	    if (alpha > 255) alpha = 255;
+
+	    g2.setColor(new Color(255, 255, 255, alpha));
+	    g2.setFont(originalFont.deriveFont(36f));
+
+	    int textWidth = g2.getFontMetrics().stringWidth(storyTransitionText);
+	    int x = (screenWidth - textWidth) / 2;
+	    int y = screenHeight / 2;
+
+	    g2.drawString(storyTransitionText, x, y);
+
+	    g2.setFont(originalFont);
+	    
+	    
 	}
     
 	private void drawDayBanner(Graphics g) {
@@ -2671,6 +2948,158 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
     }
     
+    //Draws Quest Board
+    private void drawQuestBoard(Graphics g) {
+
+        g.setColor(new Color(35, 25, 15));
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        int menuX = 90;
+        int menuY = 70;
+        int menuWidth = 540;
+        int menuHeight = 360;
+
+        g.setColor(new Color(60, 40, 20));
+        g.fillRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(menuX, menuY, menuWidth, menuHeight);
+
+        g.drawString("Adventurer Board", menuX + 20, menuY + 30);
+        g.drawString("Choose a request.", menuX + 20, menuY + 55);
+        
+        if (hasActiveQuest()) {
+            g.drawString("Active Request: " + activeQuestName, menuX + 20, menuY + 75);
+        } else {
+            g.drawString("No active request.", menuX + 20, menuY + 75);
+        }
+
+        for (int i = 0; i < questBoardOptions.length; i++) {
+            String option = questBoardOptions[i];
+
+            if (i == questBoardIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == questBoardIndex) ? "> " : "  ";
+
+            String status = "";
+
+            if (option.equals("Cellar Rats") && cellarRatsCompleted) {
+                status = " [Done]";
+            }
+            else if (option.equals("Missing Laundry") && laundryCompleted) {
+                status = " [Done]";
+            }
+            else if (option.equals("Flower Picking") && flowersCompleted) {
+                status = " [Done]";
+            }
+
+            g.drawString(prefix + option + status, menuX + 40, menuY + 100 + (i * 35));
+        }
+
+        g.setColor(Color.WHITE);
+        g.drawString("ENTER accept | ESC back", menuX + 20, menuY + menuHeight - 25);
+
+        drawQuestBoardDetails(g, menuX, menuY);
+        
+        if (questConfirmOpen) {
+            drawQuestConfirmPrompt(g);
+        }
+        
+    }
+    
+    //Confirmation allows player to re choose again
+    private void drawQuestConfirmPrompt(Graphics g) {
+
+        int boxWidth = 260;
+        int boxHeight = 120;
+        int boxX = (screenWidth - boxWidth) / 2;
+        int boxY = (screenHeight - boxHeight) / 2;
+
+        g.setColor(new Color(20, 20, 20, 230));
+        g.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+        g.setColor(Color.WHITE);
+        g.drawRect(boxX, boxY, boxWidth, boxHeight);
+
+        g.drawString("Accept request?", boxX + 25, boxY + 30);
+        g.drawString(pendingQuestName, boxX + 25, boxY + 50);
+
+        if (questConfirmIndex == 0) {
+            g.setColor(Color.YELLOW);
+        } else {
+            g.setColor(Color.WHITE);
+        }
+
+        g.drawString("> Accept", boxX + 40, boxY + 80);
+
+        if (questConfirmIndex == 1) {
+            g.setColor(Color.YELLOW);
+        } else {
+            g.setColor(Color.WHITE);
+        }
+
+        g.drawString("> Decline", boxX + 140, boxY + 80);
+        
+    }
+    
+    //details for quest board
+    private void drawQuestBoardDetails(Graphics g, int menuX, int menuY) {
+
+        String selected = questBoardOptions[questBoardIndex];
+
+        int detailX = menuX + 280;
+        int detailY = menuY + 100;
+
+        g.setColor(Color.LIGHT_GRAY);
+        g.drawString("Details", detailX, detailY);
+
+        g.setColor(Color.WHITE);
+
+        if (selected.equals("Cellar Rats")) {
+            drawWrappedText(g,
+                "Clear rats from a tavern cellar. Reward: 20 gold.",
+                detailX,
+                detailY + 25,
+                220,
+                18
+            );
+        }
+        else if (selected.equals("Missing Laundry")) {
+            drawWrappedText(g,
+                "Collect laundry scattered around town. Reward: 10 gold.",
+                detailX,
+                detailY + 25,
+                220,
+                18
+            );
+        }
+        else if (selected.equals("Flower Picking")) {
+            drawWrappedText(g,
+                "Gather medicinal flowers near the woods. Reward: 15 gold.",
+                detailX,
+                detailY + 25,
+                220,
+                18
+            );
+        }
+        else if (selected.equals("Leave")) {
+            drawWrappedText(g,
+                "Step away from the board.",
+                detailX,
+                detailY + 25,
+                220,
+                18
+            );
+        }
+        
+    }
+    
+    
+    
     //backround setting for campsite 
     private void drawCampBackground(Graphics g) {
 
@@ -2837,19 +3266,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	Weapon banditAxe = createWeaponById("bandit_axe");
     	Weapon enemyBow = createWeaponById("hunter_bow");
+    	Weapon ratBite = createWeaponById("rat_bite");
 		
 		//Class Name, Max HP, Armor Class, Movement Range, Weapon Type
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4, new WeaponType[] { WeaponType.AXE });
 		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5, new WeaponType[] { WeaponType.BOW });
-		//CharacterClass knightClass = new CharacterClass("Knight", 16, 15, 3);
+		CharacterClass ratClass = new CharacterClass("Rat", 5, 8, 5,new WeaponType[] { WeaponType.AXE });
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
 		GrowthRates hunterGrowths = new GrowthRates(60, 35, 0, 55, 50, 25, 15, 20);
+		GrowthRates ratGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
 		UnitStats banditStats = new UnitStats(10, 0, 4, 0, 3, 3, 1, 1, 0, 4);
 		UnitStats hunterStats = new UnitStats(9, 2, 3, 0, 5, 5, 2, 1, 1, 5);
+		UnitStats ratStats = new UnitStats(5, 0, 1, 0, 2, 5, 0, 0, 0, 5);
 		
 
 		if (unitId.equals("bandit")) {
@@ -2859,6 +3291,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		if (unitId.equals("hunter")) {
 		    return new BattleUnit("Hunter", col, row, enemy, enemyBow, hunterClass, hunterStats, hunterGrowths, "", EnemyRole.RANGED);
 		}
+		
+		if (unitId.equals("rat")) {
+		    return new BattleUnit("Cellar Rat", col, row, enemy, ratBite, ratClass, ratStats, ratGrowths, "", EnemyRole.AGGRESSIVE);
+		}
+		
+		
     	
     	return null;
     }
@@ -3002,6 +3440,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Bandits
         if (weaponId.equals("bandit_axe")) {
             return new Weapon("bandit_axe", "Bandit Axe", WeaponType.AXE, 1, 1, 2, 1, 8, 1, false);
+        }
+        
+        //Non Humans
+        if (weaponId.equals("rat_bite")) {
+            return new Weapon("rat_bite", "Rat Bite", WeaponType.AXE, 1, 1, 1, 1, 4, 0, false);
         }
 
         //Art Forger unique
@@ -3282,6 +3725,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         hasCreationSword = true;
         prologueStep = 3;
         pendingPrologueReturnHome = true;
+        
+        startWhiteFlash();
 
         Weapon rustyCreation = createWeaponById("rusty_creation");
 
@@ -3296,9 +3741,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Dean", "Is that... a sword?", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "Art, wait. Something feels wrong.", DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Art", "It feels like it is calling to me.", DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("", "Art obtained Rusty Creation.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Art obtained a Rusty Sword.", DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("", "A flash of white light tears through the ruins.", DialogueSide.RIGHT, DialogueFaction.NPC)
         }, GameState.EXPLORATION);
+    }
+    
+    //When obtaining Creation
+    private void startWhiteFlash() {
+        whiteFlashTimer = WHITE_FLASH_DURATION;
     }
     
     //Importantly loads in creation when saving and loading while preventing duplicate Rusty Creation copies
@@ -3406,6 +3856,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         return "Talk to the village elder.";
     }
     
+    //Quests WILL START HERE!
     private void drawQuestLog(Graphics g, int panelX, int startY) {
     	
     	g.setColor(Color.WHITE);
@@ -3425,6 +3876,136 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			);
     	
     }
+    
+    //Check Active Quests
+    private boolean hasActiveQuest() {
+        return activeQuestName != null && !activeQuestName.isEmpty();
+    }
+    
+    //Checks Done Quests
+    private boolean isQuestCompleted(String questName) {
+
+        if (questName.equals("Cellar Rats")) {
+            return cellarRatsCompleted;
+        }
+
+        if (questName.equals("Missing Laundry")) {
+            return laundryCompleted;
+        }
+
+        if (questName.equals("Flower Picking")) {
+            return flowersCompleted;
+        }
+
+        return false;
+        
+    }
+    
+    
+    //Quest: Quest Board Requests Chapter 1
+    private void handleQuestBoardSelection() {
+
+    	String selected = questBoardOptions[questBoardIndex];
+
+        if (selected.equals("Leave")) {
+            currentState = GameState.TOWN;
+            return;
+        }
+
+        if (isQuestCompleted(selected)) {
+            startDialogue("", new String[] {
+                "This request has already been completed."
+            }, GameState.QUEST_BOARD);
+            return;
+        }
+
+        if (hasActiveQuest()) {
+            startDialogue("", new String[] {
+                "You already have an active request.",
+                "Finish that one before taking another."
+            }, GameState.QUEST_BOARD);
+            return;
+        }
+
+        pendingQuestName = selected;
+        questConfirmOpen = true;
+        questConfirmIndex = 0;  
+        
+    }
+    
+    //Saying no just goes back
+    private void declineQuest() {
+        questConfirmOpen = false;
+        pendingQuestName = "";
+        questConfirmIndex = 0;
+    }
+    
+    //Starts the quest line RIGHT AWAY
+    private void acceptQuest(String questName) {
+
+        activeQuestName = questName;
+        questConfirmOpen = false;
+        pendingQuestName = "";
+
+        if (questName.equals("Cellar Rats")) {
+
+            BattleScenario scenario = BattleScenarioLibrary.getScenario("cellar_rats");
+            pendingScenarioIntroAfterQuestAccept = scenario;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "Our first official board job!", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "It says cellar rats.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Every legend starts somewhere.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Usually not under a tavern.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Under a tavern, over a tavern, beside a tavern. History will not care about the angle.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.QUEST_BOARD);
+
+            return;
+        }
+
+        if (questName.equals("Missing Laundry")) {
+        	startDialogue(new DialogueLine[] {
+                    new DialogueLine("Dean", "Missing laundry?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Penelope", "It says the wind scattered it across town.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                    new DialogueLine("Art", "If it helps someone, it counts.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Dean", "Fine. But if anyone asks, we fought the laundry devil.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                }, GameState.QUEST_BOARD);
+
+            return;
+        }
+
+        if (questName.equals("Flower Picking")) {
+        	startDialogue(new DialogueLine[] {
+                    new DialogueLine("Penelope", "This one is for medicinal flowers.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                    new DialogueLine("Dean", "Flowers. Great. Very heroic.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Art", "Medicine matters.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Dean", "I know. I just wanted the flowers to sound more dangerous.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                }, GameState.QUEST_BOARD);
+
+            return;
+        }
+        
+    }
+    
+    //Done Quest here
+    private void completeCellarRatsQuest() {
+
+        if (cellarRatsCompleted) {
+            return;
+        }
+
+        cellarRatsCompleted = true;
+        activeQuestName = "";
+        gold += 20;
+
+        addBattleMessage("Cellar Rats completed!");
+        addBattleMessage("Received 20 gold.");
+    }
+    
+    
+    
+    
     
     //NPC Handling interaction
     private NPC getAdjacentNpc() {
@@ -3972,6 +4553,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		    completeBanditQuest();
     		}
     	
+    	if (currentBattleScenario != null &&
+    		    currentBattleScenario.getId().equals("cellar_rats")) {
+
+    		    completeCellarRatsQuest();
+    		}
+    	
     	//Clears Tile
     	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
     	    Tile clearedTile = new Tile(TileType.GRASS);
@@ -3991,6 +4578,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    handleBattleVictory();
     	}
     }
+    
+    
     
   //Checks if the Survive turns battle as concluded its objective
     private void checkSurviveTurnsObjective() {
@@ -5210,7 +5799,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     
     
-    //Dialogue
+    //Dialogue prevents getting stuck 
     private void drawDialogue(Graphics g) {
     	
     	if (previousState == GameState.BATTLE) {
@@ -5230,6 +5819,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         else if (previousState == GameState.CAMP) {
             drawCampBackground(g);
+        }
+        else if (previousState == GameState.QUEST_BOARD) {
+            drawQuestBoard(g);
         }
     	
     }
@@ -5291,6 +5883,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
             writer.write("banditQuestCompleted=" + banditQuestCompleted + "\n");
             writer.write("banditQuestRewardClaimed=" + banditQuestRewardClaimed + "\n");
+            
+            //Gets active quest
+            writer.write("activeQuestName=" + activeQuestName + "\n");
+            
+            //QuestBoardChapter 1
+            writer.write("cellarRatsCompleted=" + cellarRatsCompleted + "\n");
+            writer.write("laundryCompleted=" + laundryCompleted + "\n");
+            writer.write("flowersCompleted=" + flowersCompleted + "\n");
 
             //Deletes Old Hard code in favor of calling 
             writer.write("partyCount=" + partyMembers.size() + "\n");
@@ -5408,6 +6008,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     partyCount = Integer.parseInt(value);
                 }
                 //Active Quests
+                
+                else if (key.equals("activeQuestName")) {
+                    activeQuestName = value;
+                }
+                
                 else if (key.equals("banditQuestAccepted")) {
                     banditQuestAccepted = Boolean.parseBoolean(value);
                 }
@@ -5416,6 +6021,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("banditQuestRewardClaimed")) {
                     banditQuestRewardClaimed = Boolean.parseBoolean(value);
+                }
+                //Quest Board Chapter 1
+                else if (key.equals("cellarRatsCompleted")) {
+                    cellarRatsCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("laundryCompleted")) {
+                    laundryCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("flowersCompleted")) {
+                    flowersCompleted = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -5738,6 +6353,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         int code = e.getKeyCode();
         
+        //no input on transitions
+        if (storyTransitionTimer > 0) {
+            return;
+        }
+        
         //Save
         if (code == KeyEvent.VK_S) {
             saveGame();
@@ -5819,6 +6439,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return;
             }
         }
+        
+        if (code == KeyEvent.VK_1) {
+            startChapterOne();
+            repaint();
+            return;
+        }
 
         if (currentState == GameState.DIALOGUE) {
 
@@ -5826,6 +6452,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 dialogueManager.nextLine();
 
                 if (!dialogueManager.isActive()) {
+                	
+                	//Battle Library Dialogue
+                	if (pendingScenarioIntroAfterQuestAccept != null) {
+
+                	    BattleScenario scenario = pendingScenarioIntroAfterQuestAccept;
+                	    pendingScenarioIntroAfterQuestAccept = null;
+
+                	    if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
+
+                	        // After the intro dialogue finishes, THEN load the battle.
+                	        pendingBattleScenario = scenario;
+                	        startDialogue(scenario.getIntroDialogue(), GameState.QUEST_BOARD);
+
+                	        repaint();
+                	        return;
+
+                	    } else {
+                	        loadBattleScenario(scenario);
+                	        repaint();
+                	        return;
+                	    }
+                	}
                 	
                 	//In
                 	if (pendingBattleScenario != null) {
@@ -5853,8 +6501,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	}
                 	
                 	if (pendingPrologueChapterOne) {
-                	    pendingPrologueChapterOne = false;
-                	    startChapterOne();
+                		pendingPrologueChapterOne = false;
+
+                	    pendingChapterOneStart = true;
+                	    startStoryTransition("Years Later...");
+
+                	    repaint();
+                	    return;
+                	}
+                	
+                	//Recruitment Scene
+                	if (pendingRecruitmentScene) {
+                	    pendingRecruitmentScene = false;
+                	    startRecruitmentRejectionScene();
+                	    repaint();
+                	    return;
+                	}
+
+                	//The Adventure begins scene
+                	if (pendingAdventurerIdeaScene) {
+                	    pendingAdventurerIdeaScene = false;
+                	    startAdventurerIdeaScene();
                 	    repaint();
                 	    return;
                 	}
@@ -6249,7 +6916,82 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
+        //Quest Board currentState
+        if (currentState == GameState.QUEST_BOARD) {
+        	
+        	//For quest selection screen
+        	if (questConfirmOpen) {
 
+        	    if (code == KeyEvent.VK_ESCAPE) {
+        	        declineQuest();
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_UP || code == KeyEvent.VK_DOWN ||
+        	        code == KeyEvent.VK_LEFT || code == KeyEvent.VK_RIGHT) {
+
+        	        questConfirmIndex = (questConfirmIndex == 0) ? 1 : 0;
+        	        repaint();
+        	        return;
+        	    }
+
+        	    if (code == KeyEvent.VK_ENTER) {
+
+        	        if (questConfirmIndex == 0) {
+        	            acceptQuest(pendingQuestName);
+        	        } else {
+        	            declineQuest();
+        	        }
+
+        	        repaint();
+        	        return;
+        	    }
+
+        	    return;
+        	}
+
+        	
+        	//Normal quest board handles
+            if (code == KeyEvent.VK_ESCAPE) {
+                currentState = GameState.TOWN;
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_UP) {
+                questBoardIndex--;
+
+                if (questBoardIndex < 0) {
+                    questBoardIndex = questBoardOptions.length - 1;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                questBoardIndex++;
+
+                if (questBoardIndex >= questBoardOptions.length) {
+                    questBoardIndex = 0;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER) {
+                handleQuestBoardSelection();
+                repaint();
+                return;
+            }
+
+            return;
+        }
+        
+
+        //End of States
         if (code == KeyEvent.VK_ENTER) {
             if (currentState == GameState.OVERWORLD ||
                 currentState == GameState.TOWN ||

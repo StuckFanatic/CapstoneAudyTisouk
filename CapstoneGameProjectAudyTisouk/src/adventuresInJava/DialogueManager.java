@@ -129,6 +129,10 @@ public class DialogueManager {
 		int leftPortraitX = 45;
 		int rightPortraitX = screenWidth - 45 - portraitSize;
 		
+		//Padding for Right Portrait
+		int rightPadding = 130;
+		int maxTextWidth = screenWidth - textX - rightPadding;
+		
 		drawPortraitBox(
 			    g,
 			    leftSpeakerName,
@@ -161,7 +165,7 @@ public class DialogueManager {
 		
 		
 		//Drawing the text, Once text is done show press enter to continue; Speaking
-		g.drawString(displayedText, textX, y + 40);
+		drawWrappedText(g, displayedText, textX, y + 40, maxTextWidth, 18);
 		
 		
 		//Dialogue Name
@@ -172,7 +176,7 @@ public class DialogueManager {
 		
 		
 		if (charIndex >= currentText.length()) {
-		    g.drawString("Press Enter...", screenWidth - 180, y + 90);
+		    g.drawString("Press Enter...", screenWidth - 180, y + 100);
 		}
 
 	}
@@ -248,6 +252,31 @@ public class DialogueManager {
 	    }
 
 	    return initials.toUpperCase();
+	}
+	
+	//text Wrap in dialogue
+	private void drawWrappedText(Graphics g, String text, int x, int y, int maxWidth, int lineHeight) {
+
+	    java.awt.FontMetrics fm = g.getFontMetrics();
+
+	    String[] words = text.split(" ");
+	    String line = "";
+
+	    for (String word : words) {
+	        String testLine = line.isEmpty() ? word : line + " " + word;
+
+	        if (fm.stringWidth(testLine) > maxWidth) {
+	            g.drawString(line, x, y);
+	            y += lineHeight;
+	            line = word;
+	        } else {
+	            line = testLine;
+	        }
+	    }
+
+	    if (!line.isEmpty()) {
+	        g.drawString(line, x, y);
+	    }
 	}
 	
 	

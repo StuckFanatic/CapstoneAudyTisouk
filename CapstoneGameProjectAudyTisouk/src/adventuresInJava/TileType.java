@@ -16,7 +16,8 @@ public enum TileType {
 	RUINS_FLOOR,
 	STONE_WALL,
 	PEDESTAL,
-	EVENT
+	EVENT,
+	QUEST_BOARD
 	
 	
 	

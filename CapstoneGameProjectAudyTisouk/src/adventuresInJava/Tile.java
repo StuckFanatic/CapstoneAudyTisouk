@@ -165,6 +165,17 @@ public class Tile {
 		    g.drawString("?", x + 20, y + 30);
 		}
 		
+		else if (type == TileType.QUEST_BOARD) {
+		    g.setColor(new Color(90, 55, 25));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(230, 210, 150));
+		    g.fillRect(x + 10, y + 8, tileSize - 20, tileSize - 16);
+
+		    g.setColor(Color.BLACK);
+		    g.drawRect(x + 10, y + 8, tileSize - 20, tileSize - 16);
+		}
+		
 		
 		
 		

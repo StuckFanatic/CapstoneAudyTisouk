@@ -20,6 +20,10 @@ public class BattleScenarioLibrary {
 		    return createForestAmbush();
 		}
 		
+		if (scenarioId.equals("cellar_rats")) {
+		    return createCellarRats();
+		}
+		
 		return createBanditField();
 		
 	}
@@ -179,6 +183,65 @@ public class BattleScenarioLibrary {
 	        introDialogue,
 	        outroDialogue
 	    );
+	}
+	
+	
+	//Prologue Rat Celler Quest Board
+	private static BattleScenario createCellarRats() {
+
+	    int[][] layout = {
+	        {1,1,1,1,1,1,1,1,1,1},
+	        {1,0,0,0,0,0,0,0,0,1},
+	        {1,0,3,0,0,0,0,3,0,1},
+	        {1,0,0,0,4,4,0,0,0,1},
+	        {1,0,0,0,4,4,0,0,0,1},
+	        {1,0,0,0,0,0,0,0,0,1},
+	        {1,0,3,0,0,0,0,3,0,1},
+	        {1,0,0,0,0,0,0,0,0,1},
+	        {1,0,0,0,0,0,0,0,0,1},
+	        {1,1,1,1,1,1,1,1,1,1}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 1, 8, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 8, false));
+	    playerSpawns.add(new UnitSpawn("mage", 3, 8, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("rat", 6, 3, true));
+	    enemySpawns.add(new UnitSpawn("rat", 7, 5, true));
+	    enemySpawns.add(new UnitSpawn("rat", 5, 6, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("Dean", "So this is it. Our first official adventurer job.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "It smells awful down here.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "The owner said the rats were getting bold.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "Bold rats. Great. My legend starts with me dead in a basement.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "Please do NOT call this a legend when we tell people.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+	    };
+
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	        new DialogueLine("Dean", "And just like that, the basement is saved.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "From rats.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "From BOLD rats.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "It was not glamorous, but it helped someone.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "That should count.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+	    };
+
+	    return new BattleScenario(
+	    	    "cellar_rats",
+	    	    "Cellar Rats",
+	    	    layout,
+	    	    ObjectiveType.DEFEAT_ALL,
+	    	    0,
+	    	    playerSpawns,
+	    	    enemySpawns,
+	    	    reinforcements,
+	    	    introDialogue,
+	    	    outroDialogue
+	    	);
 	}
 	
 	
