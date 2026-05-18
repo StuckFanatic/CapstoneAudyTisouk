@@ -17,7 +17,9 @@ public enum TileType {
 	STONE_WALL,
 	PEDESTAL,
 	EVENT,
-	QUEST_BOARD
+	QUEST_BOARD,
+	LAUNDRY,
+	FLOWER
 	
 	
 	

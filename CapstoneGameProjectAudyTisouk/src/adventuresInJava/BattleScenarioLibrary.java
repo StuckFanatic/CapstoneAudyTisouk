@@ -215,6 +215,7 @@ public class BattleScenarioLibrary {
 	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
 
 	    DialogueLine[] introDialogue = new DialogueLine[] {
+	    		new DialogueLine("", "Later, beneath the tavern...", DialogueSide.RIGHT, DialogueFaction.NPC),
 	        new DialogueLine("Dean", "So this is it. Our first official adventurer job.", DialogueSide.LEFT, DialogueFaction.ALLY),
 	        new DialogueLine("Penelope", "It smells awful down here.", DialogueSide.RIGHT, DialogueFaction.ALLY),
 	        new DialogueLine("Art", "The owner said the rats were getting bold.", DialogueSide.LEFT, DialogueFaction.ALLY),

@@ -110,6 +110,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] prologueForestMap;
     private GameMap prologueForestGameMap;
     
+    //Chapter 1 Quest Board Flowers
+    private Tile[][] flowerFieldMap;
+    private GameMap flowerFieldGameMap;
+    
     //SHOP
     private boolean selectingShopBuyer = true;
     private int shopBuyerIndex = 0;
@@ -216,6 +220,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean cellarRatsCompleted = false;
     private boolean laundryCompleted = false;
     private boolean flowersCompleted = false;
+    
+    //Laundry Quest 
+    private int laundryCollected = 0;
+    private final int LAUNDRY_REQUIRED = 3;
+    
+    //Flower Quest
+    private int flowersCollected = 0;
+    private final int FLOWERS_REQUIRED = 3;
     
     
     	
@@ -355,6 +367,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //This is for post battle dialogue and possibly scenes as well
     private boolean pendingReturnToOverworldAfterDialogue = false;
     
+    //Moves to flower field
+    private boolean pendingFlowerFieldStart = false;
+    
     
     /*
      * GAMESTATES
@@ -398,6 +413,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         generateTown();
         generateRuinsMap();
         generatePrologueForestMap();
+        generateFlowerFieldMap();
         
        
     }
@@ -465,6 +481,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//Quest Board
     	else if (type == TileType.QUEST_BOARD) {
     	    return "A board covered in local requests.";
+    	}
+    	
+    	//Laundry
+    	else if (type == TileType.LAUNDRY) {
+    	    return "Scattered laundry. Press ENTER to collect it.";
+    	}
+    	
+    	//Flowers
+    	else if (type == TileType.FLOWER) {
+    	    return "Medicinal flowers. Press ENTER to pick them.";
     	}
     	
     	return "";
@@ -549,6 +575,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		currentMap = overworldGameMap;
     		//helper for over world generation after quests
     		updateOverworldQuestTiles();
+    		updateTownQuestTiles();
     		
     	}	
     	
@@ -762,6 +789,48 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         prologueForestGameMap = new GameMap(prologueForestMap, "Cerebella Forest Path");
     }
     
+    //Flower Quest Chapter 1
+    private void generateFlowerFieldMap() {
+
+        flowerFieldMap = new Tile[10][10];
+
+        int[][] layout = {
+            {1,1,1,1,1,1,1,1,1,1},
+            {1,0,0,0,3,0,0,0,0,1},
+            {1,0,1,0,0,0,1,0,0,1},
+            {1,0,0,0,0,3,0,0,1,1},
+            {1,0,1,1,0,0,0,0,0,1},
+            {1,0,0,0,0,1,1,0,0,1},
+            {1,0,3,0,0,0,0,0,0,1},
+            {1,0,0,0,1,0,0,1,0,1},
+            {1,0,0,0,0,0,0,0,2,1},
+            {1,1,1,1,1,1,1,1,1,1}
+        };
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    flowerFieldMap[col][row] = new Tile(TileType.GRASS);
+                }
+                else if (value == 1) {
+                    flowerFieldMap[col][row] = new Tile(TileType.FOREST);
+                }
+                else if (value == 2) {
+                    flowerFieldMap[col][row] = new Tile(TileType.EXIT);
+                }
+                else if (value == 3) {
+                    flowerFieldMap[col][row] = new Tile(TileType.FLOWER);
+                }
+            }
+        }
+
+        flowerFieldGameMap = new GameMap(flowerFieldMap, "Forest Edge");
+        
+    }
+    
     
     
     //Explore tiles method- will add more?
@@ -850,6 +919,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		return;
     	}
     	
+    	if (tile == TileType.LAUNDRY) {
+            collectLaundry();
+            return;
+        }
+    	
     	if (tile == TileType.EXIT) {
     		currentMap = overworldGameMap;
     		currentState = GameState.OVERWORLD;
@@ -905,10 +979,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 completePrologue();
                 return;
             }
+            
+            if (activeQuestName.equals("Flower Picking") || flowersCompleted) {
+                currentMap = townGameMap;
+                currentState = GameState.TOWN;
+
+                player.col = 5;
+                player.row = 8;
+
+                return;
+            }
 
             System.out.println("There is nowhere to go right now.");
             return;
         }
+    	
+    	if (tile == TileType.FLOWER) {
+    	    collectFlower();
+    	    return;
+    	}
     	
 
         if (tile == TileType.PEDESTAL) {
@@ -3059,6 +3148,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         g.setColor(Color.WHITE);
 
+        ////
         if (selected.equals("Cellar Rats")) {
             drawWrappedText(g,
                 "Clear rats from a tavern cellar. Reward: 20 gold.",
@@ -3068,24 +3158,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 18
             );
         }
+        
+        ////
         else if (selected.equals("Missing Laundry")) {
-            drawWrappedText(g,
-                "Collect laundry scattered around town. Reward: 10 gold.",
-                detailX,
-                detailY + 25,
-                220,
-                18
-            );
+
+            String detail = "Collect laundry scattered around town. Reward: 10 gold.";
+
+            if (activeQuestName.equals("Missing Laundry")) {
+                detail = "Active: collect laundry around town. Progress: " 
+                        + laundryCollected + "/" + LAUNDRY_REQUIRED + ".";
+            }
+
+            drawWrappedText(g, detail, detailX, detailY + 25, 220, 18);
         }
+        
+        /////
         else if (selected.equals("Flower Picking")) {
-            drawWrappedText(g,
-                "Gather medicinal flowers near the woods. Reward: 15 gold.",
-                detailX,
-                detailY + 25,
-                220,
-                18
-            );
+
+            String detail = "Gather medicinal flowers near the forest. Reward: 15 gold.";
+
+            if (activeQuestName.equals("Flower Picking")) {
+                detail = "Active: gather medicinal flowers. Progress: "
+                        + flowersCollected + "/" + FLOWERS_REQUIRED + ".";
+            }
+
+            drawWrappedText(g, detail, detailX, detailY + 25, 220, 18);
         }
+        
+        
         else if (selected.equals("Leave")) {
             drawWrappedText(g,
                 "Step away from the board.",
@@ -3434,7 +3534,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         //Cleric
         if (weaponId.equals("training_staff")) {
-            return new Weapon("training_staff", "Training Staff", WeaponType.STAFF, 1, 1, 2, 1, 4, 1, true);
+            return new Weapon("training_staff", "Training Staff", WeaponType.STAFF, 1, 2, 2, 1, 4, 1, true);
         }
 
         //Bandits
@@ -3951,6 +4051,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             BattleScenario scenario = BattleScenarioLibrary.getScenario("cellar_rats");
             pendingScenarioIntroAfterQuestAccept = scenario;
+           
 
             startDialogue(new DialogueLine[] {
                 new DialogueLine("Dean", "Our first official board job!", DialogueSide.LEFT, DialogueFaction.ALLY),
@@ -3965,30 +4066,162 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         if (questName.equals("Missing Laundry")) {
-        	startDialogue(new DialogueLine[] {
-                    new DialogueLine("Dean", "Missing laundry?", DialogueSide.LEFT, DialogueFaction.ALLY),
-                    new DialogueLine("Penelope", "It says the wind scattered it across town.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                    new DialogueLine("Art", "If it helps someone, it counts.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                    new DialogueLine("Dean", "Fine. But if anyone asks, we fought the laundry devil.", DialogueSide.LEFT, DialogueFaction.ALLY)
-                }, GameState.QUEST_BOARD);
+
+            laundryCollected = 0;
+            activeQuestName = "Missing Laundry";
+            updateTownQuestTiles();
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "Missing laundry?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "It says the wind scattered it across town.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "If it helps someone, it counts.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Fine. But if anyone asks, we fought the laundry devil.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Please don't tell people that.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.QUEST_BOARD);
 
             return;
         }
 
         if (questName.equals("Flower Picking")) {
-        	startDialogue(new DialogueLine[] {
-                    new DialogueLine("Penelope", "This one is for medicinal flowers.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                    new DialogueLine("Dean", "Flowers. Great. Very heroic.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                    new DialogueLine("Art", "Medicine matters.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                    new DialogueLine("Dean", "I know. I just wanted the flowers to sound more dangerous.", DialogueSide.LEFT, DialogueFaction.ALLY)
-                }, GameState.QUEST_BOARD);
+
+            flowersCollected = 0;
+            activeQuestName = "Flower Picking";
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "This one is for medicinal flowers.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Flowers. Great. Very cool.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Medicine is good Dean.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "I know.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            }, GameState.QUEST_BOARD);
+
+            pendingFlowerFieldStart = true;
 
             return;
         }
         
     }
     
+    //Pre Quest Events
+    //Chapter 1
+    
+    //Updates Laundry collected
+    private void updateTownQuestTiles() {
+
+        if (townGameMap == null) return;
+
+        Tile[][] tiles = townGameMap.getTiles();
+
+        // Only show laundry if Missing Laundry is active and not completed
+        if (activeQuestName.equals("Missing Laundry") && !laundryCompleted) {
+
+            if (laundryCollected < 1) {
+                tiles[2][2] = new Tile(TileType.LAUNDRY);
+            }
+
+            if (laundryCollected < 2) {
+                tiles[7][2] = new Tile(TileType.LAUNDRY);
+            }
+
+            if (laundryCollected < 3) {
+                tiles[5][7] = new Tile(TileType.LAUNDRY);
+            }
+
+        } else {
+            // Clear possible laundry spots when quest is not active
+            if (tiles[2][2].getType() == TileType.LAUNDRY) {
+                tiles[2][2] = new Tile(TileType.GRASS);
+            }
+
+            if (tiles[7][2].getType() == TileType.LAUNDRY) {
+                tiles[7][2] = new Tile(TileType.GRASS);
+            }
+
+            if (tiles[5][7].getType() == TileType.LAUNDRY) {
+                tiles[5][7] = new Tile(TileType.GRASS);
+            }
+            
+        }
+        
+    }
+    
+    //Collect Laundry
+    private void collectLaundry() {
+
+        if (!activeQuestName.equals("Missing Laundry") || laundryCompleted) {
+            startDialogue("Narrator", new String[] {
+                "It is just laundry."
+            }, GameState.TOWN);
+            return;
+        }
+
+        laundryCollected++;
+
+        // Remove the current tile
+        currentMap.getTiles()[player.col][player.row] = new Tile(TileType.GRASS);
+
+        if (laundryCollected >= LAUNDRY_REQUIRED) {
+            completeMissingLaundryQuest();
+            return;
+        }
+
+        startDialogue("", new String[] {
+            "You collected a piece of laundry.",
+            "Laundry collected: " + laundryCollected + "/" + LAUNDRY_REQUIRED
+        }, GameState.TOWN);
+        
+    }
+    
+    
+    //Collect Flowers
+    private void startFlowerPickingMap() {
+
+        currentMap = flowerFieldGameMap;
+        currentState = GameState.EXPLORATION;
+
+        player.col = 1;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "A short walk beyond town, the forest opens into a quiet patch of wild grass.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Penelope", "The flowers should grow around here. Look for the pink ones.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Understood. We're hunting pink flowers.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Picking. We're picking them.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Right. Tactical picking.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.EXPLORATION);
+        
+    }
+    
+    //Collecting Flowers
+    private void collectFlower() {
+
+        if (!activeQuestName.equals("Flower Picking") || flowersCompleted) {
+            startDialogue("Narrator", new String[] {
+                "These flowers are pretty, but you do not need them right now."
+            }, GameState.EXPLORATION);
+            return;
+        }
+
+        flowersCollected++;
+
+        currentMap.getTiles()[player.col][player.row] = new Tile(TileType.GRASS);
+
+        if (flowersCollected >= FLOWERS_REQUIRED) {
+            completeFlowerPickingQuest();
+            return;
+        }
+
+        startDialogue("", new String[] {
+            "You picked medicinal flowers.",
+            "Flowers collected: " + flowersCollected + "/" + FLOWERS_REQUIRED
+        }, GameState.EXPLORATION);
+    }
+    
+    
+    
     //Done Quest here
+    //Chapter 1
+    
+    //Cellar Rat
     private void completeCellarRatsQuest() {
 
         if (cellarRatsCompleted) {
@@ -4001,6 +4234,42 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         addBattleMessage("Cellar Rats completed!");
         addBattleMessage("Received 20 gold.");
+        
+    }
+    
+    //Missing Laundry
+    private void completeMissingLaundryQuest() {
+
+        laundryCompleted = true;
+        activeQuestName = "";
+        gold += 10;
+
+        updateTownQuestTiles();
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "You gathered the last piece of missing laundry.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "And thus the town's socks were saved.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "It was helpful, Dean.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Helpful is enough for now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("", "Missing Laundry completed. Received 10 gold.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.TOWN);
+        
+    }
+    
+    //Flowers
+    private void completeFlowerPickingQuest() {
+
+        flowersCompleted = true;
+        activeQuestName = "";
+        gold += 15;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "You gathered the last bundle of medicinal flowers.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Penelope", "These should help the healer prepare more medicine.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "And not a single flower monster. Shame.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Maybe that is for the best.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("", "Flower Picking completed. Received 15 gold.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.EXPLORATION);
     }
     
     
@@ -6269,6 +6538,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
             
             updateStoryWorldState();
+            updateTownQuestTiles();
 
             System.out.println("Game loaded.");
 
@@ -6522,6 +6792,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	if (pendingAdventurerIdeaScene) {
                 	    pendingAdventurerIdeaScene = false;
                 	    startAdventurerIdeaScene();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	//Flowers
+                	if (pendingFlowerFieldStart) {
+                	    pendingFlowerFieldStart = false;
+                	    startFlowerPickingMap();
                 	    repaint();
                 	    return;
                 	}

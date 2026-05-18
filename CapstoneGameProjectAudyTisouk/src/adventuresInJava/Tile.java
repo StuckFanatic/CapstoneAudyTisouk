@@ -176,6 +176,43 @@ public class Tile {
 		    g.drawRect(x + 10, y + 8, tileSize - 20, tileSize - 16);
 		}
 		
+		else if (type == TileType.LAUNDRY) {
+		    g.setColor(new Color(230, 230, 255));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(80, 120, 220));
+		    g.drawLine(x + 8, y + 16, x + tileSize - 8, y + 16);
+
+		    g.setColor(Color.WHITE);
+		    g.fillRect(x + 12, y + 18, 10, 16);
+		    g.fillRect(x + 26, y + 18, 12, 16);
+
+		    g.setColor(Color.BLACK);
+		    g.drawRect(x + 12, y + 18, 10, 16);
+		    g.drawRect(x + 26, y + 18, 12, 16);
+		}
+		
+		else if (type == TileType.FLOWER) {
+		    g.setColor(new Color(34, 139, 34));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    // flower stem
+		    g.setColor(new Color(20, 100, 20));
+		    g.drawLine(x + tileSize / 2, y + 28, x + tileSize / 2, y + 38);
+
+		    // flower petals
+		    g.setColor(new Color(230, 120, 220));
+		    g.fillOval(x + 18, y + 14, 12, 12);
+		    g.fillOval(x + 24, y + 14, 12, 12);
+		    g.fillOval(x + 21, y + 9, 12, 12);
+
+		    // center
+		    g.setColor(Color.YELLOW);
+		    g.fillOval(x + 24, y + 17, 8, 8);
+		}
+		
+		
+		
 		
 		
 		
