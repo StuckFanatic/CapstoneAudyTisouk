@@ -114,7 +114,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] flowerFieldMap;
     private GameMap flowerFieldGameMap;
     
+    //Chapter 1 Checkmate safe house
+    private Tile[][] safehouseMap;
+    private GameMap safehouseGameMap;
+    
     //SHOP
+    private int gold = 500; 
     private boolean selectingShopBuyer = true;
     private int shopBuyerIndex = 0;
     private int shopItemIndex = 0;
@@ -184,6 +189,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean pendingRecruitmentScene = false;
     //Chapter 1 part 2
     private boolean pendingAdventurerIdeaScene = false;
+    private boolean pendingStarterJobsCompleteScene = false;
+    
+    //Chapter 1 part 5
+    private boolean safehouseUnlocked = false;
+    
+    private boolean inspectedSafehouseChildren = false;
+    private boolean inspectedSafehouseDoctor = false;
+    private boolean inspectedSafehouseSupplies = false;
+    private boolean inspectedSafehouseOrders = false;
+    
+    //Chpater 1 part 6
+    
+    private boolean pendingTaliConfrontation = false;
+    private boolean inspectedKingTent = false;
+    
+    private boolean taliConfrontationCompleted = false;
     
     
     
@@ -194,7 +215,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int encounterSourceCol = -1;
     private int encounterSourceRow = -1;
     
-    private int gold = 500; 
     private boolean banditQuestRewardClaimed = false;
     
     //Quest Flags
@@ -212,6 +232,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    "Cellar Rats",
     	    "Missing Laundry",
     	    "Flower Picking",
+    	    "Urgent Notice",
     	    "Leave"
     	};
 
@@ -221,6 +242,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean laundryCompleted = false;
     private boolean flowersCompleted = false;
     
+    private boolean starterJobsComplete = false;
+    private boolean banditQuestUnlocked = false;
+    
     //Laundry Quest 
     private int laundryCollected = 0;
     private final int LAUNDRY_REQUIRED = 3;
@@ -229,6 +253,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int flowersCollected = 0;
     private final int FLOWERS_REQUIRED = 3;
     
+    // Checkmate / Golden Sinners questline
+    private int checkmateStep = 0;
+    private boolean oldMillRoadCompleted = false;
     
     	
     	
@@ -370,6 +397,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Moves to flower field
     private boolean pendingFlowerFieldStart = false;
     
+    //DEFEAT
+    private String defeatMessage = "You were defeated...";
+    private GameState defeatReturnState = GameState.OVERWORLD;
+    
+    
     
     /*
      * GAMESTATES
@@ -389,7 +421,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		EQUIPMENT,
 		STATUS,
 		CAMP,
-		QUEST_BOARD
+		QUEST_BOARD,
+		DEFEAT
 		
 	}
     
@@ -414,6 +447,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         generateRuinsMap();
         generatePrologueForestMap();
         generateFlowerFieldMap();
+        generateSafehouseMap();
         
        
     }
@@ -574,8 +608,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
     		currentMap = overworldGameMap;
     		//helper for over world generation after quests
-    		updateOverworldQuestTiles();
     		updateTownQuestTiles();
+    		updateOverworldQuestTiles();
     		
     	}	
     	
@@ -833,6 +867,75 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     
     
+    private void generateSafehouseMap() {
+
+        safehouseMap = new Tile[10][10];
+
+        int[][] layout = {
+            {1,1,1,1,1,1,1,1,1,3},
+            {1,0,0,0,3,0,0,0,0,1},
+            {1,0,3,0,0,0,0,0,0,1},
+            {1,0,0,0,0,0,0,0,3,1},
+            {1,0,0,3,0,3,0,0,0,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,0,0,0,0,0,0,2,1},
+            {1,1,1,1,1,1,1,1,1,1}
+        };
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    safehouseMap[col][row] = new Tile(TileType.GRASS);
+                }
+                else if (value == 1) {
+                    safehouseMap[col][row] = new Tile(TileType.FOREST);
+                }
+                else if (value == 2) {
+                    safehouseMap[col][row] = new Tile(TileType.EXIT);
+                }
+                else if (value == 3) {
+                    Tile eventTile = new Tile(TileType.EVENT);
+
+                    if (col == 4 && row == 1) {
+                        eventTile.setEventId("safehouse_children");
+                    }
+                    else if (col == 2 && row == 2) {
+                        eventTile.setEventId("safehouse_doctor");
+                    }
+                    else if (col == 8 && row == 3) {
+                        eventTile.setEventId("safehouse_supplies");
+                    }
+                    else if (col == 3 && row == 4) {
+                        eventTile.setEventId("safehouse_guard");
+                    }
+                    else if (col == 5 && row == 4) {
+                        eventTile.setEventId("safehouse_orders");
+                    }
+                    else if (col == 9 && row == 0) {
+                        eventTile.setEventId("safehouse_king_tent");
+                    }
+                    
+                    
+                    else {
+                        eventTile.setEventId("safehouse_camp_life");
+                    }
+
+                    safehouseMap[col][row] = eventTile;
+                }
+            }
+        }
+
+        safehouseGameMap = new GameMap(safehouseMap, "Golden Sinners Safehouse");
+        
+    }
+    
+    
+    
     //Explore tiles method- will add more?
     
     private void exploreTile() {
@@ -883,6 +986,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    loadBattleScenario(scenario);
     	    return;
     		
+    	}
+    	
+    	else if (tile == TileType.EVENT) {
+
+    	    Tile currentTile = currentMap.getTiles()[player.col][player.row];
+
+    	    if ("enter_safehouse".equals(currentTile.getEventId())) {
+    	        enterSafehouse();
+    	        return;
+    	    }
     	}
     	
     	endTurn();
@@ -967,6 +1080,31 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //new for exploration tiles
     private void interactInExploration(TileType tile) {
+    	
+    	if (tile == TileType.EXIT) {
+
+    	    if (currentMap == safehouseGameMap) {
+    	        currentMap = overworldGameMap;
+    	        currentState = GameState.OVERWORLD;
+
+    	        // Put player back near the safehouse entrance on the overworld
+    	        player.col = 1;
+    	        player.row = 7;
+
+    	        return;
+    	    }
+
+    	    if (currentMap == flowerFieldGameMap) {
+    	        currentMap = townGameMap;
+    	        currentState = GameState.TOWN;
+
+    	        player.col = 5;
+    	        player.row = 8;
+
+    	        return;
+    	    }
+
+    	}
 
     	if (tile == TileType.EXIT) {
 
@@ -986,6 +1124,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 player.col = 5;
                 player.row = 8;
+
+                return;
+            }
+            
+            if (currentMap == safehouseGameMap) {
+                currentMap = overworldGameMap;
+                currentState = GameState.OVERWORLD;
+
+                player.col = 1;
+                player.row = 7;
 
                 return;
             }
@@ -1010,6 +1158,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             handleExplorationEvent(currentTile.getEventId());
             return;
         }
+        
+        
 
         System.out.println("There is nothing to inspect here.");
     }
@@ -1099,6 +1249,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    break;
     	    
     	case QUEST_BOARD:
+    	    updateQuestBoard();
+    	    break;
+    	    
+    	case DEFEAT:
     	    updateQuestBoard();
     	    break;
     	    
@@ -1203,7 +1357,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         // Example quest encounter tile location
         int questCol = 7;
         int questRow = 2;
+        
+        // Old Mill Road location
+        int millCol = 8;
+        int millRow = 6;
+        
+        //Safe house
+        int safehouseCol = 1;
+        int safehouseRow = 7;
 
+        //bandit ambush
         if (banditQuestAccepted && !banditQuestCompleted) {
             Tile questTile = new Tile(TileType.ENEMY);
             questTile.setScenarioId("forest_ambush");
@@ -1212,6 +1375,43 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         } else {
             tiles[questCol][questRow] = new Tile(TileType.GRASS);
         }
+        
+        
+        
+        //Old Mill Road appears after the elder reveals the next lead
+        if (checkmateStep == 3) {
+            Tile oldMillTile = new Tile(TileType.ENEMY);
+            oldMillTile.setScenarioId("old_mill_road");
+            tiles[millCol][millRow] = oldMillTile;
+        } else {
+            if (tiles[millCol][millRow] != null &&
+                tiles[millCol][millRow].getType() == TileType.ENEMY) {
+
+                tiles[millCol][millRow] = new Tile(TileType.GRASS);
+            }
+        }
+        
+        //Safe house
+        if (safehouseUnlocked && checkmateStep >= 4 && checkmateStep < 5) {
+            Tile safehouseTile = new Tile(TileType.EVENT);
+            safehouseTile.setEventId("enter_safehouse");
+            tiles[safehouseCol][safehouseRow] = safehouseTile;
+            
+        } else {
+        	
+            if (tiles[safehouseCol][safehouseRow] != null &&
+                tiles[safehouseCol][safehouseRow].getType() == TileType.EVENT &&
+                "enter_safehouse".equals(tiles[safehouseCol][safehouseRow].getEventId())) {
+
+                tiles[safehouseCol][safehouseRow] = new Tile(TileType.GRASS);
+            }
+        }
+        
+        
+        
+        
+        
+        
     }
 
     //This is where the tile lines start
@@ -1261,14 +1461,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case QUEST_BOARD:
     	    drawQuestBoard(g);
     	    break;
+    	    
+    	    
+    	case DEFEAT:
+    	    drawDefeat(g);
+    	    break;
 
         }
+        
         
         if (currentState != GameState.STATUS &&
         	    currentState != GameState.EQUIPMENT &&
         	    currentState != GameState.CAMP &&
         	    currentState != GameState.DIALOGUE &&
-        	    currentState != GameState.QUEST_BOARD) {
+        	    currentState != GameState.QUEST_BOARD &&
+        	    currentState != GameState.DEFEAT) {
         	    drawGlobalUI(g);
         	}
         
@@ -1391,6 +1598,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	break;
             	
             case QUEST_BOARD:
+            	break;
+            	
+            case DEFEAT:
             	break;
 
             case BATTLE:
@@ -2067,7 +2277,155 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             return;
         }
+        
+        
+        ///
+        //Chapter 1 Safe House Event 1
+        if (eventId.equals("safehouse_children")) {
 
+            if (inspectedSafehouseChildren) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Dean", "They're still playing with sticks like swords.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Penelope", "They should not have to grow up around this.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            inspectedSafehouseChildren = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "A few children chase each other between patched tents, waving sticks like blades.", 
+                		DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Dean", "Huh.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "What?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "I thought this place would be... I don't know. More skulls. Less tag.", 
+                		DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "They're just kids.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine(" A Golden Sinner", "Kids with nowhere else to go.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Art", "Why bring them here?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("A Golden Sinner", "Because outside these trees, no one bothers asking if they have somewhere to sleep.", 
+                		DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+        
+      //Chapter 1 Safe House Event 2
+        if (eventId.equals("safehouse_doctor")) {
+
+            if (inspectedSafehouseDoctor) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Penelope", "They are still treating the wounded.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                    new DialogueLine("Art", "Bandits and refugees in the same line.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            inspectedSafehouseDoctor = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "A woman in a dirty coat kneels beside a cot, wrapping a bloodied arm of a teenager"
+                		+ " with strips of boiled cloth.", 
+                		DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Penelope", "That bandage is too loose.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Makeshift Doctor", "Then tighten it, healer girl.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Penelope", "I... alright.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Did she just recruit Penelope by insulting the bandage?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Looks like it worked.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Makeshift Doctor", "People come here cut, starving, or scared. I don't ask who got them that way.", 
+                		DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Penelope", "You treat everyone?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Makeshift Doctor", "Everyone who can make it to my tent.", DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+        
+      //Chapter 1 Safe House Event 3
+        if (eventId.equals("safehouse_supplies")) {
+
+            if (inspectedSafehouseSupplies) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Art", "Food, medicine, blankets...", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Dean", "Still stolen, probably.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            inspectedSafehouseSupplies = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "Pryed crates are stacked beneath a sagging tarp. Grain sacks, medicine bundles, patched blankets.", 
+                		DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Dean", "This is a lot of supplies.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Some of it has the merchant seals still.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "And some of it is medicine.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "So they steal from roads and feed their camp with it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "That doesn't make the raids right.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "No. But it explains why people here defend them.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+        
+      //Chapter 1 Safe House Event 4
+        if (eventId.equals("safehouse_guard")) {
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Golden Sinner Guard", "You've got brave feet walking in here.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+                new DialogueLine("Dean", "Thanks. They are attached to brave legs.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Golden Sinner Guard", "This is the funny one I presume?", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+                new DialogueLine("Art", "We're looking for The King.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Golden Sinner Guard", "Then you're looking above your weight.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+                new DialogueLine("Penelope", "Does The King know what is happening on the roads?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Golden Sinner Guard", "The King knows what the King needs to know.", DialogueSide.RIGHT, DialogueFaction.ENEMY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+        
+        if (eventId.equals("safehouse_orders")) {
+
+            if (inspectedSafehouseOrders) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Art", "The orders are gone now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Penelope", "But we know enough. Someone here can lead us closer to The King.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            inspectedSafehouseOrders = true;
+
+            if (checkmateStep < 5) {
+                checkmateStep = 5;
+            }
+
+            updateOverworldQuestTiles();
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "A torn page lies half-hidden beneath a crate.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Art", "This has the Golden Sinners mark.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "It lists routes, storehouses, patrol times...", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "That is not petty theft. That is planning a war on wagons.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "There is a meeting point written here.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Do you think The King will be there?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "If not, someone important enough to regret meeting us.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("", "A new lead has been marked on your map.", DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+        
+        //Tali Sin
+        if (eventId.equals("safehouse_king_tent")) {
+            handleKingTentEvent();
+            return;
+        }
+
+        
+        
+        
+        //End
         startDialogue(new DialogueLine[] {
             new DialogueLine("Art", "There is nothing else here.", DialogueSide.LEFT, DialogueFaction.ALLY)
         }, GameState.EXPLORATION);
@@ -2260,6 +2618,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         startDialogue(new DialogueLine[] {
             new DialogueLine("", "After leaving the recruitment table, the three found a quiet spot away from the line.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Art was a taller young man, Brown medium wavy hair with a fair light tone. "
+            		+ "He worked as a lumberer over the years as he honed his skills in swordsmanship.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Penelope grew up in the church. Her Abilites honed from the Priest himself before he left her to the village"
+            		+ "She has long blonde hair and pale skin tone.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Dean was a shorter man with dark brown hair and a darker skin tone. He worked as hunter as did his mother.",
             		DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "I cannot believe that guy. 'Storybook volunteers.' Who says that to someone's face?",
             		DialogueSide.LEFT, DialogueFaction.ALLY),
@@ -3185,6 +3551,29 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             drawWrappedText(g, detail, detailX, detailY + 25, 220, 18);
         }
         
+        //Major Step Quest
+        else if (selected.equals("Urgent Notice")) {
+
+        	String detail;
+
+            if (!banditQuestUnlocked) {
+                detail = "No urgent requests are posted yet.";
+            } else if (!banditQuestAccepted && !banditQuestCompleted) {
+            	
+                detail = "A serious road attack notice. Speak with the Village Elder.";
+            } else if (isBanditQuestActive()) {
+            	
+                detail = "Bandit Trouble is active. Track the attackers near the forest road.";
+            } else if (banditQuestCompleted && checkmateStep == 2) {
+            	
+                detail = "The road attack request is complete. The Golden Sinners clue remains.";
+            } else {
+                detail = "The urgent request has been handled.";
+            }
+
+            drawWrappedText(g, detail, detailX, detailY + 25, 220, 18);
+        }
+        
         
         else if (selected.equals("Leave")) {
             drawWrappedText(g,
@@ -3367,21 +3756,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	Weapon banditAxe = createWeaponById("bandit_axe");
     	Weapon enemyBow = createWeaponById("hunter_bow");
     	Weapon ratBite = createWeaponById("rat_bite");
+    	Weapon taliSpear = createWeaponById("tali_spear");
 		
 		//Class Name, Max HP, Armor Class, Movement Range, Weapon Type
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4, new WeaponType[] { WeaponType.AXE });
 		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5, new WeaponType[] { WeaponType.BOW });
-		CharacterClass ratClass = new CharacterClass("Rat", 5, 8, 5,new WeaponType[] { WeaponType.AXE });
+		CharacterClass ratClass = new CharacterClass("Rat", 5, 8, 5, new WeaponType[] { WeaponType.AXE });
+		CharacterClass taliClass = new CharacterClass("Bandit King", 20, 13, 5, new WeaponType[] { WeaponType.LANCE });
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
 		GrowthRates hunterGrowths = new GrowthRates(60, 35, 0, 55, 50, 25, 15, 20);
 		GrowthRates ratGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
+		GrowthRates taliGrowths = new GrowthRates(70, 55, 10, 50, 50, 30, 35, 25);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
 		UnitStats banditStats = new UnitStats(10, 0, 4, 0, 3, 3, 1, 1, 0, 4);
 		UnitStats hunterStats = new UnitStats(9, 2, 3, 0, 5, 5, 2, 1, 1, 5);
 		UnitStats ratStats = new UnitStats(5, 0, 1, 0, 2, 5, 0, 0, 0, 5);
+		UnitStats taliStats = new UnitStats(20, 4, 5, 0, 5, 5, 4, 3, 2, 5);
 		
 
 		if (unitId.equals("bandit")) {
@@ -3394,6 +3787,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		
 		if (unitId.equals("rat")) {
 		    return new BattleUnit("Cellar Rat", col, row, enemy, ratBite, ratClass, ratStats, ratGrowths, "", EnemyRole.AGGRESSIVE);
+		}
+		
+		if (unitId.equals("tali_boss")) {
+		    return new BattleUnit("Tali", col, row, true, taliSpear, taliClass, taliStats, taliGrowths, "Piercing Thrust", EnemyRole.AGGRESSIVE);
 		}
 		
 		
@@ -3521,6 +3918,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (weaponId.equals("hunter_bow")) {
             return new Weapon("hunter_bow", "Hunter Bow", WeaponType.BOW, 2, 2, 2, 1, 6, 1, false);
+        }
+        //Spears
+        if (weaponId.equals("tali_spear")) {
+            return new Weapon("tali_spear", "Tali's Spear", WeaponType.LANCE, 1, 2, 3, 1, 8, 2, false);
         }
 
         //Mage
@@ -3903,18 +4304,35 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Quest accept helper
     private void acceptBanditQuest() {
-        banditQuestAccepted = true;
+    	
+    	banditQuestAccepted = true;
         banditQuestCompleted = false;
+        activeQuestName = "Bandit Trouble";
+
+        if (checkmateStep < 1) {
+            checkmateStep = 1;
+        }
+
         updateOverworldQuestTiles();
-        addBattleMessage("Bandit quest accepted!"); // Battle Messages for looking at 
-        System.out.println("Bandit quest accepted!"); // Can be deleted after
+
+        System.out.println("Bandit quest accepted! Checkmate step: " + checkmateStep);
     }
     
     //Shows completion
     private void completeBanditQuest() {
-        banditQuestCompleted = true;
+    	banditQuestCompleted = true;
+
+        if (activeQuestName.equals("Bandit Trouble")) {
+            activeQuestName = "";
+        }
+
+        if (checkmateStep < 2) {
+            checkmateStep = 2;
+        }
+
         updateOverworldQuestTiles();
-        System.out.println("Bandit quest completed!");
+
+        System.out.println("Bandit quest completed! Checkmate step: " + checkmateStep);
     }
     
     //Handles dialogue for before after and during the quest
@@ -3958,23 +4376,105 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Quests WILL START HERE!
     private void drawQuestLog(Graphics g, int panelX, int startY) {
-    	
-    	g.setColor(Color.WHITE);
-    	
-    	g.drawString("Quest", panelX + 20, startY);
-    	g.drawString("Bandit Trouble", panelX + 20, startY + 25);
-    	g.drawString("Status: " + getBanditQuestStatusText(), panelX + 20, startY + 50);
-    	
-    	drawWrappedText(
-    			g,
-    			"Objective: " + getBanditQuestStatusText(),
-    			panelX + 20,
-    			startY + 75,
-    			rightPanelWidth - 40,
-    			18
-    			
-    			);
-    	
+
+        g.setColor(Color.WHITE);
+
+        g.drawString("Quest", panelX + 20, startY);
+
+        String activeQuest = getActiveQuestDisplayName();
+
+        if (activeQuest == null || activeQuest.isEmpty()) {
+            g.drawString("None Active", panelX + 20, startY + 25);
+            drawWrappedText(
+                g,
+                getActiveQuestObjectiveText(),
+                panelX + 20,
+                startY + 50,
+                rightPanelWidth - 40,
+                18
+            );
+            return;
+        }
+
+        g.drawString(activeQuest, panelX + 20, startY + 25);
+
+        drawWrappedText(
+            g,
+            getActiveQuestObjectiveText(),
+            panelX + 20,
+            startY + 50,
+            rightPanelWidth - 40,
+            18
+        );
+    }
+    
+    //Displays the true current quest
+    private String getActiveQuestDisplayName() {
+
+        if (activeQuestName != null && !activeQuestName.isEmpty()) {
+            return activeQuestName;
+        }
+
+        if (checkmateStep == 3) {
+            return "Checkmate: Old Mill Road";
+        }
+
+        if (checkmateStep == 4 && !safehouseUnlocked) {
+            return "Checkmate: Report to Elder";
+        }
+
+        if (checkmateStep == 4 && safehouseUnlocked) {
+            return "Checkmate: Hidden Camp";
+        }
+
+        if (isBanditQuestActive()) {
+            return "Bandit Trouble";
+        }
+
+        return "";
+    }
+    
+    //Details for Quests
+    private String getActiveQuestObjectiveText() {
+
+        if (activeQuestName == null || activeQuestName.isEmpty()) {
+
+            if (checkmateStep == 3) {
+                return "Follow the Golden Sinners lead near Old Mill Road.";
+            }
+
+            if (checkmateStep == 4 && !safehouseUnlocked) {
+                return "Report the Old Mill Road findings to the Village Elder.";
+            }
+
+            if (checkmateStep == 4 && safehouseUnlocked) {
+                return "Investigate the hidden camp west of the old road.";
+            }
+
+            if (banditQuestUnlocked && !banditQuestAccepted && !banditQuestCompleted) {
+                return "Read the urgent notice and speak with the Village Elder.";
+            }
+
+            return "No active request.";
+        }
+
+        if (activeQuestName.equals("Cellar Rats")) {
+            return "Clear the tavern cellar.";
+        }
+
+        if (activeQuestName.equals("Missing Laundry")) {
+            return "Collect laundry around town: " + laundryCollected + "/" + LAUNDRY_REQUIRED;
+        }
+
+        if (activeQuestName.equals("Flower Picking")) {
+            return "Gather medicinal flowers: " + flowersCollected + "/" + FLOWERS_REQUIRED;
+        }
+
+        if (activeQuestName.equals("Bandit Trouble")) {
+            return "Investigate the old forest road.";
+        }
+
+        return "Continue your current request.";
     }
     
     //Check Active Quests
@@ -4018,12 +4518,40 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }, GameState.QUEST_BOARD);
             return;
         }
+        
+        
 
         if (hasActiveQuest()) {
             startDialogue("", new String[] {
                 "You already have an active request.",
                 "Finish that one before taking another."
             }, GameState.QUEST_BOARD);
+            return;
+        }
+        
+        
+        if (selected.equals("Urgent Notice") && !banditQuestUnlocked) {
+            startDialogue("", new String[] {
+                "There are no urgent requests posted right now.",
+                "Only small local jobs are available."
+            }, GameState.QUEST_BOARD);
+
+            return;
+        }
+        
+        if (selected.equals("Urgent Notice") && banditQuestUnlocked) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "A fresh notice is pinned over the older requests.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("", "The writing is hurried. The word 'urgent' is underlined twice.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Art", "This is different from the others.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "It says road attacks have gotten worse.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "Finally. A real request.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Dean.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "...A serious request. I meant serious.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("", "The notice asks capable adventurers to speak with the Village Elder.", 
+                		DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.QUEST_BOARD);
+
             return;
         }
 
@@ -4043,7 +4571,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Starts the quest line RIGHT AWAY
     private void acceptQuest(String questName) {
 
-        activeQuestName = questName;
+    	activeQuestName = "Cellar Rats";
         questConfirmOpen = false;
         pendingQuestName = "";
 
@@ -4148,7 +4676,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void collectLaundry() {
 
         if (!activeQuestName.equals("Missing Laundry") || laundryCompleted) {
-            startDialogue("Narrator", new String[] {
+            startDialogue("", new String[] {
                 "It is just laundry."
             }, GameState.TOWN);
             return;
@@ -4195,7 +4723,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void collectFlower() {
 
         if (!activeQuestName.equals("Flower Picking") || flowersCompleted) {
-            startDialogue("Narrator", new String[] {
+            startDialogue("", new String[] {
                 "These flowers are pretty, but you do not need them right now."
             }, GameState.EXPLORATION);
             return;
@@ -4216,6 +4744,82 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }, GameState.EXPLORATION);
     }
     
+    //Step 4
+    private void enterSafehouse() {
+
+        currentMap = safehouseGameMap;
+        currentState = GameState.EXPLORATION;
+
+        player.col = 1;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "West of the old road, the trees open into a hidden camp.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "Wait...this is it? The Bandit King's hideout?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "There are children here...", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Weapons down. No sudden moves.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Golden Sinner", "Please, If you're here to swing steel, turn around.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "We're here for answers.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Golden Sinner", "We all are... Come in.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.EXPLORATION);
+        
+    }
+    
+    //Step 5
+    
+    private void handleKingTentEvent() {
+
+        if (inspectedKingTent) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Art", "The tent is empty now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "But whatever happened here... it changed things.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        inspectedKingTent = true;
+        pendingTaliConfrontation = true;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "The largest tent sits apart from the rest of the camp.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "Biggest tent. Has to be the King's.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Dean, lower your voice.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "No guards outside. That's strange.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Maybe The King is dramatic. Villains love dramatic timing.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Or maybe we shouldn't be standing here.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("", "Inside, there is no throne. No stolen crown. No pile of coin.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "Maps. Supply routes. Names of villages.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Some of these are circled out.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "That is not ominous of him at all.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("???", "You three really are nosy.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("", "A tall and toned lady in her 20's appeared behind them. Her skin was the color of "
+            		+ "a fair bronze. Her black hair fitted into a high pony tail. Her spear resting on her shoulder.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "Ah. Dramatic timing. I called it. Wait a womens voice?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("???", "Cael said three little rats were sniffing around my camp.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Art", "We're not here for the people in this camp.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("???", "No? Just my tent, my maps, and my weapons?", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Penelope", "Your people attacked roads and villages.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("???", "My people were attacked first.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Penelope", "By who?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("???", "By you.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Art", "Someone lied to you.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("???", "Funny. I was about to say the same thing.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("???", "You came looking for The King?", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Dean", "I was expecting a bulky guy... with a nicer voice? Maybe with a cool crown?", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("???", "That better not be disappointment in those words.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Dean", "Not at all ma'am", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "I'm Tali Sin.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Tali", "And I am The King you seek.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+            new DialogueLine("Art", "Then we need answers.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "You won't be alive to hear them.", DialogueSide.RIGHT, DialogueFaction.ENEMY)
+        }, GameState.EXPLORATION);
+        
+    }
     
     
     //Done Quest here
@@ -4234,6 +4838,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         addBattleMessage("Cellar Rats completed!");
         addBattleMessage("Received 20 gold.");
+        
+        checkStarterJobProgress();
         
     }
     
@@ -4254,6 +4860,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("", "Missing Laundry completed. Received 10 gold.", DialogueSide.RIGHT, DialogueFaction.NPC)
         }, GameState.TOWN);
         
+        checkStarterJobProgress();
     }
     
     //Flowers
@@ -4270,12 +4877,96 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Art", "Maybe that is for the best.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("", "Flower Picking completed. Received 15 gold.", DialogueSide.RIGHT, DialogueFaction.NPC)
         }, GameState.EXPLORATION);
+        
+        checkStarterJobProgress();
+    }
+    
+    //Are they completed? If so move on below
+    
+    private boolean areStarterJobsComplete() {
+        return cellarRatsCompleted && laundryCompleted && flowersCompleted;
+    }
+    
+    private void checkStarterJobProgress() {
+
+    	if (!starterJobsComplete && areStarterJobsComplete()) {
+            starterJobsComplete = true;
+            pendingStarterJobsCompleteScene = true;
+        }
+    }
+    
+    
+    
+    //Chapter 1 Major Step
+    private void startStarterJobsCompleteScene() {
+
+    	banditQuestUnlocked = true;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "About a month passed.", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The work was not glorious. Rats, laundry, flowers, leaky roofs, missing tools, and one very angry goose.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "For the record, that goose was absolutely trained.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Dean, it was protecting its nest.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "No way! Someone trained that thing for attack purposes.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "People are starting to trust us. That matters.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Even if the jobs were small, they helped.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Small jobs. Big hearts. Such is life.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("", "Then, one morning, a new request appeared on the board. Unlike the others, this one was marked urgent.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.TOWN);
+        
+    }
+    
+    private void completeOldMillRoad() {
+
+        if (oldMillRoadCompleted) {
+            return;
+        }
+
+        oldMillRoadCompleted = true;
+
+        if (checkmateStep < 4) {
+            checkmateStep = 4;
+        }
+
+        activeQuestName = "";
+
+        addBattleMessage("Old Mill Road cleared!");
+        addBattleMessage("The Golden Sinners are targeting supply roads.");
+
+        System.out.println("Old Mill Road complete! Checkmate step: " + checkmateStep);
+        
+    }
+    
+    //End of Tali Boss Fight
+    private void completeTaliConfrontation() {
+
+        if (taliConfrontationCompleted) {
+            return;
+        }
+
+        taliConfrontationCompleted = true;
+
+        if (checkmateStep < 6) {
+            checkmateStep = 6;
+        }
+
+        activeQuestName = "";
+
+        updateOverworldQuestTiles();
+
+        addBattleMessage("Tali defeated!");
+        addBattleMessage("Cael's betrayal has been revealed.");
+
+        System.out.println("Tali confrontation complete! Checkmate step: " + checkmateStep);
     }
     
     
     
     
     
+    //END OF STORY 
     //NPC Handling interaction
     private NPC getAdjacentNpc() {
     	
@@ -4292,21 +4983,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //NPC interaction 
-  //NPC interaction 
     private void interactWithNpc(NPC npc) {
 
         if (npc == null) return;
 
         
-        // Special multi-speaker towns person conversation
-        //DEbug: Test when advancing chapters for new dialogue testing
+        // multi-speaker towns person conversation tester
         if (npc.getName().equals("Townsperson")) {
         	
         	if (storyChapter == 0) {
                 startDialogue(new DialogueLine[] {
                     new DialogueLine("Townsperson", "You children should stay away from those ruins.", 
                     		DialogueSide.RIGHT, DialogueFaction.NPC),
-                    new DialogueLine("Leader", "We were just looking around.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                    new DialogueLine("Art", "We were just looking around.", DialogueSide.LEFT, DialogueFaction.ALLY)
                 }, GameState.TOWN);
 
                 return;
@@ -4315,7 +5004,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             if (storyChapter >= 1) {
                 startDialogue(new DialogueLine[] {
                     new DialogueLine("Townsperson", "The crops have been failing lately.", DialogueSide.RIGHT, DialogueFaction.NPC),
-                    new DialogueLine("Leader", "Something feels wrong in Cerebella.", DialogueSide.LEFT, DialogueFaction.ALLY)
+                    new DialogueLine("Art", "Something feels wrong in Cerebella.", DialogueSide.LEFT, DialogueFaction.ALLY)
                 }, GameState.TOWN);
 
                 return;
@@ -4328,15 +5017,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
             return;
         }
-
         
+        //Not selected Quest Yet      
         // Quest NPC dialogue
         if (npc.getQuestId().equals("bandit_quest")) {
-        	
-        	if (storyChapter < 2) {
+
+            if (!banditQuestUnlocked) {
                 startDialogue(npc.getName(), new String[] {
-                    "The roads are quiet for now.",
-                    "Still, something feels uneasy these days."
+                    "You three have been helping around town lately.",
+                    "Small work, maybe, but people have noticed.",
+                    "Keep at it. Trust is earned one task at a time."
                 }, GameState.TOWN);
 
                 return;
@@ -4344,46 +5034,125 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (!banditQuestAccepted) {
                 acceptBanditQuest();
-                startDialogue(npc.getName(), npc.getQuestNotStartedDialogue(), GameState.TOWN);
-                return;
-            }
 
-            if (isBanditQuestActive()) {
-                startDialogue(npc.getName(), npc.getQuestActiveDialogue(), GameState.TOWN);
-                return;
-            }
+        	    startDialogue(new DialogueLine[] {
+        	        new DialogueLine("Village Elder", "You saw the notice, then.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "The road attacks?", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "Yes. At first it was missing goods. Then broken wagons. "
+        	        		+ "Now travelers have stopped coming altogether.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Penelope", "That is why the market has been so empty.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+        	        new DialogueLine("Dean", "Bandits picking on supply roads. Sounds like they need picking back.", 
+        	        		DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "This is not like the goose, Dean.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Dean", "I know.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Dean", "...Mostly.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Art", "If people are getting hurt, we will look into it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "Then start near the old forest road. That is where the last caravan vanished.",
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("", "The location has been marked on your map.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        	    }, GameState.TOWN);
 
-            if (banditQuestCompleted && !banditQuestRewardClaimed) {
-                gold += 100;
-                banditQuestRewardClaimed = true;
+        	    return;
+        	}
 
-                advanceStoryChapter(3);
+        	if (isBanditQuestActive()) {
+        	    startDialogue(new DialogueLine[] {
+        	        new DialogueLine("Village Elder", "The old forest road is where you should begin.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "If the reports are true, the attacks are not random anymore.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "We will be careful.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        	    }, GameState.TOWN);
 
-                startDialogue(npc.getName(), new String[] {
-                    "You dealt with the bandits?",
-                    "Thank you. Please take this reward.",
-                    "Received 100 gold."
-                }, GameState.TOWN);
+        	    return;
+        	}
+        	
+        	//Finishing bandit ambush talk to elder
+        	if (checkmateStep == 2 && banditQuestCompleted && !banditQuestRewardClaimed) {
+        	    gold += 100;
+        	    banditQuestRewardClaimed = true;
+        	    
+        	    if (checkmateStep < 3) {
+        	        checkmateStep = 3;
+        	    }
+        	    
+        	    updateOverworldQuestTiles();
 
-                return;
-            }
+        	    startDialogue(new DialogueLine[] {
+        	        new DialogueLine("Village Elder", "You found their mark?", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "A gold coin split by a black line.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Penelope", "The merchants called them the Golden Sinners.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "Then the rumors are true.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Dean", "Rumors are usually more fun when they are fake.", 
+        	        		DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "They were once just scattered thieves. Now someone is organizing them.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "Someone called the King?", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "That is what they call their leader. No one seems to know his face.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Dean", "A mysterious Bandit King. I hate that the name is good.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "Take this for what you have done. But if you continue this path, be careful.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("", "Received 100 gold.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        	    }, GameState.TOWN);
+        	    
+        	    
 
-            if (banditQuestRewardClaimed) {
-                startDialogue(npc.getName(), new String[] {
-                    "Thanks again for helping our village.",
-                    "The roads are much safer now."
-                }, GameState.TOWN);
+        	    return;
+        	}
+        	
+        	
+        	//Checkmate step 4
+        	
+        	if (checkmateStep == 4) {
+        		
+        		safehouseUnlocked = true;
+        		updateOverworldQuestTiles();
+        		
+        		
+        	    startDialogue(new DialogueLine[] {
+        	        new DialogueLine("Village Elder", "So it is true. They are not simply robbing travelers anymore.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "They said The King wanted the road cleared.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "Cleared...", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "That road brings grain, medicine, letters from sons and daughters who left home.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "It is not just dirt and wagon tracks. It is how villages like ours keep breathing.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Penelope", "Then they knew exactly what they were doing.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+        	        new DialogueLine("Dean", "Then we make them regret it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "The Golden Sinners were once a nuisance. Dangerous, yes, but scattered.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "Now they move like a fist. One name. One banner. One King.", DialogueSide.RIGHT, 
+        	        		DialogueFaction.NPC),
+        	        new DialogueLine("Art", "Where do we find him?", DialogueSide.LEFT, DialogueFaction.ALLY),
+        	        new DialogueLine("Village Elder", "There are rumors of a camp west of the old road. If The King has men nearby, someone"
+        	        		+ " there will know more.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "But listen to me. Do not underestimate them.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "They burned one storehouse already. If they decide on this village, "
+        	        		+ "we may not get another warning.", DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "Then we go before they do.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        	    }, GameState.TOWN);
 
-                return;
-            }
+        	    return;
+        	}
 
-            if (banditQuestCompleted) {
-                startDialogue(npc.getName(), npc.getQuestCompletedDialogue(), GameState.TOWN);
-                return;
-            }
-            
+        	//Repeat Dialogue
+        	if (banditQuestRewardClaimed) {
+        	    startDialogue(new DialogueLine[] {
+        	        new DialogueLine("Village Elder", "The Golden Sinners will not ignore your interference.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Village Elder", "If you keep following this trail, you may find more than road bandits.", 
+        	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+        	        new DialogueLine("Art", "Thank you, we'll keep our eyes open.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        	    }, GameState.TOWN);
+
+        	    return;
+        	}
+        	
+        	
+        	
+        	
         }
-
         
         startDialogue(npc.getName(), npc.getDefaultDialogue(), GameState.TOWN);
     }
@@ -4817,17 +5586,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		}
     	}
     	
-    	if (currentBattleScenario != null &&
-    		    currentBattleScenario.getId().equals("forest_ambush")) {
-    		    completeBanditQuest();
-    		}
-    	
-    	if (currentBattleScenario != null &&
-    		    currentBattleScenario.getId().equals("cellar_rats")) {
-
-    		    completeCellarRatsQuest();
-    		}
-    	
     	//Clears Tile
     	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
     	    Tile clearedTile = new Tile(TileType.GRASS);
@@ -4843,6 +5601,30 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        currentBattleScenario.getId().equals("forest_ambush")) {
     	        completeBanditQuest();
     	    }
+    	    
+    	    
+    	    if (currentBattleScenario != null &&
+        		    currentBattleScenario.getId().equals("forest_ambush")) {
+        		    completeBanditQuest();
+        		}
+        	
+        	if (currentBattleScenario != null &&
+        		    currentBattleScenario.getId().equals("cellar_rats")) {
+
+        		    completeCellarRatsQuest();
+        		}
+        	
+        	if (currentBattleScenario != null &&
+        		    currentBattleScenario.getId().equals("old_mill_road")) {
+        		    completeOldMillRoad();
+        		}
+        	
+        	if (currentBattleScenario != null &&
+        		    currentBattleScenario.getId().equals("bandit_king_challenge")) {
+        		    completeTaliConfrontation();
+        		}
+        	
+    	    
 
     	    handleBattleVictory();
     	}
@@ -5046,57 +5828,59 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //enemy turn
     private void enemyTurn() {
-    	
-    	//Any player alive check
-    	boolean anyPlayerAlive = false;
 
-    	for (BattleUnit unit : playerBattleUnits) {
-    	    if (unit != null && unit.isAlive()) {
-    	        anyPlayerAlive = true;
-    	        break;
-    	    }
-    	}
-    	
-    	
-    	if (!anyPlayerAlive) {
-    		addBattleMessage("Defeat!");
-    		return;
-    	}
-    	
-    	for (BattleUnit enemy : enemyUnits) {
+        if (allPlayerUnitsDefeated()) {
+            triggerBattleDefeat();
+            return;
+        }
 
-    	    if (enemy == null || !enemy.isAlive()) {
-    	        continue;
-    	    }
+        for (BattleUnit enemy : enemyUnits) {
 
-    	    BattleUnit target = getEnemyTarget(enemy);
+            if (enemy == null || !enemy.isAlive()) {
+                continue;
+            }
 
-    	    if (target == null) {
-    	        continue;
-    	    }
+            BattleUnit target = getEnemyTarget(enemy);
 
-    	    EnemyRole role = enemy.getEnemyRole();
+            if (target == null) {
+                continue;
+            }
 
-    	    if (role == EnemyRole.RANGED) {
-    	        handleRangedEnemyTurn(enemy, target);
-    	    } else {
-    	        handleAggressiveEnemyTurn(enemy, target);
-    	    }
-    	}
+            EnemyRole role = enemy.getEnemyRole();
 
-    	startPlayerPhase();
-	
+            if (role == EnemyRole.RANGED) {
+                handleRangedEnemyTurn(enemy, target);
+            } else {
+                handleAggressiveEnemyTurn(enemy, target);
+            }
+
+            // IMPORTANT This will check after each enemy acts
+            if (allPlayerUnitsDefeated()) {
+                triggerBattleDefeat();
+                return;
+            }
+        }
+
+        // Only start player phase if someone is alive
+        if (!allPlayerUnitsDefeated()) {
+            startPlayerPhase();
+        }
     }
     
     //Aggressive Enemy Trait
     private void handleAggressiveEnemyTurn(BattleUnit enemy, BattleUnit target) {
 
         // Attack immediately if already in range
-        if (isEnemyInRange(enemy, target)) {
+    	if (isEnemyInRange(enemy, target)) {
             performAttack(enemy, target);
 
             if (!target.isAlive()) {
                 addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            if (allPlayerUnitsDefeated()) {
+                triggerBattleDefeat();
+                return;
             }
 
             startBattlePause(45);
@@ -5106,12 +5890,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         // Otherwise move first
         moveEnemyTowardTarget(enemy, target);
 
-        // After moving, check again and attack if now in range
+        //Check after if targets is there
         if (target.isAlive() && isEnemyInRange(enemy, target)) {
             performAttack(enemy, target);
 
             if (!target.isAlive()) {
                 addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            if (allPlayerUnitsDefeated()) {
+                triggerBattleDefeat();
+                return;
             }
         }
 
@@ -5119,14 +5908,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     //Ranged Enemy Trait
+
+    
+ 
     private void handleRangedEnemyTurn(BattleUnit enemy, BattleUnit target) {
 
-        // If already in range, shoot immediately
+    	 // If already in range, shoot immediately
         if (isEnemyInRange(enemy, target)) {
             performAttack(enemy, target);
 
             if (!target.isAlive()) {
                 addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            if (allPlayerUnitsDefeated()) {
+                triggerBattleDefeat();
+                return;
             }
 
             startBattlePause(45);
@@ -5136,12 +5933,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         // Otherwise reposition
         moveRangedEnemyTowardTarget(enemy, target);
 
-        // After moving, check again and shoot if now in range
+        //After moving, check again and shoot if now in range
         if (target.isAlive() && isEnemyInRange(enemy, target)) {
             performAttack(enemy, target);
 
             if (!target.isAlive()) {
                 addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            if (allPlayerUnitsDefeated()) {
+                triggerBattleDefeat();
+                return;
             }
         }
 
@@ -6118,6 +6920,100 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
     }
     
+    //Defeat State if you were to lose in combat
+    //GG
+    private void triggerDefeat(String message) {
+
+        defeatMessage = message;
+
+        battleActionMenuOpen = false;
+        battleAttackPreviewOpen = false;
+        battleSkillPreviewOpen = false;
+        battleTargetSelectOpen = false;
+        battleSkillTargetSelectOpen = false;
+        battleHealTargetSelectOpen = false;
+        battleHealPreviewOpen = false;
+        battleZoomCombatOpen = false;
+
+        selectedBattleUnit = null;
+        battleUnitSelected = false;
+
+        selectedUnitStartCol = -1;
+        selectedUnitStartRow = -1;
+
+        currentState = GameState.DEFEAT;
+        
+    }
+    
+    private boolean allPlayerUnitsDefeated() {
+
+        for (BattleUnit unit : playerBattleUnits) {
+            if (unit != null && unit.isAlive()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+    private void triggerBattleDefeat() {
+
+        if (currentBattleScenario != null &&
+            currentBattleScenario.getId().equals("bandit_king_challenge")) {
+
+            triggerDefeat("Tali's force overwhelmed the party...");
+            return;
+        }
+
+        triggerDefeat("The party was defeated...");
+    }
+    
+    //You lost gg
+    
+    private void drawDefeat(Graphics g) {
+
+        Font originalFont = g.getFont();
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        g.setColor(Color.WHITE);
+
+        g.setFont(originalFont.deriveFont(32f));
+        g.drawString("Defeat", screenWidth / 2 - 55, screenHeight / 2 - 40);
+
+        g.setFont(originalFont.deriveFont(16f));
+        g.drawString(defeatMessage, screenWidth / 2 - 90, screenHeight / 2);
+
+        g.drawString("Press ENTER to return to the overworld.", screenWidth / 2 - 145, screenHeight / 2 + 40);
+
+        g.setFont(originalFont);
+        
+    }
+    
+    private boolean canRetreatFromCurrentBattle() {
+
+        if (currentBattleScenario == null) {
+            return true;
+        }
+
+        String id = currentBattleScenario.getId();
+
+        if (id.equals("bandit_king_challenge")) {
+            return false;
+        }
+
+        if (id.equals("old_mill_road")) {
+            return false;
+        }
+
+        if (id.equals("forest_ambush")) {
+            return false;
+        }
+
+        return true;
+    }
+    
     //Save game function allows the save game as a text form
     private void saveGame() {
 
@@ -6149,6 +7045,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("deanLastTalkedChapter=" + deanLastTalkedChapter + "\n");
                      
             //Quest
+            writer.write("banditQuestUnlocked=" + banditQuestUnlocked + "\n");
             writer.write("banditQuestAccepted=" + banditQuestAccepted + "\n");
             writer.write("banditQuestCompleted=" + banditQuestCompleted + "\n");
             writer.write("banditQuestRewardClaimed=" + banditQuestRewardClaimed + "\n");
@@ -6160,6 +7057,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("cellarRatsCompleted=" + cellarRatsCompleted + "\n");
             writer.write("laundryCompleted=" + laundryCompleted + "\n");
             writer.write("flowersCompleted=" + flowersCompleted + "\n");
+            writer.write("starterJobsComplete=" + starterJobsComplete + "\n");
+            
+            //Chapter 1 CheckMate Steps
+            writer.write("checkmateStep=" + checkmateStep + "\n");
+            
+            writer.write("inspectedSafehouseChildren=" + inspectedSafehouseChildren + "\n");
+            writer.write("inspectedSafehouseDoctor=" + inspectedSafehouseDoctor + "\n");
+            writer.write("inspectedSafehouseSupplies=" + inspectedSafehouseSupplies + "\n");
+            writer.write("inspectedSafehouseOrders=" + inspectedSafehouseOrders + "\n");
+            
+            writer.write("oldMillRoadCompleted=" + oldMillRoadCompleted + "\n");
+            writer.write("safehouseUnlocked=" + safehouseUnlocked + "\n");
+            
+            writer.write("inspectedKingTent=" + inspectedKingTent + "\n");
+            writer.write("taliConfrontationCompleted=" + taliConfrontationCompleted + "\n");
 
             //Deletes Old Hard code in favor of calling 
             writer.write("partyCount=" + partyMembers.size() + "\n");
@@ -6282,6 +7194,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     activeQuestName = value;
                 }
                 
+                else if (key.equals("banditQuestUnlocked")) {
+                    banditQuestUnlocked = Boolean.parseBoolean(value);
+                }
                 else if (key.equals("banditQuestAccepted")) {
                     banditQuestAccepted = Boolean.parseBoolean(value);
                 }
@@ -6300,6 +7215,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("flowersCompleted")) {
                     flowersCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("starterJobsComplete")) {
+                    starterJobsComplete = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("checkmateStep")) {
+                    checkmateStep = Integer.parseInt(value);
+                }
+                else if (key.equals("inspectedSafehouseChildren")) {
+                    inspectedSafehouseChildren = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedSafehouseDoctor")) {
+                    inspectedSafehouseDoctor = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedSafehouseSupplies")) {
+                    inspectedSafehouseSupplies = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedSafehouseOrders")) {
+                    inspectedSafehouseOrders = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("oldMillRoadCompleted")) {
+                    oldMillRoadCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("safehouseUnlocked")) {
+                    safehouseUnlocked = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("inspectedKingTent")) {
+                    inspectedKingTent = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("taliConfrontationCompleted")) {
+                    taliConfrontationCompleted = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -6803,6 +7748,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	    repaint();
                 	    return;
                 	}
+                	
+                	//Plays after Last Petty quest done
+                	if (pendingStarterJobsCompleteScene) {
+                	    pendingStarterJobsCompleteScene = false;
+                	    startStarterJobsCompleteScene();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	//Tali Battle
+                	if (pendingTaliConfrontation) {
+                	    pendingTaliConfrontation = false;
+
+                	    BattleScenario scenario = BattleScenarioLibrary.getScenario("bandit_king_challenge");
+                	    loadBattleScenario(scenario);
+
+                	    repaint();
+                	    return;
+                	}
 
                     currentState = previousState;
 
@@ -7194,6 +8158,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
+        if (currentState == GameState.DEFEAT) {
+
+            if (code == KeyEvent.VK_ENTER) {
+                currentMap = overworldGameMap;
+                currentState = GameState.OVERWORLD;
+
+                player.col = 3;
+                player.row = 1;
+
+                movementLeft = maxMovement;
+
+                repaint();
+                return;
+            }
+
+            return;
+        }
+        
         //Quest Board currentState
         if (currentState == GameState.QUEST_BOARD) {
         	
@@ -7267,6 +8249,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             return;
         }
+        
         
 
         //End of States
@@ -7396,6 +8379,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         	            if (!zoomAttacker.isAlive()) {
         	                addBattleMessage(zoomAttacker.getName() + " was defeated!");
+        	            }
+        	            
+        	            if (allPlayerUnitsDefeated()) {
+        	                triggerDefeat("The party was defeated...");
+        	                repaint();
+        	                return;
         	            }
 
         	            showZoomResultText(
@@ -7947,14 +8936,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         			return;
         			
         		} else {
-        			currentMap = overworldGameMap;
-        			currentState = GameState.OVERWORLD;
         			
-        			player.col = 3; //temporary return spot
-        			player.row = 1;
-        			
-        			repaint();
-        			return;
+        		    if (!canRetreatFromCurrentBattle()) {
+        		        addBattleMessage("You cannot retreat from this battle.");
+        		        repaint();
+        		        return;
+        		    }
+
+        		    currentMap = overworldGameMap;
+        		    currentState = GameState.OVERWORLD;
+
+        		    player.col = 3;
+        		    player.row = 1;
+
+        		    repaint();
+        		    return;
         		}
         	}
         	

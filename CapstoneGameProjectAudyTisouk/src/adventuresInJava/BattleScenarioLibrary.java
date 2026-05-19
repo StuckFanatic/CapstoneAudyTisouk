@@ -24,6 +24,14 @@ public class BattleScenarioLibrary {
 		    return createCellarRats();
 		}
 		
+		if (scenarioId.equals("old_mill_road")) {
+		    return createOldMillRoad();
+		}
+		
+		if (scenarioId.equals("bandit_king_challenge")) {
+		    return createBanditKingChallenge();
+		}
+		
 		return createBanditField();
 		
 	}
@@ -92,29 +100,35 @@ public class BattleScenarioLibrary {
 	    };
 
 	    List<UnitSpawn> playerSpawns = new ArrayList<>();
-	    playerSpawns.add(new UnitSpawn("leader", 1, 1, false));
-	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 1, false));
-	    playerSpawns.add(new UnitSpawn("mage", 3, 1, false));
+	    playerSpawns.add(new UnitSpawn("leader", 4, 5, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 5, 4, false));
+	    playerSpawns.add(new UnitSpawn("mage", 4, 4, false));
 
 	    List<UnitSpawn> enemySpawns = new ArrayList<>();
-	    enemySpawns.add(new UnitSpawn("hunter", 7, 2, true));
 	    enemySpawns.add(new UnitSpawn("hunter", 7, 7, true));
+	    enemySpawns.add(new UnitSpawn("hunter", 2, 7, true));
 
 	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
-	    reinforcements.add(new ReinforcementSpawn(3, "hunter", 8, 1, true));
+	    reinforcements.add(new ReinforcementSpawn(3, "hunter", 9, 0, true));
+	    reinforcements.add(new ReinforcementSpawn(3, "hunter", 0, 0, true));
 	    
 	    //Combat PreDialogue
 	    DialogueLine[] introDialogue = new DialogueLine[] {
-	    	    new DialogueLine("Leader", "Something feels wrong.", DialogueSide.LEFT, DialogueFaction.ALLY),
-	    	    new DialogueLine("Archer Ally", "The forest is too quiet.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Art", "Something feels wrong.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Dean", "The forest is too quiet.", DialogueSide.RIGHT, DialogueFaction.ALLY),
 	    	    new DialogueLine("Bandit", "You picked the wrong road, travelers!", DialogueSide.RIGHT, DialogueFaction.ENEMY),
-	    	    new DialogueLine("Leader", "Weapons ready!", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    	    new DialogueLine("Art", "Weapons ready!", DialogueSide.LEFT, DialogueFaction.ALLY)
 	    	};
 	    //Combat Post Battle
 	    DialogueLine[] outroDialogue = new DialogueLine[] {
-	    	    new DialogueLine("Archer Ally", "That was too close.", DialogueSide.LEFT, DialogueFaction.ALLY),
-	    	    new DialogueLine("Leader", "But the road is safe now.", DialogueSide.LEFT, DialogueFaction.ALLY),
-	    	    new DialogueLine("Leader", "Let's report back to the elder.", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    	    new DialogueLine("Dean", "Okay. Those were definitely not random road thugs.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Penelope", "They have the same marking on their gear.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Art", "A gold coin split by a black line...", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Dean", "That sounds like a gang symbol.", 
+	    	    		DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Penelope", "One of the merchants mentioned a name before. The Golden Sinners. That should be them.", 
+	    	    		DialogueSide.RIGHT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Art", "Then this is not the end of it.", DialogueSide.LEFT, DialogueFaction.ALLY)
 	    	};
 
 	    return new BattleScenario(
@@ -243,7 +257,151 @@ public class BattleScenarioLibrary {
 	    	    introDialogue,
 	    	    outroDialogue
 	    	);
+	    
 	}
+	
+	//Checkmate step 3
+	private static BattleScenario createOldMillRoad() {
+
+	    int[][] layout = {
+	        {1,1,1,1,1,1,1,1,1,1},
+	        {1,0,0,4,4,4,0,0,3,1},
+	        {1,0,3,0,0,4,0,3,0,1},
+	        {1,0,0,0,0,4,0,0,0,1},
+	        {1,5,5,0,0,4,0,2,0,1},
+	        {1,5,1,1,0,4,0,2,0,1},
+	        {1,5,5,0,0,4,0,0,0,1},
+	        {1,0,0,0,3,4,0,3,0,1},
+	        {1,0,3,0,0,4,0,0,0,1},
+	        {1,1,1,1,1,1,1,1,1,1}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 3, 8, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 8, false));
+	    playerSpawns.add(new UnitSpawn("mage", 1, 8, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("bandit", 7, 2, true));
+	    enemySpawns.add(new UnitSpawn("hunter", 8, 4, true));
+	    enemySpawns.add(new UnitSpawn("bandit", 6, 6, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+	    reinforcements.add(new ReinforcementSpawn(3, "bandit", 8, 1, true));
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("", "The old mill road sits quiet under a grey sky and setting sun.", DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Penelope", "This road should have more travelers.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "Maybe they heard we were coming and cleared the way.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "No. Something scared them off.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "There are wagon tracks near the mill.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "And fresh bootprints. Stay ready.", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	    	    new DialogueLine("Bandit", "Wait! Wait, don't swing!", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	    	    new DialogueLine("Dean", "That depends. Are you about to say something useful?", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Bandit", "The King wanted the road cleared. That's all I know.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	    	    new DialogueLine("Art", "Cleared? You attacked travelers.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Bandit", "Anyone walking that road was warned. The Golden Sinners own it now.", 
+	    	    		DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	    	    new DialogueLine("Penelope", "You hurt people who had nothing to do with this.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Bandit", "The King says the roads feed the towns. Break the roads, towns kneel. We have to follow all of his"
+	    	    		+ " orders", 
+	    	    		DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	    	    new DialogueLine("Dean", "That's not a king. That's a coward with a nickname.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Art", "Where is he?", DialogueSide.LEFT, DialogueFaction.ALLY),
+	    	    new DialogueLine("Bandit", "No one just finds him. The King finds who matters.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	    	    new DialogueLine("", "The bandit says nothing more, but the name hangs heavy in the air. As they bring him back to village", 
+	    	    		DialogueSide.RIGHT, DialogueFaction.NPC)
+	    	};
+	    
+
+	    return new BattleScenario(
+	        "old_mill_road",
+	        "Old Mill Road",
+	        layout,
+	        ObjectiveType.DEFEAT_ALL,
+	        0,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements,
+	        introDialogue,
+	        outroDialogue
+	    );
+	    
+	}
+	
+	
+	//Major Tali Sin Fight
+	private static BattleScenario createBanditKingChallenge() {
+
+	    int[][] layout = {
+	        {1,1,1,1,1,1,1,1,1,1},
+	        {1,0,0,3,0,0,0,3,0,1},
+	        {1,0,3,0,0,4,0,0,0,1},
+	        {1,0,0,0,4,4,4,0,0,1},
+	        {1,3,0,0,0,0,0,0,3,1},
+	        {1,0,0,4,4,4,0,0,0,1},
+	        {1,0,3,0,0,0,0,3,0,1},
+	        {1,0,0,0,0,4,0,0,0,1},
+	        {1,0,0,3,0,0,0,3,0,1},
+	        {1,1,1,1,1,1,1,1,1,1}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 5, 7, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 5, 8, false));
+	    playerSpawns.add(new UnitSpawn("mage", 4, 8, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("tali_boss", 5, 1, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("Tali", "Here I am.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Dean", "Still processing that part.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "We do not want to hurt the people in your camp.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "Then you should have stayed out of it.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Art", "We need the truth.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "Truth will be revealed after steel.", DialogueSide.RIGHT, DialogueFaction.ENEMY)
+	    };
+
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	        new DialogueLine("Tali", "Enough.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Dean", "That means we win, right?", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "It means I am still deciding whether you are stupid or lucky.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Art", "You said Cael told you we attacked your people.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "He said enough.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Penelope", "Then listen to us too. The raids on villages, the road attacks, the burned storehouse...",
+	        		DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "I ordered no such raids on villages.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Art", "What?", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("", "Before Tali can answer, shouting rises from deeper in the camp.", 
+	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Injured Golden Sinner", "Tali! The eastern stores are gone!", DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Tali", "Gone?", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Golden Sinner", "Coin, grain, medicine. Cael's men took all of it. Attacked us too", 
+	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Tali", "...Cael.", DialogueSide.RIGHT, DialogueFaction.ENEMY)
+	    };
+
+	    return new BattleScenario(
+	        "bandit_king_challenge",
+	        "The Bandit King",
+	        layout,
+	        ObjectiveType.DEFEAT_ALL,
+	        0,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements,
+	        introDialogue,
+	        outroDialogue
+	    );
+	}
+	
 	
 	
 	
