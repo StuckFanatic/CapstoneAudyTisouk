@@ -32,6 +32,10 @@ public class BattleScenarioLibrary {
 		    return createBanditKingChallenge();
 		}
 		
+		if (scenarioId.equals("cael_usurper")) {
+		    return createCaelUsurper();
+		}
+		
 		return createBanditField();
 		
 	}
@@ -354,6 +358,8 @@ public class BattleScenarioLibrary {
 	    playerSpawns.add(new UnitSpawn("leader", 5, 7, false));
 	    playerSpawns.add(new UnitSpawn("archer_ally", 5, 8, false));
 	    playerSpawns.add(new UnitSpawn("mage", 4, 8, false));
+	    
+	    playerSpawns.add(new UnitSpawn("tali_guest", 4, 7, false));
 
 	    List<UnitSpawn> enemySpawns = new ArrayList<>();
 	    enemySpawns.add(new UnitSpawn("tali_boss", 5, 1, true));
@@ -400,6 +406,96 @@ public class BattleScenarioLibrary {
 	        introDialogue,
 	        outroDialogue
 	    );
+	    
+	}
+	
+	
+	private static BattleScenario createCaelUsurper() {
+
+	    int[][] layout = {
+	        {1,1,1,1,1,1,1,1,1,1},
+	        {1,0,0,3,0,0,0,3,0,1},
+	        {1,0,3,0,0,4,0,0,0,1},
+	        {1,0,0,0,4,4,4,0,0,1},
+	        {1,3,0,0,0,0,0,0,3,1},
+	        {1,0,0,4,4,4,0,0,0,1},
+	        {1,0,3,0,0,0,0,3,0,1},
+	        {1,0,0,0,0,4,0,0,0,1},
+	        {1,0,0,3,0,0,0,3,0,1},
+	        {1,1,1,1,1,1,1,1,1,1}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 1, 8, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 8, false));
+	    playerSpawns.add(new UnitSpawn("mage", 3, 8, false));
+
+	    // Tali joins this fight as a temporary ally
+	    playerSpawns.add(new UnitSpawn("tali_guest", 4, 8, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("cael_boss", 7, 2, true));
+	    enemySpawns.add(new UnitSpawn("bandit", 6, 3, true));
+	    enemySpawns.add(new UnitSpawn("hunter", 8, 4, true));
+	    enemySpawns.add(new UnitSpawn("bandit", 7, 5, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("", "The trail leads to an old toll road where stolen supplies are being loaded onto wagons.", 
+	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Tali", "Cael!", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Cael", "Tali. You should be resting after your embarrassing little loss.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Tali", "You took the eastern stores.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Cael", "I took what the Golden Sinners needed.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Penelope", "Medicine and grain from your own camp?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Cael", "From mouths that only consume. I have plans beyond feeding strays.",
+	        		DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Dean", "Wow. I already hate him.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "You used Tali's name to raid towns.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Cael", "Her name opened doors. Fear kept them open.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Tali", "You turned my people into your knife.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Cael", "No. I gave them teeth. To survive is nothing more than grasping at straws."
+	        		+ " Being strong means we grow.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Tali", "I'll kill you right now.", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	    		new DialogueLine("", "The last strike lays Cael into the ground bleeding. Any remaining bandits scatter.", 
+		        		DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Cael", "Gah...You think killing me fixes the problem?", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Cael", "The people need real leadership because we were tired of being weak.", 
+	        		DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Cael", "All those dirty nobles... we needed to kill them", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Cael", "Our weak won't help us win.", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("Tali", "All we wanted was somewhere to live in and you're taking that from us", 
+	        		DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Cael", "Because I wanted to give us more... I was willing to risk it...", DialogueSide.RIGHT, DialogueFaction.ENEMY),
+	        new DialogueLine("", "Cael succumbs to his injuries...", 
+	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Art", "Enough of this.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "The supplies are still here. We can return what was stolen.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "And maybe keep the bandits from reorganizing into... whatever this was.", 
+	        		DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "I started this mess.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "Then help us clean it up.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "...Fine. Until the Golden Sinners stop bleeding people dry, I am with you.", 
+	        		DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    return new BattleScenario(
+	        "cael_usurper",
+	        "Cael's Betrayal",
+	        layout,
+	        ObjectiveType.DEFEAT_ALL,
+	        0,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements,
+	        introDialogue,
+	        outroDialogue
+	    );
+	    
 	}
 	
 	

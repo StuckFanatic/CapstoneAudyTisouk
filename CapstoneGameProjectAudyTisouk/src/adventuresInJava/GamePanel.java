@@ -149,6 +149,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int penelopeLastTalkedChapter = -1;
     private int deanLastTalkedChapter = -1;
     
+    private int taliBond = 0;
+    private int taliLastTalkedChapter = -1;
+    
 
     
     /*
@@ -191,6 +194,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean pendingAdventurerIdeaScene = false;
     private boolean pendingStarterJobsCompleteScene = false;
     
+    // Checkmate / Golden Sinners questline
+    private int checkmateStep = 0;
+    private boolean oldMillRoadCompleted = false;
+    
+    
     //Chapter 1 part 5
     private boolean safehouseUnlocked = false;
     
@@ -205,6 +213,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean inspectedKingTent = false;
     
     private boolean taliConfrontationCompleted = false;
+    
+    // Tali Joins up Temp
+    private boolean taliTemporaryAlly = false;
+    private boolean taliRecruited = false;
+    
+    //Chapter 1 End
+    private boolean pendingChapterOneEnding = false;
+    
+    private boolean pendingChapterOneCamp = false;
+    
+    private boolean pendingAdvanceToChapterTwo = false;
     
     
     
@@ -253,10 +272,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int flowersCollected = 0;
     private final int FLOWERS_REQUIRED = 3;
     
-    // Checkmate / Golden Sinners questline
-    private int checkmateStep = 0;
-    private boolean oldMillRoadCompleted = false;
-    
+
     	
     	
     
@@ -400,6 +416,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //DEFEAT
     private String defeatMessage = "You were defeated...";
     private GameState defeatReturnState = GameState.OVERWORLD;
+    private String[] defeatOptions = {"Retry Battle", "Return to Overworld"};
+    private int defeatMenuIndex = 0;
+    private BattleScenario lastBattleScenario = null;
+    
     
     
     
@@ -1365,6 +1385,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Safe house
         int safehouseCol = 1;
         int safehouseRow = 7;
+        
+        //Cael Fight
+        int caelCol = 2;
+        int caelRow = 7;
 
         //bandit ambush
         if (banditQuestAccepted && !banditQuestCompleted) {
@@ -1404,6 +1428,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 "enter_safehouse".equals(tiles[safehouseCol][safehouseRow].getEventId())) {
 
                 tiles[safehouseCol][safehouseRow] = new Tile(TileType.GRASS);
+            }
+        }
+        
+        //Cael Fight 
+        if (checkmateStep == 6 && taliTemporaryAlly && !taliRecruited) {
+            Tile caelTile = new Tile(TileType.ENEMY);
+            caelTile.setScenarioId("cael_usurper");
+            tiles[caelCol][caelRow] = caelTile;
+        } else {
+            if (tiles[caelCol][caelRow] != null &&
+                tiles[caelCol][caelRow].getType() == TileType.ENEMY &&
+                "cael_usurper".equals(tiles[caelCol][caelRow].getScenarioId())) {
+
+                tiles[caelCol][caelRow] = new Tile(TileType.GRASS);
             }
         }
         
@@ -1679,6 +1717,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case CAMP:
             	
             case QUEST_BOARD:
+            	
+            case DEFEAT:
    
 
             case BATTLE:
@@ -1729,6 +1769,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case CAMP:
             	
             case QUEST_BOARD:
+            	
+            case DEFEAT:
             
             	
             case BATTLE:
@@ -1836,6 +1878,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	break;
             	
             case QUEST_BOARD:
+            	break;
+            	
+            case DEFEAT:
             	break;
 
             case BATTLE:
@@ -2042,6 +2087,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             startPenelopeCampConversation();
             return;
         }
+        
+        if (member.getId().equals("tali")) {
+            startTaliCampConversation();
+            return;
+        }
 
         startDialogue(new DialogueLine[] {
             new DialogueLine(member.getName(), "There is not much to say tonight.", DialogueSide.RIGHT, DialogueFaction.ALLY),
@@ -2183,6 +2233,45 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
             
         }
+        
+        
+    }
+    
+    
+    //Start Tali Bond Convo
+    private void startTaliCampConversation() {
+
+        if (taliLastTalkedChapter == storyChapter) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Tali", "You already checked if I planned to run off.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "That was not what I was doing.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Sure looked like it.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "I was checking if you were alright.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "...That's worse.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.CAMP);
+
+            return;
+        }
+
+        taliLastTalkedChapter = storyChapter;
+        taliBond++;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Tali", "The village looked at me like I was going to steal the moon.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "You did lead the Golden Sinners.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "I know what I did.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "I also know what Cael did with my name.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "People won't separate those overnight.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "I'm not asking them to.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then why stay?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Because if I walk away, every story Cael told about me becomes easier to believe.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "And because the people still wearing my mark deserve better than what I left behind."
+            		+ "I gotta clear my name... Or at least try to make it up somehow.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "That sounds like a good reason for doing good.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Don't make it so noble. I hate that.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+        }, GameState.CAMP);
         
         
     }
@@ -3753,28 +3842,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    return createBattleUnitFromPartyMember(partyMember, col, row); //hard coded leader/archer replaced with a call
     	}
     	
+    	if (unitId.equals("tali_guest") && !enemy) {
+    	    return createTaliGuestUnit(col, row);
+    	}
+    	
     	Weapon banditAxe = createWeaponById("bandit_axe");
     	Weapon enemyBow = createWeaponById("hunter_bow");
     	Weapon ratBite = createWeaponById("rat_bite");
     	Weapon taliSpear = createWeaponById("tali_spear");
+    	Weapon caelBlade = createWeaponById("cael_blade");
 		
 		//Class Name, Max HP, Armor Class, Movement Range, Weapon Type
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4, new WeaponType[] { WeaponType.AXE });
 		CharacterClass hunterClass = new CharacterClass("Hunter", 9, 11, 5, new WeaponType[] { WeaponType.BOW });
 		CharacterClass ratClass = new CharacterClass("Rat", 5, 8, 5, new WeaponType[] { WeaponType.AXE });
-		CharacterClass taliClass = new CharacterClass("Bandit King", 20, 13, 5, new WeaponType[] { WeaponType.LANCE });
+		CharacterClass taliClass = new CharacterClass("Bandit King", 17, 13, 5, new WeaponType[] { WeaponType.LANCE });
+		CharacterClass caelClass = new CharacterClass("Usurper", 20, 13, 5,new WeaponType[] { WeaponType.SWORD });
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
 		GrowthRates hunterGrowths = new GrowthRates(60, 35, 0, 55, 50, 25, 15, 20);
 		GrowthRates ratGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
 		GrowthRates taliGrowths = new GrowthRates(70, 55, 10, 50, 50, 30, 35, 25);
+		GrowthRates caelGrowths = new GrowthRates(70, 55, 10, 55, 55, 25, 30, 20);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
 		UnitStats banditStats = new UnitStats(10, 0, 4, 0, 3, 3, 1, 1, 0, 4);
 		UnitStats hunterStats = new UnitStats(9, 2, 3, 0, 5, 5, 2, 1, 1, 5);
 		UnitStats ratStats = new UnitStats(5, 0, 1, 0, 2, 5, 0, 0, 0, 5);
-		UnitStats taliStats = new UnitStats(20, 4, 5, 0, 5, 5, 4, 3, 2, 5);
+		UnitStats taliStats = new UnitStats(17, 4, 5, 0, 5, 5, 4, 3, 2, 5);
+		UnitStats caelStats = new UnitStats(20, 6, 5, 0, 6, 6, 3, 3, 2, 5);
 		
 
 		if (unitId.equals("bandit")) {
@@ -3790,12 +3887,35 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		}
 		
 		if (unitId.equals("tali_boss")) {
-		    return new BattleUnit("Tali", col, row, true, taliSpear, taliClass, taliStats, taliGrowths, "Piercing Thrust", EnemyRole.AGGRESSIVE);
+		    return new BattleUnit("Tali Sin", col, row, true, taliSpear, taliClass, taliStats,taliGrowths,"Piercing Thrust", EnemyRole.AGGRESSIVE);
+		}
+		
+		if (unitId.equals("cael_boss")) {
+		    return new BattleUnit("Cael", col, row, true, caelBlade, caelClass, caelStats, caelGrowths, "Dirty Cut",EnemyRole.AGGRESSIVE);
 		}
 		
 		
     	
     	return null;
+    }
+    
+    
+    //Temp Unit!
+    private BattleUnit createTaliGuestUnit(int col, int row) {
+
+        Weapon taliSpear = createWeaponById("tali_spear");
+
+        CharacterClass taliClass = new CharacterClass(
+            "Bandit King", 14, 13, 5, new WeaponType[] { WeaponType.LANCE });
+
+        GrowthRates taliGrowths = new GrowthRates(70, 55, 10, 50, 50, 30, 35, 25);
+
+        // HP, MP, STR, MAG, SKL, SPD, LCK, DEF, RES, MOV
+        UnitStats taliStats = new UnitStats(16, 4, 5, 0, 5, 5, 4, 3, 2, 5);
+
+        return new BattleUnit(
+            "Tali Sin",col, row, false, taliSpear, taliClass, taliStats, taliGrowths, "Piercing Thrust",null);
+        
     }
     
     //THIS IS FOR NEW PLAYERS UNITS ADD HERE!!!
@@ -3871,6 +3991,32 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         partyMembers.add(mageMember);
     }
     
+    //Recruit Tali after End of Chapter 1
+    private void recruitTali() {
+
+        if (taliRecruited || getPartyMemberById("tali") != null) {
+            taliRecruited = true;
+            taliTemporaryAlly = false;
+            return;
+        }
+
+        Weapon taliSpear = createWeaponById("tali_spear");
+        CharacterClass taliClass = new CharacterClass("Spearfighter", 14, 13, 5, new WeaponType[] { WeaponType.LANCE });
+        GrowthRates taliGrowths = new GrowthRates(70, 55, 10, 50, 50, 30, 35, 25);
+
+        // HP, MP, STR, MAG, SKL, SPD, LCK, DEF, RES, MOV
+        UnitStats taliStats = new UnitStats(16, 4, 5, 0, 5, 5, 4, 3, 2, 5);
+
+        PartyMember tali = new PartyMember("tali", "Tali Sin", 1, 0, taliStats, taliGrowths, taliClass, taliSpear, "Piercing Thrust");
+
+        partyMembers.add(tali);
+
+        taliRecruited = true;
+        taliTemporaryAlly = false;
+
+        System.out.println("Tali has joined the party.");
+    }
+    
     //Splitting and creating units from party ^Above
     private BattleUnit createBattleUnitFromPartyMember(PartyMember member, int col, int row) {
 
@@ -3905,6 +4051,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (weaponId.equals("steel_sword")) {
             return new Weapon("steel_sword", "Steel Sword", WeaponType.SWORD, 1, 1, 2, 1, 8, 2, false);
+        }
+        
+        if (weaponId.equals("cael_blade")) {
+            return new Weapon("cael_blade","Cael's Blade",WeaponType.SWORD, 1, 1, 4, 1, 8, 2,false);
         }
 
         //Archers
@@ -4005,6 +4155,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Loads in the scenario player steps on 
     private void loadBattleScenario(BattleScenario scenario) {
     	
+    	lastBattleScenario = scenario;
     	currentBattleScenario = scenario;
     	
     	currentObjective = scenario.getObjectiveType();
@@ -4952,16 +5103,119 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             checkmateStep = 6;
         }
 
+        taliTemporaryAlly = true;
+
         activeQuestName = "";
 
         updateOverworldQuestTiles();
 
         addBattleMessage("Tali defeated!");
         addBattleMessage("Cael's betrayal has been revealed.");
+        addBattleMessage("Tali will fight with you for now.");
 
-        System.out.println("Tali confrontation complete! Checkmate step: " + checkmateStep);
+        System.out.println("Tali is now a temporary ally.");
+        
     }
     
+    //Cael Final Chapter Fight
+    private void completeCaelBattle() {
+
+        if (checkmateStep < 8) {
+            checkmateStep = 8;
+        }
+
+        activeQuestName = "";
+
+        recruitTali();
+
+        pendingChapterOneEnding = true;
+
+        updateOverworldQuestTiles();
+
+        addBattleMessage("Cael defeated!");
+        addBattleMessage("The Golden Sinners are broken.");
+        addBattleMessage("Tali joined the party!");
+
+        System.out.println("Cael battle complete! Checkmate step: " + checkmateStep);
+        
+    }
+    
+    
+    //Chapter 1 end
+    private void startChapterOneEnding() {
+    	
+    	pendingChapterOneCamp = true;
+
+        currentMap = townGameMap;
+        currentState = GameState.TOWN;
+
+        player.col = 5;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "By the time the party returned to the village, word had already reached the streets.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The road attacks had stopped. Supplies returned. Merchants spoke the party's name with relief.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The refugees of the Golden Sinners much to Tali's relief were offered permanent shelter at the village", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            
+            new DialogueLine("Townsperson", "That's them! The ones who dealt with the Bandits!", DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "Did you hear that? 'The ones.' That's practically a title.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Please do not make them regret thanking us.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "We only did what needed doing.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Classic hero answer. Very clean. Very humble. I give it an eight.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Village Elder", "You returned with a village breathing easier because of you.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "We had help.", DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("Tali", "Do not look at me like that. I am not part of the parade.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Too late. You are absolutely in the parade now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Try putting flowers on me and I bite.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "That night, away from the noise and gratitude, the party made camp beyond the village lights.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.TOWN);
+        
+    }
+    
+    
+    //Chapter 1 Camp end
+    private void startChapterOneCampReflection() {
+    	
+    	pendingAdvanceToChapterTwo = true;
+
+        currentState = GameState.CAMP;
+        campMenuIndex = 0;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("Dean", "So. We are officially heroes now, right?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "The village thanked us but not quite yet", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "It's close enough for tonight.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "It felt strange. Hearing people say our names like that.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Good strange or bad strange?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Both.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "People cheer when they are scared and someone else bleeds for them.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "That is one way to ruin a victory campfire.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "You wanted honest or cozy?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Maybe both matter.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "People needed help. We helped. But it does not mean everything is fixed.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "The crops are still failing.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Animals are still running from the woods.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "And whatever scared my people into following Cael did not start with Cael.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then tomorrow, we decide where to look next.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Tomorrow. Tonight, I am accepting that we are at least village-level heroes.", 
+            		DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Village-level?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "It is a rank. I made it up just now.", DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.CAMP);
+        
+        
+    }
     
     
     
@@ -5622,6 +5876,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	if (currentBattleScenario != null &&
         		    currentBattleScenario.getId().equals("bandit_king_challenge")) {
         		    completeTaliConfrontation();
+        		}
+        	
+        	
+        	if (currentBattleScenario != null &&
+        		    currentBattleScenario.getId().equals("cael_usurper")) {
+        		    completeCaelBattle();
         		}
         	
     	    
@@ -6925,6 +7185,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void triggerDefeat(String message) {
 
         defeatMessage = message;
+        defeatMenuIndex = 0;
 
         battleActionMenuOpen = false;
         battleAttackPreviewOpen = false;
@@ -6979,17 +7240,33 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         g.setColor(Color.WHITE);
 
-        g.setFont(originalFont.deriveFont(32f));
-        g.drawString("Defeat", screenWidth / 2 - 55, screenHeight / 2 - 40);
+        g.setFont(originalFont.deriveFont(36f));
+        g.drawString("Defeat", screenWidth / 2 - 65, screenHeight / 2 - 100);
 
         g.setFont(originalFont.deriveFont(16f));
-        g.drawString(defeatMessage, screenWidth / 2 - 90, screenHeight / 2);
+        g.drawString(defeatMessage, screenWidth / 2 - 120, screenHeight / 2 - 55);
 
-        g.drawString("Press ENTER to return to the overworld.", screenWidth / 2 - 145, screenHeight / 2 + 40);
+        int optionY = screenHeight / 2;
+
+        for (int i = 0; i < defeatOptions.length; i++) {
+
+            if (i == defeatMenuIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == defeatMenuIndex) ? "> " : "  ";
+            g.drawString(prefix + defeatOptions[i], screenWidth / 2 - 90, optionY + (i * 30));
+        }
+
+        g.setColor(Color.WHITE);
+        g.drawString("UP/DOWN select | ENTER confirm", screenWidth / 2 - 130, screenHeight / 2 + 100);
 
         g.setFont(originalFont);
         
     }
+    
     
     private boolean canRetreatFromCurrentBattle() {
 
@@ -7012,6 +7289,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         return true;
+        
     }
     
     //Save game function allows the save game as a text form
@@ -7043,6 +7321,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("deanBond=" + deanBond + "\n");
             writer.write("penelopeLastTalkedChapter=" + penelopeLastTalkedChapter + "\n");
             writer.write("deanLastTalkedChapter=" + deanLastTalkedChapter + "\n");
+            writer.write("taliBond=" + taliBond + "\n");
+            writer.write("taliLastTalkedChapter=" + taliLastTalkedChapter + "\n");
                      
             //Quest
             writer.write("banditQuestUnlocked=" + banditQuestUnlocked + "\n");
@@ -7072,6 +7352,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
             writer.write("inspectedKingTent=" + inspectedKingTent + "\n");
             writer.write("taliConfrontationCompleted=" + taliConfrontationCompleted + "\n");
+            
+            writer.write("taliTemporaryAlly=" + taliTemporaryAlly + "\n");
+            writer.write("taliRecruited=" + taliRecruited + "\n");
 
             //Deletes Old Hard code in favor of calling 
             writer.write("partyCount=" + partyMembers.size() + "\n");
@@ -7185,6 +7468,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 else if (key.equals("deanLastTalkedChapter")) {
                     deanLastTalkedChapter = Integer.parseInt(value);
                 }
+                else if (key.equals("taliBond")) {
+                    taliBond = Integer.parseInt(value);
+                }
+                else if (key.equals("taliLastTalkedChapter")) {
+                    taliLastTalkedChapter = Integer.parseInt(value);
+                }
                 else if (key.equals("partyCount")) {
                     partyCount = Integer.parseInt(value);
                 }
@@ -7245,6 +7534,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("taliConfrontationCompleted")) {
                     taliConfrontationCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("taliTemporaryAlly")) {
+                    taliTemporaryAlly = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("taliRecruited")) {
+                    taliRecruited = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -7427,6 +7722,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     partyExps[i],
                     loadedStats
                 );
+                
             }
             
             //Reading Loop for Weapons
@@ -7478,6 +7774,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
             }
             
+            if (taliRecruited && getPartyMemberById("tali") == null) {
+                taliRecruited = false;
+                recruitTali();
+            }
+            
             currentMap = overworldGameMap;
             currentState = GameState.OVERWORLD;
             
@@ -7491,7 +7792,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             System.out.println("Load failed.");
             e.printStackTrace();
         }
+        
     }
+    
     
     //This prevents a party member from having no weapon if something goes wrong with the save file
     private Weapon createDefaultWeaponForPartyMember(PartyMember member) {
@@ -7509,6 +7812,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         return null;
+        
     }
     
     //method helps apply leader ID when saving and updates them
@@ -7620,7 +7924,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         
         //open status screen
-        if (code == KeyEvent.VK_P) {
+        if (code == KeyEvent.VK_Q) {
             if (currentState == GameState.OVERWORLD ||
                 currentState == GameState.TOWN ||
                 currentState == GameState.EXPLORATION) {
@@ -7767,7 +8071,33 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	    repaint();
                 	    return;
                 	}
+                	
+                	//Chapter End
+                	if (pendingChapterOneEnding) {
+                	    pendingChapterOneEnding = false;
+                	    startChapterOneEnding();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingChapterOneCamp) {
+                	    pendingChapterOneCamp = false;
+                	    startChapterOneCampReflection();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingAdvanceToChapterTwo) {
+                	    pendingAdvanceToChapterTwo = false;
 
+                	    advanceStoryChapter(2);
+
+                	    currentState = GameState.CAMP;
+                	    repaint();
+                	    return;
+                	}
+
+                	//Skip for Dialogue completion Block
                     currentState = previousState;
 
                     if (dialogueNextMap != null) {
@@ -8158,19 +8488,56 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
+        //Defeat Screen Movement
         if (currentState == GameState.DEFEAT) {
 
-            if (code == KeyEvent.VK_ENTER) {
-                currentMap = overworldGameMap;
-                currentState = GameState.OVERWORLD;
+            if (code == KeyEvent.VK_UP) {
+                defeatMenuIndex--;
 
-                player.col = 3;
-                player.row = 1;
-
-                movementLeft = maxMovement;
+                if (defeatMenuIndex < 0) {
+                    defeatMenuIndex = defeatOptions.length - 1;
+                }
 
                 repaint();
                 return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                defeatMenuIndex++;
+
+                if (defeatMenuIndex >= defeatOptions.length) {
+                    defeatMenuIndex = 0;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER) {
+
+                String selected = defeatOptions[defeatMenuIndex];
+
+                if (selected.equals("Retry Battle")) {
+                    if (lastBattleScenario != null) {
+                        loadBattleScenario(lastBattleScenario);
+                    }
+
+                    repaint();
+                    return;
+                }
+
+                if (selected.equals("Return to Overworld")) {
+                    currentMap = overworldGameMap;
+                    currentState = GameState.OVERWORLD;
+
+                    player.col = 3;
+                    player.row = 1;
+
+                    movementLeft = maxMovement;
+
+                    repaint();
+                    return;
+                }
             }
 
             return;
