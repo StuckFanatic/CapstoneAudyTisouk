@@ -629,7 +629,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			{0,1,1,1,0,0,2,0,0,0},
     			{0,0,0,1,0,0,2,0,1,0},
     			{0,0,0,0,0,0,0,0,1,0},
-    			{2,5,4,1,1,0,0,0,0,0},
+    			{2,0,0,1,1,0,0,0,0,0},
     	};
     	
     	
