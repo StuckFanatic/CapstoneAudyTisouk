@@ -1,3 +1,8 @@
+
+Hello This is Audy Tisouk and I'm glad you are taking a look!
+In oder to start the game itself open in any java editor and run it with GamePanel.Java to start playing!
+
+---------------------------------------------------------------------------------------------------------
 # Lost Time: Rewrite
 
 **Lost Time: Rewrite** is a Java tactical RPG / adventure prototype inspired by classic Fire Emblem-style grid combat, D&D-style dice mechanics, and story-driven fantasy RPGs.
