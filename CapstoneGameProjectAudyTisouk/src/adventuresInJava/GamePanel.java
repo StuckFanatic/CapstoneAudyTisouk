@@ -127,7 +127,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private GameMap chapterTwoRuinsGameMap;
     
     //SHOP
-    private int gold = 500; 
+    private int gold = 100;
     private boolean selectingShopBuyer = true;
     private int shopBuyerIndex = 0;
     private int shopItemIndex = 0;
@@ -1217,7 +1217,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Campsite
     private void openCamp() {
-        campReturnState = currentState;
+    	campReturnState = currentState;
         campReturnMap = currentMap;
         campReturnCol = player.col;
         campReturnRow = player.row;
@@ -5225,6 +5225,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return activeQuestName;
         }
 
+        // Checkmate arc
         if (checkmateStep == 3) {
             return "Checkmate: Old Mill Road";
         }
@@ -5237,8 +5238,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return "Checkmate: Hidden Camp";
         }
 
-        if (isBanditQuestActive()) {
-            return "Bandit Trouble";
+        if (checkmateStep == 5) {
+            return "Checkmate: The King's Tent";
+        }
+
+        if (checkmateStep == 6 && taliTemporaryAlly && !taliRecruited) {
+            return "Checkmate: Cael's Betrayal";
+        }
+
+        if (checkmateStep == 8 && taliRecruited) {
+            return "Checkmate: Complete";
+        }
+
+        // Chapter 2 / Act One ending arc
+        if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !merrenBetrayalTriggered) {
+            return "Chapter 2: Old Relic Ruins";
+        }
+
+        if (storyChapter == 2 && merrenBetrayalTriggered && !williamRecruited) {
+            return "Chapter 2: The Broken Seal";
+        }
+
+        if (storyChapter == 2 && williamRecruited) {
+            return "Act One: Complete";
+        }
+
+        // Urgent notice before Bandit Trouble
+        if (banditQuestUnlocked && !banditQuestAccepted && !banditQuestCompleted) {
+            return "Urgent Notice";
         }
 
         return "";
@@ -5247,44 +5274,71 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Details for Quests
     private String getActiveQuestObjectiveText() {
 
-        if (activeQuestName == null || activeQuestName.isEmpty()) {
+        if (activeQuestName != null && !activeQuestName.isEmpty()) {
 
-            if (checkmateStep == 3) {
-                return "Follow the Golden Sinners lead near Old Mill Road.";
+            if (activeQuestName.equals("Cellar Rats")) {
+                return "Clear the tavern cellar.";
             }
 
-            if (checkmateStep == 4 && !safehouseUnlocked) {
-                return "Report the Old Mill Road findings to the Village Elder.";
+            if (activeQuestName.equals("Missing Laundry")) {
+                return "Collect laundry around town: " + laundryCollected + "/" + LAUNDRY_REQUIRED;
             }
 
-            if (checkmateStep == 4 && safehouseUnlocked) {
-                return "Investigate the hidden camp west of the old road.";
+            if (activeQuestName.equals("Flower Picking")) {
+                return "Gather medicinal flowers: " + flowersCollected + "/" + FLOWERS_REQUIRED;
             }
 
-            if (banditQuestUnlocked && !banditQuestAccepted && !banditQuestCompleted) {
-                return "Read the urgent notice and speak with the Village Elder.";
+            if (activeQuestName.equals("Bandit Trouble")) {
+                return "Investigate the old forest road.";
             }
 
-            return "No active request.";
+            return "Continue your current request.";
         }
 
-        if (activeQuestName.equals("Cellar Rats")) {
-            return "Clear the tavern cellar.";
+        // Checkmate arc after Bandit Trouble
+        if (checkmateStep == 3) {
+            return "Follow the Golden Sinners lead near Old Mill Road.";
         }
 
-        if (activeQuestName.equals("Missing Laundry")) {
-            return "Collect laundry around town: " + laundryCollected + "/" + LAUNDRY_REQUIRED;
+        if (checkmateStep == 4 && !safehouseUnlocked) {
+            return "Report the Old Mill Road findings to the Village Elder.";
         }
 
-        if (activeQuestName.equals("Flower Picking")) {
-            return "Gather medicinal flowers: " + flowersCollected + "/" + FLOWERS_REQUIRED;
+        if (checkmateStep == 4 && safehouseUnlocked) {
+            return "Investigate the hidden camp west of the old road.";
         }
 
-        if (activeQuestName.equals("Bandit Trouble")) {
-            return "Investigate the old forest road.";
+        if (checkmateStep == 5) {
+            return "Search the safehouse for the King's tent.";
         }
 
-        return "Continue your current request.";
+        if (checkmateStep == 6 && taliTemporaryAlly && !taliRecruited) {
+            return "Confront Cael and recover what he stole.";
+        }
+
+        if (checkmateStep == 8 && taliRecruited) {
+            return "The Golden Sinners crisis has been resolved.";
+        }
+
+        // Chapter 2 / Merren arc
+        if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !merrenBetrayalTriggered) {
+            return "Travel to the marked ruins and investigate Merren's relic job.";
+        }
+
+        if (storyChapter == 2 && merrenBetrayalTriggered && !williamRecruited) {
+            return "Survive the seal trap and escape the ruins.";
+        }
+
+        if (storyChapter == 2 && williamRecruited) {
+            return "Act One is complete.";
+        }
+
+        // Urgent Notice before Bandit Trouble is accepted
+        if (banditQuestUnlocked && !banditQuestAccepted && !banditQuestCompleted) {
+            return "Read the urgent notice and speak with the Village Elder.";
+        }
+
+        return "No active request.";
     }
     
     //Check Active Quests
