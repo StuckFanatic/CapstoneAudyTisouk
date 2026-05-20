@@ -1,6 +1,6 @@
 
 Hello This is Audy Tisouk and I'm glad you are taking a look!
-In oder to start the game itself open in any java editor and run it with GamePanel.Java to start playing!
+In order to start the game itself open in any java editor and run it with GamePanel.Java to start playing!
 
 ---------------------------------------------------------------------------------------------------------
 # Lost Time: Rewrite
