@@ -36,6 +36,10 @@ public class BattleScenarioLibrary {
 		    return createCaelUsurper();
 		}
 		
+		if (scenarioId.equals("golem_seal_trap")) {
+		    return createGolemSealTrap();
+		}
+		
 		return createBanditField();
 		
 	}
@@ -358,8 +362,6 @@ public class BattleScenarioLibrary {
 	    playerSpawns.add(new UnitSpawn("leader", 5, 7, false));
 	    playerSpawns.add(new UnitSpawn("archer_ally", 5, 8, false));
 	    playerSpawns.add(new UnitSpawn("mage", 4, 8, false));
-	    
-	    playerSpawns.add(new UnitSpawn("tali_guest", 4, 7, false));
 
 	    List<UnitSpawn> enemySpawns = new ArrayList<>();
 	    enemySpawns.add(new UnitSpawn("tali_boss", 5, 1, true));
@@ -496,6 +498,67 @@ public class BattleScenarioLibrary {
 	        outroDialogue
 	    );
 	    
+	}
+	
+	//Golem Trap
+	private static BattleScenario createGolemSealTrap() {
+
+	    int[][] layout = {
+	        {1,1,1,1,1,1,1,1,1,1},
+	        {1,0,0,6,0,6,0,0,0,1},
+	        {1,0,6,6,0,0,6,0,0,1},
+	        {1,6,6,0,0,0,6,6,6,1},
+	        {1,0,0,0,0,0,6,0,0,1},
+	        {1,0,0,6,0,6,6,0,0,1},
+	        {1,6,6,6,0,0,6,6,6,1},
+	        {1,6,0,6,6,0,6,6,6,1},
+	        {1,6,6,6,0,0,6,0,0,1},
+	        {1,1,1,1,1,1,1,1,1,1}
+	    };
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 4, 8, false));
+	    playerSpawns.add(new UnitSpawn("tali", 8, 1, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 1, 1, false));
+	    playerSpawns.add(new UnitSpawn("mage", 8, 4, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("stone_golem", 4, 1, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("", "The exit seals behind the party as molten light pours from cracks in the walls.", 
+	        		DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Dean", "Lava. That is fricking lava. Why is it lava?", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "We're separated!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "Less yelling, more trying not to die!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "Everyone stay on your platform!", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "Reeeally? I was just about to go turn myself into charcoal.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("", "Stone grinds against stone. A guardian rises from the center seal.", 
+	        		DialogueSide.RIGHT, DialogueFaction.NPC)
+	    };
+
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	        new DialogueLine("", "The lava slows. The seal cracks open with a final shudder.", DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Dean", "I vote we never take jobs from smiling merchants again.", DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "That was your first rule? Mine is to find and kill that Dwarf", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Penelope", "Is everyone still standing?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "Barely.", DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    return new BattleScenario(
+	        "golem_seal_trap",
+	        "The Broken Seal",
+	        layout,
+	        ObjectiveType.SURVIVE_TURNS,
+	        4,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements,
+	        introDialogue,
+	        outroDialogue
+	    );
 	}
 	
 	

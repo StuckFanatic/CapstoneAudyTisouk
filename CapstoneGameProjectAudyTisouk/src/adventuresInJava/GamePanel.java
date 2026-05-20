@@ -38,6 +38,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int screenWidth = mapWidth + rightPanelWidth;
     private int screenHeight = mapHeight + bottomPanelHeight;
     
+    //Title
+    private String[] titleMenuOptions = {"New Game", "Load Game", "Controls", "Exit"};
+    private int titleMenuIndex = 0;
+    
     //Save State
     private final String SAVE_FILE = "save_data.txt";
     
@@ -118,6 +122,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private Tile[][] safehouseMap;
     private GameMap safehouseGameMap;
     
+    //Chapter 2 Ruins
+    private Tile[][] chapterTwoRuinsMap;
+    private GameMap chapterTwoRuinsGameMap;
+    
     //SHOP
     private int gold = 500; 
     private boolean selectingShopBuyer = true;
@@ -138,6 +146,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //CAMP MENU
     private String[] campMenuOptions = {"Rest", "Gather", "Bond", "Leave"};
     private int campMenuIndex = 0;
+    private GameState campReturnState = GameState.OVERWORLD;
+    private GameMap campReturnMap = null;
+    private int campReturnCol = 0;
+    private int campReturnRow = 0;
     
     //BONDS
     private boolean campBondMenuOpen = false;
@@ -271,6 +283,49 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Flower Quest
     private int flowersCollected = 0;
     private final int FLOWERS_REQUIRED = 3;
+    
+    /*
+     * CHAPTER 2 STARTS HERE
+     */
+    
+    //Chapter 2 story flow Skip
+    private int chapterTwoStep = 0;
+    private boolean pendingChapterTwoOpening = false;
+    private boolean ruinsJobUnlocked = false;
+    
+    private boolean pendingRuinsJobUnlock = false;
+    
+    //Ruins
+    private boolean inspectedChapterTwoMural = false;
+    private boolean inspectedChapterTwoSeal = false;
+    private boolean inspectedChapterTwoRelic = false;
+    
+    //Chapter 2 Golem
+    private boolean pendingMerrenBetrayal = false;
+    
+    //Merren trap
+    private boolean pendingMerrenTrapBattle = false;
+    private boolean merrenBetrayalTriggered = false;
+    
+    private boolean golemTurn2DialogueShown = false;
+    private boolean golemTurn3DialogueShown = false;
+    private boolean williamArrivedForGolem = false;
+    private boolean pendingWilliamGolemRescue = false;
+    
+    //After Goblem Fight
+    private boolean williamRecruited = false;
+    
+    private boolean pendingWilliamRecruitmentScene = false;
+    private boolean pendingActOneEnding = false;
+    
+    private boolean showingRuinsExteriorScene = false;
+    
+    //End of Act 1 Chapter 2
+    private boolean pendingEndActOneTransition = false;
+    
+    private boolean pendingReturnAfterActOne = false;
+    
+    
     
 
     	
@@ -428,10 +483,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
      */
     
     //Current State of Game
-    private GameState currentState = GameState.OVERWORLD;
+    //Now starts on title!
+    private GameState currentState = GameState.TITLE;
 
     //Game States that can be switched into from a button or tile
 	private enum GameState {
+		TITLE,
+		CONTROLS,
 		OVERWORLD,
 		TOWN,
 		BATTLE,
@@ -442,7 +500,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		STATUS,
 		CAMP,
 		QUEST_BOARD,
-		DEFEAT
+		DEFEAT,
+		ACT_ONE_END
 		
 	}
     
@@ -468,6 +527,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         generatePrologueForestMap();
         generateFlowerFieldMap();
         generateSafehouseMap();
+        generateChapterTwoRuinsMap();
         
        
     }
@@ -954,6 +1014,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
     }
     
+    //Ruins Chapter 2 
+    //Exploration
+    private void generateChapterTwoRuinsMap() {
+
+        chapterTwoRuinsMap = new Tile[10][10];
+
+        int[][] layout = {
+            {1,1,1,1,1,1,1,1,1,1},
+            {1,0,0,0,0,0,0,0,0,1},
+            {1,0,1,1,0,3,0,1,0,1},
+            {1,0,1,0,0,0,0,1,0,1},
+            {1,0,0,0,3,0,0,0,0,1},
+            {1,0,0,0,0,0,3,0,0,1},
+            {1,0,1,0,0,0,0,1,0,1},
+            {1,0,1,1,0,0,1,1,0,1},
+            {1,0,0,0,0,0,0,0,2,1},
+            {1,1,1,1,1,1,1,1,1,1}
+        };
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    chapterTwoRuinsMap[col][row] = new Tile(TileType.RUINS_FLOOR);
+                }
+                else if (value == 1) {
+                    chapterTwoRuinsMap[col][row] = new Tile(TileType.STONE_WALL);
+                }
+                else if (value == 2) {
+                    chapterTwoRuinsMap[col][row] = new Tile(TileType.EXIT);
+                }
+                else if (value == 3) {
+                    Tile eventTile = new Tile(TileType.EVENT);
+
+                    if (col == 5 && row == 2) {
+                        eventTile.setEventId("chapter2_mural_creation");
+                    }
+                    else if (col == 4 && row == 4) {
+                        eventTile.setEventId("chapter2_magic_seal");
+                    }
+                    else if (col == 6 && row == 5) {
+                        eventTile.setEventId("chapter2_relic_pedestal");
+                    }
+
+                    chapterTwoRuinsMap[col][row] = eventTile;
+                }
+            }
+        }
+
+        chapterTwoRuinsGameMap = new GameMap(chapterTwoRuinsMap, "Old Relic Ruins");
+    }
+    
+    
+    
     
     
     //Explore tiles method- will add more?
@@ -1016,7 +1132,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        enterSafehouse();
     	        return;
     	    }
+    	    
+    	    if ("enter_chapter_two_ruins".equals(currentTile.getEventId())) {
+    	        enterChapterTwoRuins();
+    	        return;
+    	    }
+    	    
     	}
+    
     	
     	endTurn();
     }
@@ -1094,6 +1217,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Campsite
     private void openCamp() {
+        campReturnState = currentState;
+        campReturnMap = currentMap;
+        campReturnCol = player.col;
+        campReturnRow = player.row;
+
+        currentState = GameState.CAMP;
+        campMenuIndex = 0;
+    }
+    
+    private void openCampWithReturn(GameState returnState, GameMap returnMap, int returnCol, int returnRow) {
+        campReturnState = returnState;
+        campReturnMap = returnMap;
+        campReturnCol = returnCol;
+        campReturnRow = returnRow;
+
         currentState = GameState.CAMP;
         campMenuIndex = 0;
     }
@@ -1119,6 +1257,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        currentState = GameState.TOWN;
 
     	        player.col = 5;
+    	        player.row = 8;
+
+    	        return;
+    	    }
+    	    
+    	    if (currentMap == chapterTwoRuinsGameMap) {
+    	        currentMap = overworldGameMap;
+    	        currentState = GameState.OVERWORLD;
+
+    	        player.col = 6;
     	        player.row = 8;
 
     	        return;
@@ -1185,6 +1333,205 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     
+    //Title handler
+    private void handleTitleMenuSelection() {
+
+        String selected = titleMenuOptions[titleMenuIndex];
+
+        if (selected.equals("New Game")) {
+            startNewGame();
+            return;
+        }
+
+        if (selected.equals("Load Game")) {
+            loadGame();
+            return;
+        }
+        
+        if (selected.equals("Controls")) {
+            currentState = GameState.CONTROLS;
+            return;
+        }
+
+        if (selected.equals("Exit")) {
+            System.exit(0);
+        }
+    }
+    
+    //THE GRAND RESET!//THE GRAND RESET!
+    private void startNewGame() {
+
+        // Basic campaign reset
+        storyChapter = 0;
+        prologueStep = 0;
+        day = 1;
+        gold = 0;
+
+        // Quest reset
+        banditQuestAccepted = false;
+        banditQuestCompleted = false;
+        banditQuestRewardClaimed = false;
+
+        cellarRatsCompleted = false;
+        laundryCompleted = false;
+        flowersCompleted = false;
+        activeQuestName = "";
+
+        starterJobsComplete = false;
+        banditQuestUnlocked = false;
+
+        // Checkmate reset
+        checkmateStep = 0;
+        oldMillRoadCompleted = false;
+        safehouseUnlocked = false;
+        taliTemporaryAlly = false;
+        taliRecruited = false;
+        taliConfrontationCompleted = false;
+
+        // Story item reset
+        hasCreationSword = false;
+        creationAwakened = false;
+
+        // Camp bond reset
+        penelopeBond = 0;
+        deanBond = 0;
+        taliBond = 0;
+
+        penelopeLastTalkedChapter = -1;
+        deanLastTalkedChapter = -1;
+        taliLastTalkedChapter = -1;
+
+        // Chapter 2 reset
+        chapterTwoStep = 0;
+        ruinsJobUnlocked = false;
+        williamRecruited = false;
+
+        // Recreate base party
+        createPartyMembers();
+
+        // Rebuild world state
+        generateWorld();
+        generateTown();
+        generateRuinsMap();
+        generatePrologueForestMap();
+        generateFlowerFieldMap();
+        generateSafehouseMap();
+        generateChapterTwoRuinsMap();
+
+        updateStoryWorldState();
+        updateTownQuestTiles();
+
+        // Start the story
+        startPrologue();
+        
+    }
+    //THE GRAND RESET!
+    
+    
+    //Builds title screen
+    private void drawTitle(Graphics g) {
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        Font originalFont = g.getFont();
+
+        
+        // Title
+        g.setColor(Color.WHITE);
+        g.setFont(originalFont.deriveFont(40f));
+
+        String title = "Lost Time: Rewrite";
+        int titleWidth = g.getFontMetrics().stringWidth(title);
+        g.drawString(title, (screenWidth - titleWidth) / 2, 170);
+
+        
+        // Subtitle
+        g.setFont(originalFont.deriveFont(16f));
+        String subtitle = "Act One";
+        int subtitleWidth = g.getFontMetrics().stringWidth(subtitle);
+        g.drawString(subtitle, (screenWidth - subtitleWidth) / 2, 205);
+
+        // Menu
+        g.setFont(originalFont.deriveFont(22f));
+
+        int menuY = 290;
+
+        
+        for (int i = 0; i < titleMenuOptions.length; i++) {
+
+            if (i == titleMenuIndex) {
+                g.setColor(Color.YELLOW);
+            } else {
+            	
+                g.setColor(Color.WHITE);
+            }
+
+            String prefix = (i == titleMenuIndex) ? "> " : "  ";
+            String option = prefix + titleMenuOptions[i];
+
+            int optionWidth = g.getFontMetrics().stringWidth(option);
+            g.drawString(option, (screenWidth - optionWidth) / 2, menuY + (i * 40));
+            
+        }
+
+        // Footer
+        g.setFont(originalFont.deriveFont(14f));
+        g.setColor(Color.GRAY);
+
+        String footer = "UP/DOWN select | ENTER confirm";
+        int footerWidth = g.getFontMetrics().stringWidth(footer);
+        g.drawString(footer, (screenWidth - footerWidth) / 2, screenHeight - 50);
+
+        g.setFont(originalFont);
+        
+    }
+    
+    
+    //Draws the controls for the screen on title
+    private void drawControls(Graphics g) {
+
+    	
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        
+        Font originalFont = g.getFont();
+
+        g.setColor(Color.WHITE);
+        g.setFont(originalFont.deriveFont(32f));
+
+        String title = "Controls";
+        int titleWidth = g.getFontMetrics().stringWidth(title);
+        g.drawString(title, (screenWidth - titleWidth) / 2, 80);
+
+        g.setFont(originalFont.deriveFont(16f));
+
+        
+        int x = 170;
+        int y = 140;
+        int lineHeight = 28;
+
+        g.drawString("Arrow Keys  - Move / Navigate menus", x, y);
+        g.drawString("ENTER       - Confirm / Interact / Advance dialogue", x, y + lineHeight);
+        g.drawString("ESC         - Back / Cancel", x, y + lineHeight * 2);
+
+        
+        g.drawString("E           - Equipment menu", x, y + lineHeight * 4);
+        g.drawString("Q         - Party status screen", x, y + lineHeight * 5);
+        g.drawString("F           - Camp menu", x, y + lineHeight * 6);
+
+        //Important
+        g.drawString("S           - Save game", x, y + lineHeight * 8);
+        g.drawString("L           - Load game", x, y + lineHeight * 9);
+
+        g.setColor(Color.GRAY);
+        g.drawString("Press ENTER or ESC to return to title.", x, screenHeight - 70);
+
+        g.setFont(originalFont);
+        
+    }
+    
     //run out of movement ends turn
     private void endTurn() {
     	//Day
@@ -1232,6 +1579,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//Separating the logic by current states the game is in
     	switch(currentState) {
     	
+    	case TITLE:
+    	    updateTitle();
+    	    break;
+    	    
+    	case CONTROLS:
+    	    updateControls();
+    	    break;
+    	
     	case OVERWORLD:
     		updateOverworld();
     		break;
@@ -1275,6 +1630,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case DEFEAT:
     	    updateQuestBoard();
     	    break;
+    	    
+    	case ACT_ONE_END:
+    		break;
     	    
     	}
     	
@@ -1325,6 +1683,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
 
+    private void updateTitle() {
+    	
+    }
+    
+    private void updateControls() {
+       
+    }
     
     private void updateOverworld() {
     	
@@ -1389,6 +1754,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Cael Fight
         int caelCol = 2;
         int caelRow = 7;
+        
+        //Chap2 Ruins
+        int ruinsCol = 6;
+        int ruinsRow = 8;
+        
 
         //bandit ambush
         if (banditQuestAccepted && !banditQuestCompleted) {
@@ -1445,6 +1815,20 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }
         }
         
+        //Chap 2 ruins
+        if (ruinsJobUnlocked && chapterTwoStep == 2) {
+            Tile ruinsTile = new Tile(TileType.EVENT);
+            ruinsTile.setEventId("enter_chapter_two_ruins");
+            tiles[ruinsCol][ruinsRow] = ruinsTile;
+        } else {
+            if (tiles[ruinsCol][ruinsRow] != null &&
+                tiles[ruinsCol][ruinsRow].getType() == TileType.EVENT &&
+                "enter_chapter_two_ruins".equals(tiles[ruinsCol][ruinsRow].getEventId())) {
+
+                tiles[ruinsCol][ruinsRow] = new Tile(TileType.GRASS);
+            }
+        }
+        
         
         
         
@@ -1459,6 +1843,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         //Switch for the different states
         switch(currentState) {
+        
+        case TITLE:
+            drawTitle(g);
+            break;
+            
+        case CONTROLS:
+            drawControls(g);
+            break;
         
         case OVERWORLD:
     		drawOverworld(g);
@@ -1504,16 +1896,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	case DEFEAT:
     	    drawDefeat(g);
     	    break;
+    	    
+    	case ACT_ONE_END:
+    	    drawActOneEnd(g);
+    	    break;
 
         }
         
         
-        if (currentState != GameState.STATUS &&
+        
+        
+        if (currentState != GameState.TITLE &&
+        		currentState != GameState.CONTROLS &&
+        		currentState != GameState.STATUS &&
         	    currentState != GameState.EQUIPMENT &&
         	    currentState != GameState.CAMP &&
         	    currentState != GameState.DIALOGUE &&
         	    currentState != GameState.QUEST_BOARD &&
-        	    currentState != GameState.DEFEAT) {
+        	    currentState != GameState.DEFEAT &&
+        	    currentState != GameState.ACT_ONE_END) {
         	    drawGlobalUI(g);
         	}
         
@@ -1584,6 +1985,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         // left section
         switch(currentState) {
+        
+        	case TITLE:
+        		break;
+        		
+        	case CONTROLS:
+        		break;
 
             case OVERWORLD:
                 g.drawString("Day: " + day, 20, panelY + 25);
@@ -1639,6 +2046,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	break;
             	
             case DEFEAT:
+            	break;
+            	
+            case ACT_ONE_END:
             	break;
 
             case BATTLE:
@@ -1697,6 +2107,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         // center section
         switch(currentState) {
 
+        
+        	case TITLE:
+        		
+        	case CONTROLS:
+        
+        		
             case OVERWORLD:
             	
             case TOWN:
@@ -1719,6 +2135,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case QUEST_BOARD:
             	
             case DEFEAT:
+            case ACT_ONE_END:
    
 
             case BATTLE:
@@ -1744,6 +2161,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         switch(currentState) {
 
 
+        	case TITLE:
+        		
+        	case CONTROLS:
+        		
             case OVERWORLD:
             	
             case TOWN:
@@ -1771,6 +2192,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             case QUEST_BOARD:
             	
             case DEFEAT:
+            	
+            case ACT_ONE_END:
             
             	
             case BATTLE:
@@ -1820,6 +2243,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         g.setColor(Color.WHITE);
 
         switch(currentState) {
+        
+        	case TITLE:
+        		
+        	case CONTROLS:
+        
 
             case OVERWORLD:
             	g.drawString("Overworld", panelX + 20, 30);
@@ -1881,6 +2309,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	break;
             	
             case DEFEAT:
+            	break;
+            	
+            case ACT_ONE_END:
             	break;
 
             case BATTLE:
@@ -2358,7 +2789,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             startDialogue(new DialogueLine[] {
                 new DialogueLine("Penelope", "This one makes me uneasy.", DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Art", "Why?", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Penelope", "The circle here... it looks like a clock, but the hands are shattered.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "The circle here... it looks like a clock, but the hands are shattered.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Dean", "Maybe old people were bad at drawing clocks.", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "Dean.", DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Dean", "What? I am helping.", DialogueSide.LEFT, DialogueFaction.ALLY)
@@ -2478,7 +2910,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             if (inspectedSafehouseOrders) {
                 startDialogue(new DialogueLine[] {
                     new DialogueLine("Art", "The orders are gone now.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                    new DialogueLine("Penelope", "But we know enough. Someone here can lead us closer to The King.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+                    new DialogueLine("Penelope", "But we know enough. Someone here can lead us closer to The King.", 
+                    		DialogueSide.RIGHT, DialogueFaction.ALLY)
                 }, GameState.EXPLORATION);
                 return;
             }
@@ -2508,6 +2941,114 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Tali Sin
         if (eventId.equals("safehouse_king_tent")) {
             handleKingTentEvent();
+            return;
+        }
+        
+        //Chapter 2 Ruins
+        //Mural
+        if (eventId.equals("chapter2_mural_creation")) {
+
+            if (inspectedChapterTwoMural) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Art", "The sword carving is still here.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Penelope", "It looks too much like the one near Cerebella.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            inspectedChapterTwoMural = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "This symbol again...", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "The blade surrounded by light.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "So your weird sword has cousins.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Or a reputation.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "Old civilizations reused symbols constantly. Swords, suns, crowns, wings. Very dramatic people.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Art", "The Rusty Creation feels warmer here.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Thats comforting.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "Comfort is rarely found in old ruins, I'm afraid.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
+            return;
+            
+        }
+        
+        
+        
+        //magic Seals
+        if (eventId.equals("chapter2_magic_seal")) {
+
+            if (inspectedChapterTwoSeal) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Penelope", "This seal is still making the air feel heavy.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                    new DialogueLine("Tali", "Then stop standing on it.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            inspectedChapterTwoSeal = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "A circular seal is carved deep into the stone floor.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Penelope", "It looks like the broken clock carving from the old ruins.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "I love when old ruins start repeating themselves. That always means nothing terrible.",
+                        DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Merren, what is this?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "A lock, perhaps. Or a warning. Old places like this usually aren't worth it.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Tali", "That wasn't an answer.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "It was a cautious answer.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Art", "The sword is reacting to it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Then maybe William was right.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "William worries professionally. I admire the commitment and boldness Come along now.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
+            return;
+            
+        }
+        
+        
+        //Relic Pedestal
+        if (eventId.equals("chapter2_relic_pedestal")) {
+
+            if (merrenBetrayalTriggered) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("Art", "The pedestal is empty now.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Penelope", "I did not like how quickly everything changed here.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            merrenBetrayalTriggered = true;
+            inspectedChapterTwoRelic = true;
+            pendingMerrenTrapBattle = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Merren Vale", "There it is.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Dean", "That tiny thing? We came all this way for a shiny rock?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Dean, do not call unknown relics shiny rocks.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "I am with him. That is a lot of trouble for something I could throw at a wall.",
+                        DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Merren. Wait.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "No need to worry. I know exactly what I am doing.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("", "Merren lifts the relic from the pedestal.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("", "The seal beneath it cracks with a sound like splitting ice.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Penelope", "That was not a good sound.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "No. But it was a profitable one.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Dean", "I knew it. Nobody with a fit that clean is trustworthy.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Merren Vale", "Do try to survive. I would hate for reliable guards to go to waste.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Art", "Merren!", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("", "Stone grinds shut behind him. Heat rises as something wakes beneath the floor. ",
+                        DialogueSide.RIGHT, DialogueFaction.NPC)
+            }, GameState.EXPLORATION);
+
             return;
         }
 
@@ -2836,7 +3377,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
 	    if (pendingChapterOneStart) {
 	        pendingChapterOneStart = false;
+	        storyTransitionText = "";
 	        startChapterOne();
+	        return;
+	    }
+
+	    if (pendingReturnAfterActOne) {
+	    	pendingReturnAfterActOne = false;
+	        storyTransitionText = "";
+	        showingRuinsExteriorScene = false;
+	        currentState = GameState.ACT_ONE_END;
+	        return;
 	    }
 
 	    storyTransitionText = "";
@@ -3715,7 +4266,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         int menuX = mapWidth + 20;
         int menuY = 100;
         int menuWidth = rightPanelWidth - 40;
-        int menuHeight = 200;
+        int menuHeight = 250;
 
         g.setColor(new Color(25, 25, 35));
         g.fillRect(menuX, menuY, menuWidth, menuHeight);
@@ -3779,8 +4330,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             g.drawString(prefix + member.getName(), menuX + 25, menuY + 55 + (i * 25));
         }
         g.setColor(Color.LIGHT_GRAY);
-        g.drawString("Dean Bond: " + deanBond, menuX + 20, menuY + 155);
-        g.drawString("Penelope Bond: " + penelopeBond, menuX + 20, menuY + 175);
+        g.drawString("Dean Bond: " + deanBond, menuX + 20, menuY + 165);
+        g.drawString("Penelope Bond: " + penelopeBond, menuX + 20, menuY + 185);
+        g.drawString("Tali Bond: " + taliBond, menuX + 20, menuY + 205);
         
         g.setColor(Color.WHITE);
         g.drawString("ENTER talk | ESC back", menuX + 20, menuY + 125);
@@ -3846,11 +4398,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    return createTaliGuestUnit(col, row);
     	}
     	
+    	
+    	
+    	//Enemy Weapons
     	Weapon banditAxe = createWeaponById("bandit_axe");
     	Weapon enemyBow = createWeaponById("hunter_bow");
     	Weapon ratBite = createWeaponById("rat_bite");
     	Weapon taliSpear = createWeaponById("tali_spear");
     	Weapon caelBlade = createWeaponById("cael_blade");
+    	Weapon golemPulse = createWeaponById("golem_pulse");
 		
 		//Class Name, Max HP, Armor Class, Movement Range, Weapon Type
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4, new WeaponType[] { WeaponType.AXE });
@@ -3858,6 +4414,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		CharacterClass ratClass = new CharacterClass("Rat", 5, 8, 5, new WeaponType[] { WeaponType.AXE });
 		CharacterClass taliClass = new CharacterClass("Bandit King", 17, 13, 5, new WeaponType[] { WeaponType.LANCE });
 		CharacterClass caelClass = new CharacterClass("Usurper", 20, 13, 5,new WeaponType[] { WeaponType.SWORD });
+		CharacterClass golemClass = new CharacterClass("Seal Guardian", 24, 8, 0, new WeaponType[] { WeaponType.AXE });
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
@@ -3865,6 +4422,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		GrowthRates ratGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
 		GrowthRates taliGrowths = new GrowthRates(70, 55, 10, 50, 50, 30, 35, 25);
 		GrowthRates caelGrowths = new GrowthRates(70, 55, 10, 55, 55, 25, 30, 20);
+		GrowthRates golemGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
 		UnitStats banditStats = new UnitStats(10, 0, 4, 0, 3, 3, 1, 1, 0, 4);
@@ -3872,6 +4430,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		UnitStats ratStats = new UnitStats(5, 0, 1, 0, 2, 5, 0, 0, 0, 5);
 		UnitStats taliStats = new UnitStats(17, 4, 5, 0, 5, 5, 4, 3, 2, 5);
 		UnitStats caelStats = new UnitStats(20, 6, 5, 0, 6, 6, 3, 3, 2, 5);
+		UnitStats golemStats = new UnitStats(35, 0, 7, 0, 2, 0, 0, 28, 0, 0);
 		
 
 		if (unitId.equals("bandit")) {
@@ -3892,6 +4451,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		
 		if (unitId.equals("cael_boss")) {
 		    return new BattleUnit("Cael", col, row, true, caelBlade, caelClass, caelStats, caelGrowths, "Dirty Cut",EnemyRole.AGGRESSIVE);
+		}
+		
+		if (unitId.equals("stone_golem")) {
+		    return new BattleUnit("Stone Golem", col, row, true, golemPulse, golemClass, golemStats, golemGrowths, "", EnemyRole.STATIONARY);
 		}
 		
 		
@@ -3917,6 +4480,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             "Tali Sin",col, row, false, taliSpear, taliClass, taliStats, taliGrowths, "Piercing Thrust",null);
         
     }
+    
+    
+    //William Guest
+    private BattleUnit createWilliamGuestUnit(int col, int row) {
+
+        Weapon williamTome = createWeaponById("william_tome");
+        CharacterClass williamClass = new CharacterClass("Scholar Mage", 12, 12, 4, new WeaponType[] { WeaponType.TOME });
+        GrowthRates williamGrowths = new GrowthRates(60, 10, 70, 55, 40, 35, 20, 55);
+
+        // HP, MP, STR, MAG, SKL, SPD, LCK, DEF, RES, MOV
+        UnitStats williamStats = new UnitStats(14, 18, 0, 8, 6, 4, 4, 2, 6, 4);
+
+        return new BattleUnit("William Winters", col, row, false, williamTome, williamClass, williamStats, williamGrowths, "Arcane Break", null);
+    }
+    
+    
     
     //THIS IS FOR NEW PLAYERS UNITS ADD HERE!!!
     //Will make creation easier the above for players
@@ -4017,6 +4596,37 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         System.out.println("Tali has joined the party.");
     }
     
+    
+    
+    private void recruitWilliam() {
+
+        if (williamRecruited || getPartyMemberById("william") != null) {
+            williamRecruited = true;
+            return;
+        }
+
+        Weapon williamTome = createWeaponById("william_tome");
+
+        CharacterClass williamClass = new CharacterClass(
+            "Scholar Mage", 12, 12, 4, new WeaponType[] { WeaponType.TOME });
+
+        GrowthRates williamGrowths = new GrowthRates(60, 10, 70, 55, 40, 35, 20, 55);
+
+        // HP, MP, STR, MAG, SKL, SPD, LCK, DEF, RES, MOV
+        UnitStats williamStats = new UnitStats(14, 18, 0, 8, 6, 4, 4, 2, 6, 4);
+
+        PartyMember william = new PartyMember("william", "William Winters", 1, 0, williamStats, williamGrowths, 
+        		williamClass, williamTome, "Arcane Break");
+
+        partyMembers.add(william);
+
+        williamRecruited = true;
+
+        System.out.println("William has joined the party.");
+    }
+    
+    
+    
     //Splitting and creating units from party ^Above
     private BattleUnit createBattleUnitFromPartyMember(PartyMember member, int col, int row) {
 
@@ -4083,6 +4693,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return new Weapon("fire_tome_plus", "Fire Tome+", WeaponType.TOME, 1, 2, 3, 1, 8, 2, true);
         }
         
+        if (weaponId.equals("william_tome")) {
+            return new Weapon("william_tome", "Arcane Tome", WeaponType.TOME, 1, 3, 5, 2, 8, 4, true);
+        }
+        
         //Cleric
         if (weaponId.equals("training_staff")) {
             return new Weapon("training_staff", "Training Staff", WeaponType.STAFF, 1, 2, 2, 1, 4, 1, true);
@@ -4096,6 +4710,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Non Humans
         if (weaponId.equals("rat_bite")) {
             return new Weapon("rat_bite", "Rat Bite", WeaponType.AXE, 1, 1, 1, 1, 4, 0, false);
+        }
+        
+        if (weaponId.equals("golem_pulse")) {
+            return new Weapon("golem_pulse", "Seal Pulse", WeaponType.AXE, 1, 6, 3, 1, 8, 2, false);
         }
 
         //Art Forger unique
@@ -4158,9 +4776,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	lastBattleScenario = scenario;
     	currentBattleScenario = scenario;
     	
+    	//Golem Problem
+    	if (scenario.getId().equals("golem_seal_trap")) {
+    	    golemTurn2DialogueShown = false;
+    	    golemTurn3DialogueShown = false;
+    	    williamArrivedForGolem = false;
+    	    pendingWilliamGolemRescue = false;
+    	}
+    	
     	currentObjective = scenario.getObjectiveType();
     	surviveTurnTarget = scenario.getSurviveTurnTarget();
     	currentBattleTurn = 1;
+    	
+    	
     	
     	if (scenario.getId().equals("prologue_ruins")) {
     	    objectiveCol = 4;
@@ -4171,36 +4799,67 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    objectiveRow = -1;
     	}
     	
+    	
+    	
     	//Map will build from scenario layout
     	Tile[][] battleMap = new Tile[maxScreenCol][maxScreenRow];
     	int[][] layout = scenario.getLayout();
+    	
+    	//Speical Casing
+    	boolean isGolemTrap = scenario.getId().equals("golem_seal_trap");
     	
     	for (int col = 0; col < maxScreenCol; col++) {
     		for (int row = 0; row < maxScreenRow; row++) {
     			
     			int value = layout[row][col];
     			
-    			if (value == 0) {
-    				battleMap[col][row] = new Tile(TileType.GRASS);
-    				
-    			} else if (value == 1) {
-    				battleMap[col][row] = new Tile(TileType.WATER);
-    				
-    			} else if (value == 2) {
-    				battleMap[col][row] = new Tile(TileType.HILL);
-    				
-    			} else if (value == 3) {
-    				battleMap[col][row] = new Tile(TileType.FOREST);
-    				
-    			} else if (value == 4) {
-    				battleMap[col][row] = new Tile(TileType.ROAD);
-    				
-    			} else if (value == 5) {
-    				battleMap[col][row] = new Tile(TileType.SHORE);
-    				
-    			}	
+    			if (isGolemTrap) {
+
+    			    if (value == 0) {
+    			        battleMap[col][row] = new Tile(TileType.RUINS_FLOOR);
+    			    }
+    			    else if (value == 1) {
+    			        battleMap[col][row] = new Tile(TileType.STONE_WALL);
+    			    }
+    			    else if (value == 6) {
+    			        battleMap[col][row] = new Tile(TileType.LAVA);
+    			    }
+
+    			} else {
+
+    			    if (value == 0) {
+    			        battleMap[col][row] = new Tile(TileType.GRASS);
+    			    }
+    			    else if (value == 1) {
+    			        battleMap[col][row] = new Tile(TileType.WATER);
+    			    }
+    			    else if (value == 2) {
+    			        battleMap[col][row] = new Tile(TileType.HILL);
+    			    }
+    			    else if (value == 3) {
+    			        battleMap[col][row] = new Tile(TileType.FOREST);
+    			    }
+    			    else if (value == 4) {
+    			        battleMap[col][row] = new Tile(TileType.ROAD);
+    			    }
+    			    else if (value == 5) {
+    			        battleMap[col][row] = new Tile(TileType.SHORE);
+    			    }
+    			    else if (value == 6) {
+    			        battleMap[col][row] = new Tile(TileType.LAVA);
+    			    }
+    			}
+    			
+    			if (battleMap[col][row] == null) {
+    			    battleMap[col][row] = new Tile(TileType.GRASS);
+    			}
+    			
     		}
+    		
+    		
     	}
+    	
+    	
     	
     	// Current Map reset clear
     	currentMap = new GameMap(battleMap, scenario.getName());
@@ -5185,6 +5844,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void startChapterOneCampReflection() {
     	
     	pendingAdvanceToChapterTwo = true;
+    	
+    	openCampWithReturn(GameState.OVERWORLD, overworldGameMap, 2, 5);
 
         currentState = GameState.CAMP;
         campMenuIndex = 0;
@@ -5217,10 +5878,436 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
     }
     
+    /*
+     * CHAPTER 2 BEGINS HERE
+     * !!!
+     */
+    
+    private void startChapterTwoOpening() {
+
+        chapterTwoStep = 1;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "Morning came quiet over the camp, but the road ahead did not feel as simple as it had the day before.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Dean", "So, where does a group of village-level heroes go after saving the roads?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Preferably somewhere people stop calling us heroes.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "You say that now, but the title grows on you.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Like mold.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Penelope", "The elder said the roads are safer, but not safe.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then we keep moving. If something else is spreading, we find where it starts.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("Merren Vale", "A noble intention. Expensive, though.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "WOAH! Who are you and how long were you standing there?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("", "A small dwarvish man stands before them. The big bellied man had red hair and large moustache."
+            		+ "he is wearing typical merchant coveralls.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Merren Vale", "Long enough to hear the word 'heroes' used with confidence.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Tali", "That was his mistake, not ours.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            
+            new DialogueLine("Merren Vale", "Merren Vale. Merchant, collector, and occasional employer of capable people.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "What kind of work?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Merren Vale", "Ruins west of here. Old stone. Older locks. I need guards while I retrieve a relic.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Penelope", "A relic?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Merren Vale", "A harmless one, if handled by someone who knows its worth.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Dean", "That sentence had at least three suspicious parts.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Four.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Merren Vale", "You may keep any ordinary salvage. I only require the relic. Payment upfront, half now.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Art", "We'll think about it.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Merren Vale", "Of course. But ruins do not stay quiet forever.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The dwarven man waddles away with his carraige.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("William", "And neither do men who lie about them.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Great. New mysterious person.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "William Winters. And if Merren Vale sent you toward those ruins, "
+            		+ "then you are already closer to danger than you understand.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("", "The man was deshveled and his mage like clothes were dirty. A tome on his hip."
+            		+ "His dark hair fading with grey.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            
+            new DialogueLine("William", "If you enter those ruins, do not touch anything sealed.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "That is extremely specific advice.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Specific advice is usually the useful kind.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "You know something.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "I know enough to say you should be careful where it wakes.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Where it wakes?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Ask me again if you survive Merren's job.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "I hate that answer.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+        }, GameState.CAMP);
+
+        pendingRuinsJobUnlock = true;
+        
+    }
+    
+    
+    private void unlockChapterTwoRuinsJob() {
+
+        chapterTwoStep = 2;
+        ruinsJobUnlocked = true;
+
+        updateStoryWorldState();
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "The ruins Merren mentioned have been marked on your map.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "I still don't trust the guy with the too-clean merchant smile.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Good. That means at least one thing is working in your head.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "William seemed worried.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then we go carefully. We get some answers before anyone gets hurt.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.CAMP);
+        
+    }
+    
+    
+    //Chapter 2 Step 1 Ruins
+    private void enterChapterTwoRuins() {
+
+        currentMap = chapterTwoRuinsGameMap;
+        currentState = GameState.EXPLORATION;
+
+        player.col = 1;
+        player.row = 8;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "The ruins wait beyond the old road, half-buried beneath leaning stone and tangled roots.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Merren Vale", "There you are. I was beginning to think caution had won.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "Caution never wins. It just complains until we arrive.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "I do not complain.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Sometimes.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Enough. We go in, watch each other, and keep our eyes on Merren.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Merren Vale", "Wise. Suspicion keeps the blood moving.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "I liked him more before he said that.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.EXPLORATION);
+        
+        
+    }
+    
+    
+    private boolean isGolemSealTrap() {
+        return currentBattleScenario != null &&
+               currentBattleScenario.getId().equals("golem_seal_trap");
+    }
+    
+    private boolean isStoneGolem(BattleUnit unit) {
+        return unit != null && unit.getName().equals("Stone Golem");
+    }
+    
+    //Calls Stone Golem
+    private BattleUnit getStoneGolem() {
+
+        for (BattleUnit enemy : enemyUnits) {
+            if (enemy != null && enemy.isAlive() && enemy.getName().equals("Stone Golem")) {
+                return enemy;
+            }
+        }
+
+        return null;
+    }
+    
+    //Sequence of events for Golem trap
+    private boolean handleGolemTrapTurnEvents() {
+
+        if (!isGolemSealTrap()) {
+            return false;
+        }
+
+        if (currentBattleTurn == 2 && !golemTurn2DialogueShown) {
+            golemTurn2DialogueShown = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Dean", "Okay, I just hit it and It did not care.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Gah, same here. My spear is hitting stone.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Our weapons are barely scratching it.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "I'm trying to suppress it's magical aura... I..can't", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "So the plan is... to keep losing slowly?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "The plan is stay alive and look for an opening. There has "
+                		+ "gotta be a way. Hold on everyone!", DialogueSide.LEFT, DialogueFaction.ALLY)
+            }, GameState.BATTLE);
+
+            return true;
+            
+        }
+
+        
+        if (currentBattleTurn == 3 && !golemTurn3DialogueShown) {
+            golemTurn3DialogueShown = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Penelope", "I can't keep this up forever.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Can't die here...", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "I would like to formally vote for not dying.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "The Creation keeps shielding me from the pulse.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Only you?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "...Yeah.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Then unless that sword learns to share, we're going to need help.", 
+                		DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.BATTLE);
+
+            return true;
+        }
+
+        
+        if (currentBattleTurn == 4 && !williamArrivedForGolem) {
+            williamArrivedForGolem = true;
+            pendingWilliamGolemRescue = true;
+
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("", "A sharp crack of blue light cuts across the chamber.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("William", "Quickly step away from the center seal!", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "William? Oh good. The mysterious warning man came back.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("William", "Preferably before the guardian turns you into ash.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Penelope", "Can you stop it?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("William", "No.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Bad start.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("William", "But I can break what is waking it.", DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.BATTLE);
+
+            
+            return true;
+        }
+
+        
+        return false;
+    }
     
     
     
-    //END OF STORY 
+    private void performWilliamGolemRescue() {
+
+        BattleUnit william = createUnitFromId("william_guest", 4, 3, false);
+
+        if (william != null) {
+            playerBattleUnits.add(william);
+            addBattleMessage("William Winters joined the battle!");
+        }
+
+        BattleUnit golem = getStoneGolem();
+
+        if (golem != null && golem.isAlive()) {
+            addBattleMessage("William casts Arcane Break!");
+            golem.takeDamage(golem.getHp());
+            addBattleMessage("The Stone Golem collapses!");
+        }
+
+        handleBattleVictory();
+    }
+    
+    //Outside now
+    private void drawRuinsExterior(Graphics g) {
+
+        g.setColor(new Color(12, 18, 28));
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Night sky / distant trees
+        g.setColor(new Color(25, 45, 35));
+        g.fillRect(0, mapHeight - 120, mapWidth, 120);
+
+        // Ruins silhouette
+        g.setColor(new Color(55, 55, 65));
+        g.fillRect(120, mapHeight - 210, 80, 160);
+        g.fillRect(210, mapHeight - 170, 180, 120);
+        g.fillRect(410, mapHeight - 210, 70, 160);
+
+        // Ruins doorway
+        g.setColor(new Color(10, 10, 15));
+        g.fillRect(260, mapHeight - 120, 70, 70);
+
+        // Moon / pale light
+        g.setColor(new Color(220, 220, 240));
+        g.fillOval(60, 50, 45, 45);
+
+        g.setColor(Color.WHITE);
+        g.drawString("Outside the Ruins", 30, 30);
+    }
+    
+    //Chapter 2 Part 4
+    private void startWilliamRecruitmentScene() {
+
+        recruitWilliam();
+
+        pendingActOneEnding = true;
+        showingRuinsExteriorScene = true;
+
+        startDialogue(new DialogueLine[] {
+        		
+            new DialogueLine("", "The party stumbles out of the ruins as the last tremors fade beneath the stone.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "I vote we never take jobs from smiling merchants again.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "That was your first rule? Mine is to find Merren and break his teeth.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Can everyone please breathe before making threats?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "It's natural you feel that way. Threats can wait until after bleeding stops.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Art", "Huff...Merren escaped with the relic.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Yes. And if that relic is what I believe it is, he will search for more.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Wonderful. The evil thief has a shopping list.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("Art", "You knew the ruins were dangerous.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "I knew enough to be afraid of them.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "And enough to save us.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Barely.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "William eye's the rusty sword on Art's holster.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Art", "You know something about The Sword don't you.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "I know it should not have answered you.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "But it did.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Yes. Which means either the world has become desperate, or you have.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "That was supposed to be reassuring?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "No. This is.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Art, I do not know everything your sword is tied to.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "But I know this much... relics like that do not wake for nothing.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "If it chose your hand, then some good may still be possible.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "I'm not following?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Certain doom.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "I think that was encouraging. Maybe.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "It was the closest he has gotten.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("William", "Merren will not stop. If you mean to follow him, you will need someone who understands old magic.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then come with us.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "I was hoping you would say that after I saved your lives.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Narrator", "William Winters joined the party.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.BATTLE);
+    }
+    
+    //End of Act 1
+    private void startActOneEnding() {
+    	
+    	pendingEndActOneTransition = true;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "Merren vanished with the relic before the ruins grew quiet again.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "The party left with more questions than answers, and one more companion than they had entered with.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Dean", "So. Bandits, lava, golems, creepy relics, suspicious merchants.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Mannnn, I miss the rats.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "I never thought I would agree with that.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Tali", "Whatever Merren stole, people will bleed for it.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Likely.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "You could have softened that.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Unlikely.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Art", "Then we follow him.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Even if this is bigger than us?", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Especially then.", DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "In Art's hand, the Rusty Creation stirred with pale light.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("William", "There is a name in old records. One most scholars dismiss as myth.", 
+            		DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "What name?", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Marrtyme.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "The road ahead no longer led toward village troubles or simple jobs.", 
+            		DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Something old had begun to wake.", DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.BATTLE);
+        
+    }
+    
+    //Draws end of act one scenes
+    private void drawActOneEnd(Graphics g) {
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        Font oldFont = g.getFont();
+
+        g.setColor(Color.WHITE);
+        g.setFont(oldFont.deriveFont(34f));
+
+        String title = "End of Act One";
+        int titleWidth = g.getFontMetrics().stringWidth(title);
+        g.drawString(title, (screenWidth - titleWidth) / 2, screenHeight / 2 - 40);
+
+        g.setFont(oldFont.deriveFont(16f));
+        String subtitle = "Lost Time: Rewrite";
+        int subWidth = g.getFontMetrics().stringWidth(subtitle);
+        g.drawString(subtitle, (screenWidth - subWidth) / 2, screenHeight / 2);
+
+        String prompt = "Press ENTER to return to title.";
+        int promptWidth = g.getFontMetrics().stringWidth(prompt);
+        g.drawString(prompt, (screenWidth - promptWidth) / 2, screenHeight / 2 + 60);
+
+        g.setFont(oldFont);
+    }
+    
+    
+    
+    
+    
+    
+    //END OF STORY Skip
     //NPC Handling interaction
     private NPC getAdjacentNpc() {
     	
@@ -5895,6 +6982,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
   //Checks if the Survive turns battle as concluded its objective
     private void checkSurviveTurnsObjective() {
     	
+    	//For Golem
+    	if (isGolemSealTrap()) {
+            return;
+        }
+    	
     	//Clears Tile
     	if (encounterSourceCol >= 0 && encounterSourceRow >= 0) {
     	    Tile clearedTile = new Tile(TileType.GRASS);
@@ -5952,6 +7044,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         player.row = 1;
 
         pendingReturnToOverworldAfterDialogue = false;
+        pendingReturnToOverworldAfterDialogue = false;
     }
     
     //victory logic; if there is a dialogue use it otherwise return to over world
@@ -5965,8 +7058,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (currentBattleScenario != null &&
                 currentBattleScenario.getId().equals("prologue_ruins")) {
                 advanceStoryChapter(1);
+                
+                
+            }
+        
+        
+        if (currentBattleScenario != null &&
+                currentBattleScenario.getId().equals("golem_seal_trap")) {
+
+                pendingWilliamRecruitmentScene = true;
             }
 
+        
         if (currentBattleScenario != null &&
             currentBattleScenario.getOutroDialogue() != null &&
             currentBattleScenario.getOutroDialogue().length > 0) {
@@ -5983,19 +7086,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //starts the player phase after ends
     //necessary to adding new unit
     private void startPlayerPhase() {
+        currentBattleTurn++;
         battlePhase = "PLAYER";
         addBattleMessage("Player Phase");
         showBattlePhaseBanner("Player Phase");
 
-        currentBattleTurn++;
         checkReinforcements();
 
-        //Resets all at once
         for (BattleUnit unit : playerBattleUnits) {
             if (unit != null && unit.isAlive()) {
                 unit.setHasMoved(false);
                 unit.setHasActed(false);
             }
+        }
+
+        if (handleGolemTrapTurnEvents()) {
+            return;
         }
 
         checkBattleEnd();
@@ -6108,8 +7214,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             EnemyRole role = enemy.getEnemyRole();
 
-            if (role == EnemyRole.RANGED) {
+            if (role == EnemyRole.STATIONARY) {
+                handleStationaryEnemyTurn(enemy, target);
+                
+            } else if (role == EnemyRole.RANGED) {
                 handleRangedEnemyTurn(enemy, target);
+                
             } else {
                 handleAggressiveEnemyTurn(enemy, target);
             }
@@ -6209,6 +7319,39 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         startBattlePause(45);
     }
+    
+    //Stationary Enemies like turrets
+    private void handleStationaryEnemyTurn(BattleUnit enemy, BattleUnit target) {
+
+        if (enemy == null || !enemy.isAlive()) {
+            return;
+        }
+
+        if (isGolemSealTrap() && enemy.getName().equals("Stone Golem")) {
+            performGolemPulse(enemy);
+            startBattlePause(45);
+            return;
+        }
+
+        if (target != null && isEnemyInRange(enemy, target)) {
+            performAttack(enemy, target);
+
+            if (!target.isAlive()) {
+                addBattleMessage(target.getName() + " was defeated!");
+            }
+
+            if (allPlayerUnitsDefeated()) {
+                triggerBattleDefeat();
+                return;
+            }
+
+            startBattlePause(45);
+        }
+        
+    }
+    
+    
+    
     
     //Helps with spacing
     private int getDistance(BattleUnit a, BattleUnit b) {
@@ -6401,6 +7544,41 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         return target;
     }
+    
+    
+    //Goblem Specific Attack that targets all but Art for story reasons
+    private void performGolemPulse(BattleUnit golem) {
+
+        addBattleMessage(golem.getName() + " releases a seal pulse!");
+
+        int pulseDamage = 3;
+
+        for (BattleUnit unit : playerBattleUnits) {
+
+            if (unit == null || !unit.isAlive()) {
+                continue;
+            }
+
+            if (isArtUnit(unit) && hasCreationSword) {
+                addBattleMessage(unit.getName() + " is protected by The Creation!");
+                continue;
+            }
+
+            unit.takeDamage(pulseDamage);
+            addBattleMessage(unit.getName() + " took " + pulseDamage + " damage!");
+
+            if (!unit.isAlive()) {
+                addBattleMessage(unit.getName() + " was defeated!");
+            }
+        }
+
+        if (allPlayerUnitsDefeated()) {
+            triggerBattleDefeat();
+        }
+        
+    }
+    
+    
     
     //Skill Attacker for chosen skill
     private void performSkill(BattleUnit attacker, BattleUnit defender) {
@@ -6755,6 +7933,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Counter Attack gives defenders chance to hit back
     private boolean canCounterattack(BattleUnit attacker, BattleUnit defender) {
+    	
+    	//For golem
+    	if (isStoneGolem(defender)) {
+            return false;
+        }
     	
     	return isEnemyInRange(defender, attacker);
     	
@@ -7133,6 +8316,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Dialogue prevents getting stuck 
     private void drawDialogue(Graphics g) {
     	
+    	if (showingRuinsExteriorScene) {
+    	    drawRuinsExterior(g);
+    	    return;
+    	}
+    	
     	if (previousState == GameState.BATTLE) {
             drawBattle(g);
         }
@@ -7355,6 +8543,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
             writer.write("taliTemporaryAlly=" + taliTemporaryAlly + "\n");
             writer.write("taliRecruited=" + taliRecruited + "\n");
+            
+            /*
+             * Chapter 2 Saves
+             */
+            writer.write("chapterTwoStep=" + chapterTwoStep + "\n");
+            writer.write("ruinsJobUnlocked=" + ruinsJobUnlocked + "\n");
+            
+            writer.write("chapterTwoStep=" + chapterTwoStep + "\n");
+            writer.write("ruinsJobUnlocked=" + ruinsJobUnlocked + "\n");
+            
+            writer.write("williamRecruited=" + williamRecruited + "\n");
 
             //Deletes Old Hard code in favor of calling 
             writer.write("partyCount=" + partyMembers.size() + "\n");
@@ -7540,6 +8739,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("taliRecruited")) {
                     taliRecruited = Boolean.parseBoolean(value);
+                }
+                //Chapter 2 Loads
+                else if (key.equals("chapterTwoStep")) { 
+                    chapterTwoStep = Integer.parseInt(value);
+                }
+                else if (key.equals("ruinsJobUnlocked")) {
+                    ruinsJobUnlocked = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("chapterTwoStep")) {
+                    chapterTwoStep = Integer.parseInt(value);
+                }
+                else if (key.equals("ruinsJobUnlocked")) {
+                    ruinsJobUnlocked = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("williamRecruited")) {
+                    williamRecruited = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -7779,6 +8994,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 recruitTali();
             }
             
+            if (williamRecruited && getPartyMemberById("william") == null) {
+                williamRecruited = false;
+                recruitWilliam();
+            }
+            
             currentMap = overworldGameMap;
             currentState = GameState.OVERWORLD;
             
@@ -7813,6 +9033,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         return null;
         
+    }
+    
+    private boolean isArtUnit(BattleUnit unit) {
+        return unit != null && unit.getName().contains("Art");
     }
     
     //method helps apply leader ID when saving and updates them
@@ -7864,13 +9088,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (member.getEquippedWeapon() != null) {
             writer.write("party" + index + "EquippedWeapon=" + member.getEquippedWeapon().getId() + "\n");
         }
+        
     }
+    
     
     //keys need to be pressed for movement
     @Override
     public void keyPressed(KeyEvent e) {
 
         int code = e.getKeyCode();
+        
+        //title controls
+        if (currentState == GameState.TITLE) {
+
+            if (code == KeyEvent.VK_UP) {
+                titleMenuIndex--;
+
+                if (titleMenuIndex < 0) {
+                    titleMenuIndex = titleMenuOptions.length - 1;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_DOWN) {
+                titleMenuIndex++;
+
+                if (titleMenuIndex >= titleMenuOptions.length) {
+                    titleMenuIndex = 0;
+                }
+
+                repaint();
+                return;
+            }
+
+            if (code == KeyEvent.VK_ENTER) {
+                handleTitleMenuSelection();
+                repaint();
+                return;
+            }
+
+            return;
+        }
+        
+        if (currentState == GameState.CONTROLS) {
+
+            if (code == KeyEvent.VK_ESCAPE || code == KeyEvent.VK_ENTER) {
+                currentState = GameState.TITLE;
+                repaint();
+                return;
+            }
+
+            return;
+        }
+        
+        
         
         //no input on transitions
         if (storyTransitionTimer > 0) {
@@ -7891,37 +9164,45 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
-        //Advances Chapters for testing
-        if (code == KeyEvent.VK_C) {
-            advanceStoryChapter(storyChapter + 1);
-
-            if (storyChapter > 7) {
-                storyChapter = 7;
-            }
-
-            repaint();
-            return;
-        }
+        //DEbug code for buttons
         
-        if (code == KeyEvent.VK_P) {
-            startPrologue(); //Will be tied to new game unpon starting the game
-            repaint();
-            return;
-        }
+//        //Advances Chapters for testing
+//        if (code == KeyEvent.VK_C) {
+//            advanceStoryChapter(storyChapter + 1);
+//
+//            if (storyChapter > 7) {
+//                storyChapter = 7;
+//            }
+//
+//            repaint();
+//            return;
+//        }
+//        
+//        if (code == KeyEvent.VK_P) {
+//            startPrologue(); //Will be tied to new game unpon starting the game
+//            repaint();
+//            return;
+//        }
         
 
         
-        //Exploration will delete the above later
-        if (code == KeyEvent.VK_R) {
-            currentMap = ruinsGameMap;
-            currentState = GameState.EXPLORATION;
-
-            player.col = 1;
-            player.row = 8;
-
-            repaint();
-            return;
-        }
+//        //Exploration will delete the above later
+//        if (code == KeyEvent.VK_R) {
+//            currentMap = ruinsGameMap;
+//            currentState = GameState.EXPLORATION;
+//
+//            player.col = 1;
+//            player.row = 8;
+//
+//            repaint();
+//            return;
+//        }
+        
+//      if (code == KeyEvent.VK_1) {
+//      startChapterOne();
+//      repaint();
+//      return;
+//  }
         
         //open status screen
         if (code == KeyEvent.VK_Q) {
@@ -7948,7 +9229,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         
         //opens Camp
-        if (code == KeyEvent.VK_G) {
+        if (code == KeyEvent.VK_F) {
             if (currentState == GameState.OVERWORLD ||
                 currentState == GameState.TOWN ||
                 currentState == GameState.EXPLORATION) {
@@ -7959,9 +9240,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }
         }
         
-        if (code == KeyEvent.VK_1) {
-            startChapterOne();
-            repaint();
+
+        
+        //Title placeholder
+        if (currentState == GameState.ACT_ONE_END) {
+            if (code == KeyEvent.VK_ENTER) {
+                currentState = GameState.TITLE;
+                titleMenuIndex = 0;
+                repaint();
+                return;
+            }
+
             return;
         }
 
@@ -7994,22 +9283,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	    }
                 	}
                 	
-                	//In
-                	if (pendingBattleScenario != null) {
-                        BattleScenario scenarioToLoad = pendingBattleScenario;
-                        pendingBattleScenario = null;
-
-                        loadBattleScenario(scenarioToLoad);
-                        repaint();
-                        return;
-                    }
-                	
-                	//Out
-                	if (pendingReturnToOverworldAfterDialogue) {
-                	    returnToOverworldAfterBattle();
-                	    repaint();
-                	    return;
-                	}
                 	
                 	//Post sword dialogue
                 	if (pendingPrologueReturnHome) {
@@ -8091,13 +9364,101 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	    pendingAdvanceToChapterTwo = false;
 
                 	    advanceStoryChapter(2);
+                	    pendingChapterTwoOpening = true;
 
                 	    currentState = GameState.CAMP;
+
                 	    repaint();
                 	    return;
                 	}
+                	
+                	/*
+                	 * Start Chapter 2
+                	 */
+                	if (pendingChapterTwoOpening) {
+                	    pendingChapterTwoOpening = false;
+                	    startChapterTwoOpening();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingRuinsJobUnlock) {
+                	    pendingRuinsJobUnlock = false;
+                	    unlockChapterTwoRuinsJob();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingMerrenTrapBattle) {
+                	    pendingMerrenTrapBattle = false;
 
+                	    BattleScenario scenario = BattleScenarioLibrary.getScenario("golem_seal_trap");
+
+                	    if (scenario.getIntroDialogue() != null && scenario.getIntroDialogue().length > 0) {
+                	        pendingBattleScenario = scenario;
+                	        startDialogue(scenario.getIntroDialogue(), GameState.EXPLORATION);
+
+                	        repaint();
+                	        return;
+                	    }
+
+                	    loadBattleScenario(scenario);
+                	    repaint();
+                	    return;
+                	}
+                	
+                	//William Saves Team
+                	if (pendingWilliamGolemRescue) {
+                	    pendingWilliamGolemRescue = false;
+                	    performWilliamGolemRescue();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingWilliamRecruitmentScene) {
+                	    pendingWilliamRecruitmentScene = false;
+                	    startWilliamRecruitmentScene();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	//End of Act 1 Chapter 2s
+                	if (pendingActOneEnding) {
+                	    pendingActOneEnding = false;
+                	    startActOneEnding();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	
+                	if (pendingEndActOneTransition) {
+                	    pendingEndActOneTransition = false;
+                	    pendingReturnAfterActOne = true;
+                	    startStoryTransition("End of Act One");
+                	    repaint();
+                	    return;
+                	}
+                	
+                	
+                	
                 	//Skip for Dialogue completion Block
+                	//In
+                	if (pendingBattleScenario != null) {
+                        BattleScenario scenarioToLoad = pendingBattleScenario;
+                        pendingBattleScenario = null;
+
+                        loadBattleScenario(scenarioToLoad);
+                        repaint();
+                        return;
+                    }
+                	
+                	//Out
+                	if (pendingReturnToOverworldAfterDialogue) {
+                	    returnToOverworldAfterBattle();
+                	    repaint();
+                	    return;
+                	}
+                	
                     currentState = previousState;
 
                     if (dialogueNextMap != null) {
@@ -8376,7 +9737,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                         return;
                     }
                 	
-                    currentState = GameState.OVERWORLD;
+                	if (campReturnMap != null) {
+                        currentMap = campReturnMap;
+                    }
+
+                    currentState = campReturnState;
+                    player.col = campReturnCol;
+                    player.row = campReturnRow;
+
                     repaint();
                     return;
                 }

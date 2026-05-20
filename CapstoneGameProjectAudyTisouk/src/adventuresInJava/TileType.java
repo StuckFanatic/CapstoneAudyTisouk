@@ -19,7 +19,8 @@ public enum TileType {
 	EVENT,
 	QUEST_BOARD,
 	LAUNDRY,
-	FLOWER
+	FLOWER,
+	LAVA
 	
 	
 	

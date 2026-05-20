@@ -31,6 +31,10 @@ public class Tile {
 		case STONE_WALL:
 		    passable = false;
 		    break;
+		    
+		case LAVA:
+		    passable = false;
+		    break;
 			
 		default:
 			passable = true;
@@ -209,6 +213,15 @@ public class Tile {
 		    // center
 		    g.setColor(Color.YELLOW);
 		    g.fillOval(x + 24, y + 17, 8, 8);
+		}
+		
+		else if (type == TileType.LAVA) {
+		    g.setColor(new Color(190, 50, 20));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(255, 140, 40));
+		    g.drawLine(x + 4, y + 12, x + tileSize - 4, y + 18);
+		    g.drawLine(x + 4, y + 30, x + tileSize - 4, y + 24);
 		}
 		
 		
