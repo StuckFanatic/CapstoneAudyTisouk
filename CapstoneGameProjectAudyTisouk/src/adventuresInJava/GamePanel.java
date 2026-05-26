@@ -301,11 +301,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean inspectedChapterTwoRelic = false;
     
     //Chapter 2 Golem
-    private boolean pendingMerrenBetrayal = false;
+    private boolean pendingSilasBetrayal = false;
     
-    //Merren trap
-    private boolean pendingMerrenTrapBattle = false;
-    private boolean merrenBetrayalTriggered = false;
+    //Silas trap
+    private boolean pendingSilasTrapBattle = false;
+    private boolean silasBetrayalTriggered = false;
     
     private boolean golemTurn2DialogueShown = false;
     private boolean golemTurn3DialogueShown = false;
@@ -2937,11 +2937,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 new DialogueLine("Art", "The blade surrounded by light.", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Dean", "So your weird sword has cousins.", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Tali", "Or a reputation.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "Old civilizations reused symbols constantly. Swords, suns, crowns, wings. Very dramatic people.",
+                new DialogueLine("Silas", "Old civilizations reused symbols constantly. Swords, suns, crowns, wings. Very dramatic people.",
                         DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("Art", "The Rusty Creation feels warmer here.", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "Thats comforting.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "Comfort is rarely found in old ruins, I'm afraid.",
+                new DialogueLine("Silas", "Comfort is rarely found in old ruins, I'm afraid.",
                         DialogueSide.RIGHT, DialogueFaction.NPC)
             }, GameState.EXPLORATION);
 
@@ -2970,14 +2970,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 		DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Dean", "I love when old ruins start repeating themselves. That always means nothing terrible.",
                         DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Art", "Merren, what is this?", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "A lock, perhaps. Or a warning. Old places like this usually aren't worth it.",
+                new DialogueLine("Art", "Silas, what is this?", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Silas", "A lock, perhaps. Or a warning. Old places like this usually aren't worth it.",
                         DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("Tali", "That wasn't an answer.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "It was a cautious answer.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Silas", "It was a cautious answer.", DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("Art", "The sword is reacting to it.", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "Then maybe William was right.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "William worries professionally. I admire the commitment and boldness Come along now.",
+                new DialogueLine("Silas", "William worries professionally. I admire the commitment and boldness Come along now.",
                         DialogueSide.RIGHT, DialogueFaction.NPC)
             }, GameState.EXPLORATION);
 
@@ -2989,7 +2989,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Relic Pedestal
         if (eventId.equals("chapter2_relic_pedestal")) {
 
-            if (merrenBetrayalTriggered) {
+            if (silasBetrayalTriggered) {
                 startDialogue(new DialogueLine[] {
                     new DialogueLine("Art", "The pedestal is empty now.", DialogueSide.LEFT, DialogueFaction.ALLY),
                     new DialogueLine("Penelope", "I did not like how quickly everything changed here.", DialogueSide.RIGHT, DialogueFaction.ALLY)
@@ -2997,28 +2997,28 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return;
             }
 
-            merrenBetrayalTriggered = true;
+            silasBetrayalTriggered = true;
             inspectedChapterTwoRelic = true;
-            pendingMerrenTrapBattle = true;
+            pendingSilasTrapBattle = true;
 
             startDialogue(new DialogueLine[] {
-                new DialogueLine("Merren Vale", "There it is.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Silas", "There it is.", DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("Dean", "That tiny thing? We came all this way for a shiny rock?", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("Penelope", "Dean, do not call unknown relics shiny rocks.", DialogueSide.RIGHT, DialogueFaction.ALLY),
                 new DialogueLine("Tali", "I am with him. That is a lot of trouble for something I could throw at a wall.",
                         DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Art", "Merren. Wait.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "No need to worry. I know exactly what I am doing.",
+                new DialogueLine("Art", "Silas. Wait.", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Silas", "No need to worry. I know exactly what I am doing.",
                         DialogueSide.RIGHT, DialogueFaction.NPC),
-                new DialogueLine("", "Merren lifts the relic from the pedestal.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("", "Silas lifts the relic from the pedestal.", DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("", "The seal beneath it cracks with a sound like splitting ice.",
                         DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("Penelope", "That was not a good sound.", DialogueSide.RIGHT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "No. But it was a profitable one.", DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Silas", "No. But it was a profitable one.", DialogueSide.RIGHT, DialogueFaction.NPC),
                 new DialogueLine("Dean", "I knew it. Nobody with a fit that clean is trustworthy.", DialogueSide.LEFT, DialogueFaction.ALLY),
-                new DialogueLine("Merren Vale", "Do try to survive. I would hate for reliable guards to go to waste.",
+                new DialogueLine("Silas", "Do try to survive. I would hate for reliable guards to go to waste.",
                         DialogueSide.RIGHT, DialogueFaction.NPC),
-                new DialogueLine("Art", "Merren!", DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "Silas!", DialogueSide.LEFT, DialogueFaction.ALLY),
                 new DialogueLine("", "Stone grinds shut behind him. Heat rises as something wakes beneath the floor. ",
                         DialogueSide.RIGHT, DialogueFaction.NPC)
             }, GameState.EXPLORATION);
@@ -5221,7 +5221,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return "Chapter 2: Old Relic Ruins";
             }
 
-            if (!merrenBetrayalTriggered) {
+            if (!silasBetrayalTriggered) {
                 return "Chapter 2: Relic Chamber";
             }
 
@@ -5280,11 +5280,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         // Chapter 2 / Act One ending arc
-        if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !merrenBetrayalTriggered) {
+        if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !silasBetrayalTriggered) {
             return "Chapter 2: Old Relic Ruins";
         }
 
-        if (storyChapter == 2 && merrenBetrayalTriggered && !williamRecruited) {
+        if (storyChapter == 2 && silasBetrayalTriggered && !williamRecruited) {
             return "Chapter 2: The Broken Seal";
         }
 
@@ -5400,9 +5400,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return "The Golden Sinners crisis has been resolved.";
         }
 
-        // Chapter 2 / Merren arc
-        if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !merrenBetrayalTriggered) {
-            return "Travel to the marked ruins and investigate Merren's relic job.";
+        // Chapter 2 / Silas arc
+        if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !silasBetrayalTriggered) {
+            return "Travel to the marked ruins and investigate Silas's relic job.";
         }
         
         if (currentMap == chapterTwoRuinsGameMap) {
@@ -5411,14 +5411,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return "Explore the ruins and inspect the ancient markings.";
             }
 
-            if (!merrenBetrayalTriggered) {
-                return "Inspect the relic pedestal and keep an eye on Merren.";
+            if (!silasBetrayalTriggered) {
+                return "Inspect the relic pedestal and keep an eye on Silas.";
             }
 
             return "Survive the trap and escape the ruins.";
         }
 
-        if (storyChapter == 2 && merrenBetrayalTriggered && !williamRecruited) {
+        if (storyChapter == 2 && silasBetrayalTriggered && !williamRecruited) {
             return "Survive the seal trap and escape the ruins.";
         }
 
@@ -6056,39 +6056,39 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Art", "Then we keep moving. If something else is spreading, we find where it starts.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
 
-            new DialogueLine("Merren Vale", "A noble intention. Expensive, though.",
+            new DialogueLine("Silas", "A noble intention. Expensive, though.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "WOAH! Who are you and how long were you standing there?",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("", "A small dwarvish man stands before them. The big bellied man had red hair and large moustache."
             		+ "he is wearing typical merchant coveralls.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("Merren Vale", "Long enough to hear the word 'heroes' used with confidence.",
+            new DialogueLine("Silas", "Long enough to hear the word 'heroes' used with confidence.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Tali", "That was his mistake, not ours.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
             
-            new DialogueLine("Merren Vale", "Merren Vale. Merchant, collector, and occasional employer of capable people.",
+            new DialogueLine("Silas", "Silas Vale. Merchant, collector, and occasional employer of capable people.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Art", "What kind of work?",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Merren Vale", "Ruins west of here. Old stone. Older locks. I need guards while I retrieve a relic.",
+            new DialogueLine("Silas", "Ruins west of here. Old stone. Older locks. I need guards while I retrieve a relic.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Penelope", "A relic?",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
-            new DialogueLine("Merren Vale", "A harmless one, if handled by someone who knows its worth.",
+            new DialogueLine("Silas", "A harmless one, if handled by someone who knows its worth.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
 
             new DialogueLine("Dean", "That sentence had at least three suspicious parts.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Tali", "Four.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
-            new DialogueLine("Merren Vale", "You may keep any ordinary salvage. I only require the relic. Payment upfront, half now.",
+            new DialogueLine("Silas", "You may keep any ordinary salvage. I only require the relic. Payment upfront, half now.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
 
             new DialogueLine("Art", "We'll think about it.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Merren Vale", "Of course. But ruins do not stay quiet forever.",
+            new DialogueLine("Silas", "Of course. But ruins do not stay quiet forever.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("", "The dwarven man waddles away with his carraige.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
@@ -6097,7 +6097,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Dean", "Great. New mysterious person.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("William", "William Winters. And if Merren Vale sent you toward those ruins, "
+            new DialogueLine("William", "William Winters. And if Silas Vale sent you toward those ruins, "
             		+ "then you are already closer to danger than you understand.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("", "The man was deshveled and his mage like clothes were dirty. A tome on his hip."
@@ -6110,7 +6110,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Art", "You know something.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("William", "I know enough to say you should be careful where it wakes.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "Where it wakes?", DialogueSide.RIGHT, DialogueFaction.ALLY),
-            new DialogueLine("William", "Ask me again if you survive Merren's job.", DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Ask me again if you survive Silas's job.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Tali", "I hate that answer.", DialogueSide.RIGHT, DialogueFaction.ALLY),
         }, GameState.CAMP);
 
@@ -6127,7 +6127,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         updateStoryWorldState();
 
         startDialogue(new DialogueLine[] {
-            new DialogueLine("", "The ruins Merren mentioned have been marked on your map.",
+            new DialogueLine("", "The ruins Silas mentioned have been marked on your map.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "I still don't trust the guy with the too-clean merchant smile.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
@@ -6154,7 +6154,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         startDialogue(new DialogueLine[] {
             new DialogueLine("", "The ruins wait beyond the old road, half-buried beneath leaning stone and tangled roots.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("Merren Vale", "There you are. I was beginning to think caution had won.",
+            new DialogueLine("Silas", "There you are. I was beginning to think caution had won.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "Caution never wins. It just complains until we arrive.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
@@ -6162,9 +6162,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Tali", "Sometimes.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
-            new DialogueLine("Art", "Enough. We go in, watch each other, and keep our eyes on Merren.",
+            new DialogueLine("Art", "Enough. We go in, watch each other, and keep our eyes on Silas.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Merren Vale", "Wise. Suspicion keeps the blood moving.",
+            new DialogueLine("Silas", "Wise. Suspicion keeps the blood moving.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "I liked him more before he said that.",
                     DialogueSide.LEFT, DialogueFaction.ALLY)
@@ -6325,14 +6325,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "I vote we never take jobs from smiling merchants again.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Tali", "That was your first rule? Mine is to find Merren and break his teeth.",
+            new DialogueLine("Tali", "That was your first rule? Mine is to find Silas and break his teeth.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "Can everyone please breathe before making threats?",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("William", "It's natural you feel that way. Threats can wait until after bleeding stops.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
 
-            new DialogueLine("Art", "Huff...Merren escaped with the relic.",
+            new DialogueLine("Art", "Huff...Silas escaped with the relic.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("William", "Yes. And if that relic is what I believe it is, he will search for more.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
@@ -6377,7 +6377,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Penelope", "It was the closest he has gotten.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
 
-            new DialogueLine("William", "Merren will not stop. If you mean to follow him, you will need someone who understands old magic.",
+            new DialogueLine("William", "Silas will not stop. If you mean to follow him, you will need someone who understands old magic.",
                     DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Art", "Then come with us.",
                     DialogueSide.LEFT, DialogueFaction.ALLY),
@@ -6394,7 +6394,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	pendingEndActOneTransition = true;
 
         startDialogue(new DialogueLine[] {
-            new DialogueLine("", "Merren vanished with the relic before the ruins grew quiet again.", 
+            new DialogueLine("", "Silas vanished with the relic before the ruins grew quiet again.", 
             		DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("", "The party left with more questions than answers, and one more companion than they had entered with.", 
             		DialogueSide.RIGHT, DialogueFaction.NPC),
@@ -6403,7 +6403,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Dean", "Mannnn, I miss the rats.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("Penelope", "I never thought I would agree with that.", DialogueSide.RIGHT, DialogueFaction.ALLY),
 
-            new DialogueLine("Tali", "Whatever Merren stole, people will bleed for it.", DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Whatever Silas stole, people will bleed for it.", DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("William", "Likely.", DialogueSide.RIGHT, DialogueFaction.ALLY),
             new DialogueLine("Dean", "You could have softened that.", DialogueSide.LEFT, DialogueFaction.ALLY),
             new DialogueLine("William", "Unlikely.", DialogueSide.RIGHT, DialogueFaction.ALLY),
@@ -9575,8 +9575,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	    return;
                 	}
                 	
-                	if (pendingMerrenTrapBattle) {
-                	    pendingMerrenTrapBattle = false;
+                	if (pendingSilasTrapBattle) {
+                	    pendingSilasTrapBattle = false;
 
                 	    BattleScenario scenario = BattleScenarioLibrary.getScenario("golem_seal_trap");
 
