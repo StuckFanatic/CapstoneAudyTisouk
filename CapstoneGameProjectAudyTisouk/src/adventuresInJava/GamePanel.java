@@ -1168,11 +1168,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void interactInTown(TileType tile) {
     	
+    	NPC standingNpc = getNpcAt(player.col, player.row);
+
+    	if (standingNpc != null) {
+    	    interactWithNpc(standingNpc);
+    	    return;
+    	}
+
     	NPC adjacentNpc = getAdjacentNpc();
-    	
+
     	if (adjacentNpc != null) {
-    		interactWithNpc(adjacentNpc);
-    		return;
+    	    interactWithNpc(adjacentNpc);
+    	    return;
     	}
     	
     	if (tile == TileType.LAUNDRY) {
@@ -1241,95 +1248,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if (tile == TileType.EXIT) {
 
-    	    if (currentMap == safehouseGameMap) {
-    	        currentMap = overworldGameMap;
-    	        currentState = GameState.OVERWORLD;
+            if (currentMap == safehouseGameMap) {
+                currentMap = overworldGameMap;
+                currentState = GameState.OVERWORLD;
+                player.col = 1;
+                player.row = 7;
+                return;
+            }
 
-    	        // Put player back near the safehouse entrance on the overworld
-    	        player.col = 1;
-    	        player.row = 7;
+            if (currentMap == flowerFieldGameMap) {
+                currentMap = townGameMap;
+                currentState = GameState.TOWN;
+                player.col = 5;
+                player.row = 8;
+                return;
+            }
 
-    	        return;
-    	    }
-
-    	    if (currentMap == flowerFieldGameMap) {
-    	        currentMap = townGameMap;
-    	        currentState = GameState.TOWN;
-
-    	        player.col = 5;
-    	        player.row = 8;
-
-    	        return;
-    	    }
-    	    
-    	    if (currentMap == chapterTwoRuinsGameMap) {
-    	        currentMap = overworldGameMap;
-    	        currentState = GameState.OVERWORLD;
-
-    	        player.col = 6;
-    	        player.row = 8;
-
-    	        return;
-    	    }
-
-    	}
-
-    	if (tile == TileType.EXIT) {
+            if (currentMap == chapterTwoRuinsGameMap) {
+                currentMap = overworldGameMap;
+                currentState = GameState.OVERWORLD;
+                player.col = 6;
+                player.row = 8;
+                return;
+            }
 
             if (storyChapter == 0 && prologueStep == 0) {
                 startPrologueCamp();
                 return;
             }
-            
+
             if (storyChapter == 0 && prologueStep == 4) {
                 completePrologue();
-                return;
-            }
-            
-            if (activeQuestName.equals("Flower Picking") || flowersCompleted) {
-                currentMap = townGameMap;
-                currentState = GameState.TOWN;
-
-                player.col = 5;
-                player.row = 8;
-
-                return;
-            }
-            
-            if (currentMap == safehouseGameMap) {
-                currentMap = overworldGameMap;
-                currentState = GameState.OVERWORLD;
-
-                player.col = 1;
-                player.row = 7;
-
                 return;
             }
 
             System.out.println("There is nowhere to go right now.");
             return;
         }
-    	
-    	if (tile == TileType.FLOWER) {
-    	    collectFlower();
-    	    return;
-    	}
-    	
+
+        if (tile == TileType.FLOWER) {
+            collectFlower();
+            return;
+        }
 
         if (tile == TileType.PEDESTAL) {
             triggerCreationSwordEvent();
             return;
         }
-        
+
         if (tile == TileType.EVENT) {
             Tile currentTile = currentMap.getTiles()[player.col][player.row];
             handleExplorationEvent(currentTile.getEventId());
             return;
         }
-        
-        
 
         System.out.println("There is nothing to inspect here.");
+        
     }
     
     
@@ -3091,7 +3065,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Camping before next part of Prologue
     private void startPrologueCamp() {
 
-        prologueStep = 1;
+    	prologueStep = 1;
+
+        openCampWithReturn(GameState.EXPLORATION, prologueForestGameMap, player.col, player.row);
 
         currentState = GameState.CAMP;
         campMenuIndex = 0;
@@ -5224,6 +5200,59 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (activeQuestName != null && !activeQuestName.isEmpty()) {
             return activeQuestName;
         }
+        
+        //Map Specific Quests
+        if (currentMap == safehouseGameMap) {
+
+            if (!inspectedKingTent) {
+                return "Checkmate: Hidden Camp";
+            }
+
+            if (inspectedKingTent && !taliConfrontationCompleted) {
+                return "Checkmate: The Bandit King";
+            }
+
+            return "Checkmate: Safehouse";
+        }
+        
+        if (currentMap == chapterTwoRuinsGameMap) {
+
+            if (!inspectedChapterTwoMural || !inspectedChapterTwoSeal) {
+                return "Chapter 2: Old Relic Ruins";
+            }
+
+            if (!merrenBetrayalTriggered) {
+                return "Chapter 2: Relic Chamber";
+            }
+
+            return "Chapter 2: The Broken Seal";
+        }
+        
+        //Prologue
+        if (storyChapter == 0) {
+
+            if (prologueStep == 0) {
+                return "Prologue: Forest Path";
+            }
+
+            if (prologueStep == 1) {
+                return "Prologue: Camp";
+            }
+
+            if (prologueStep == 2) {
+                return "Prologue: Ancient Ruins";
+            }
+
+            if (prologueStep == 3) {
+                return "Prologue: The Sword";
+            }
+
+            if (prologueStep == 4) {
+                return "Prologue: Return Home";
+            }
+
+            return "Prologue";
+        }
 
         // Checkmate arc
         if (checkmateStep == 3) {
@@ -5246,7 +5275,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return "Checkmate: Cael's Betrayal";
         }
 
-        if (checkmateStep == 8 && taliRecruited) {
+        if (storyChapter < 2 && checkmateStep == 8 && taliRecruited) {
             return "Checkmate: Complete";
         }
 
@@ -5267,6 +5296,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (banditQuestUnlocked && !banditQuestAccepted && !banditQuestCompleted) {
             return "Urgent Notice";
         }
+        
+        if (banditQuestCompleted && !banditQuestRewardClaimed && checkmateStep < 3) {
+            return "Bandit Trouble: Report Back";
+        }
 
         return "";
     }
@@ -5275,6 +5308,32 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private String getActiveQuestObjectiveText() {
 
         if (activeQuestName != null && !activeQuestName.isEmpty()) {
+        	
+        	if (storyChapter == 0) {
+
+        	    if (prologueStep == 0) {
+        	        return "Follow the forest path and reach the campsite.";
+        	    }
+
+        	    if (prologueStep == 1) {
+        	        return "Rest at camp, then leave when ready.";
+        	    }
+
+        	    if (prologueStep == 2) {
+        	        return "Explore the ancient ruins and inspect the pedestal.";
+        	    }
+
+        	    if (prologueStep == 3) {
+        	        return "Leave the ruins with the Rusty Creation.";
+        	    }
+
+        	    if (prologueStep == 4) {
+        	        return "Follow the forest path back home.";
+        	    }
+
+        	    return "Continue the prologue.";
+        	}
+        	
 
             if (activeQuestName.equals("Cellar Rats")) {
                 return "Clear the tavern cellar.";
@@ -5307,6 +5366,27 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (checkmateStep == 4 && safehouseUnlocked) {
             return "Investigate the hidden camp west of the old road.";
         }
+        
+        if (currentMap == safehouseGameMap) {
+
+            if (!inspectedSafehouseChildren || 
+                !inspectedSafehouseDoctor || 
+                !inspectedSafehouseSupplies || 
+                !inspectedSafehouseOrders) {
+
+                return "Explore the hidden camp and inspect what the Golden Sinners are protecting.";
+            }
+
+            if (!inspectedKingTent) {
+                return "Search deeper in the camp and inspect the King's tent.";
+            }
+
+            if (inspectedKingTent && !taliConfrontationCompleted) {
+                return "Face the person known as the Bandit King.";
+            }
+
+            return "Leave the safehouse and continue the investigation.";
+        }
 
         if (checkmateStep == 5) {
             return "Search the safehouse for the King's tent.";
@@ -5316,13 +5396,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return "Confront Cael and recover what he stole.";
         }
 
-        if (checkmateStep == 8 && taliRecruited) {
+        if (storyChapter < 2 && checkmateStep == 8 && taliRecruited) {
             return "The Golden Sinners crisis has been resolved.";
         }
 
         // Chapter 2 / Merren arc
         if (storyChapter == 2 && ruinsJobUnlocked && chapterTwoStep == 2 && !merrenBetrayalTriggered) {
             return "Travel to the marked ruins and investigate Merren's relic job.";
+        }
+        
+        if (currentMap == chapterTwoRuinsGameMap) {
+
+            if (!inspectedChapterTwoMural || !inspectedChapterTwoSeal) {
+                return "Explore the ruins and inspect the ancient markings.";
+            }
+
+            if (!merrenBetrayalTriggered) {
+                return "Inspect the relic pedestal and keep an eye on Merren.";
+            }
+
+            return "Survive the trap and escape the ruins.";
         }
 
         if (storyChapter == 2 && merrenBetrayalTriggered && !williamRecruited) {
@@ -5336,6 +5429,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         // Urgent Notice before Bandit Trouble is accepted
         if (banditQuestUnlocked && !banditQuestAccepted && !banditQuestCompleted) {
             return "Read the urgent notice and speak with the Village Elder.";
+        }
+        
+        if (banditQuestCompleted && !banditQuestRewardClaimed && checkmateStep < 3) {
+            return "Return to town and report the bandit attack to the Village Elder.";
         }
 
         return "No active request.";
@@ -6377,6 +6474,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	return null;
     }
     
+    
+    //NPC interaction more forgiving
+    private NPC getNpcAt(int col, int row) {
+
+        for (NPC npc : townNpcs) {
+            if (npc.getCol() == col && npc.getRow() == row) {
+                return npc;
+            }
+        }
+
+        return null;
+    }
+    
     //NPC interaction 
     private void interactWithNpc(NPC npc) {
 
@@ -6827,15 +6937,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     
     //highlights the target the users cursor is on
+    //Highlights all targets and hover colors over selected target
     private void drawTargetHighlight(Graphics g) {
     	
-    	if (!battleTargetSelectOpen || availableTargets.isEmpty()) return;
-    	
-    	BattleUnit target = availableTargets.get(currentTargetIndex);
-    	
-    	g.setColor(Color.ORANGE);
-    	g.drawRect(target.getCol() * tileSize, target.getRow() * tileSize, tileSize, tileSize);
-    	g.drawRect(target.getCol() * tileSize + 1, target.getRow() * tileSize + 1, tileSize - 2, tileSize - 2);
+    	if ((!battleTargetSelectOpen && !battleSkillTargetSelectOpen) || availableTargets.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < availableTargets.size(); i++) {
+
+            BattleUnit target = availableTargets.get(i);
+
+            if (target == null || !target.isAlive()) {
+                continue;
+            }
+
+            int x = target.getCol() * tileSize;
+            int y = target.getRow() * tileSize;
+
+            if (i == currentTargetIndex) {
+                g.setColor(Color.YELLOW);
+                g.drawRect(x, y, tileSize, tileSize);
+                g.drawRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
+            } else if (battleSkillTargetSelectOpen) {
+                g.setColor(Color.MAGENTA);
+                g.drawRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+            } else {
+                g.setColor(Color.ORANGE);
+                g.drawRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+            }
+        }
     }
     
     //Helper to gather enemies within range of units
@@ -9220,43 +9351,44 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         //DEbug code for buttons
         
-//        //Advances Chapters for testing
-//        if (code == KeyEvent.VK_C) {
-//            advanceStoryChapter(storyChapter + 1);
-//
-//            if (storyChapter > 7) {
-//                storyChapter = 7;
-//            }
-//
-//            repaint();
-//            return;
-//        }
-//        
-//        if (code == KeyEvent.VK_P) {
-//            startPrologue(); //Will be tied to new game unpon starting the game
-//            repaint();
-//            return;
-//        }
+        //Advances Chapters for testing
+        if (code == KeyEvent.VK_C) {
+            advanceStoryChapter(storyChapter + 1);
+
+            if (storyChapter > 7) {
+                storyChapter = 7;
+            }
+
+            repaint();
+            return;
+        }
+        
+        if (code == KeyEvent.VK_P) {
+            startPrologue(); //Will be tied to new game unpon starting the game
+            repaint();
+            return;
+        }
         
 
         
-//        //Exploration will delete the above later
-//        if (code == KeyEvent.VK_R) {
-//            currentMap = ruinsGameMap;
-//            currentState = GameState.EXPLORATION;
-//
-//            player.col = 1;
-//            player.row = 8;
-//
-//            repaint();
-//            return;
-//        }
+        //Exploration will delete the above later
+        if (code == KeyEvent.VK_R) {
+            currentMap = ruinsGameMap;
+            currentState = GameState.EXPLORATION;
+
+            player.col = 1;
+            player.row = 8;
+
+            repaint();
+            return;
+        }
         
-//      if (code == KeyEvent.VK_1) {
-//      startChapterOne();
-//      repaint();
-//      return;
-//  }
+        //Skip to chapter 1
+        if (code == KeyEvent.VK_1) {
+        	startChapterOne();
+        	repaint();
+        	return;
+        }
         
         //open status screen
         if (code == KeyEvent.VK_Q) {
@@ -9784,14 +9916,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 if (selectedOption.equals("Leave")) {
                 	
+                	System.out.println("Leaving camp to state: " + campReturnState);
+
+                	if (campReturnMap != null) {
+                	    System.out.println("Leaving camp to map: " + campReturnMap.getMapName());
+                	}
+                	
                 	//Just for the prologue
-                	if (storyChapter == 0 && prologueStep == 1) {
+                	campBondMenuOpen = false;
+                    campBondIndex = 0;
+
+                    // Scripted prologue camp: leaving camp sends the party to the ruins
+                    if (storyChapter == 0 && prologueStep == 1 && campReturnState == GameState.EXPLORATION) {
                         enterPrologueRuins();
                         repaint();
                         return;
                     }
-                	
-                	if (campReturnMap != null) {
+
+                    if (campReturnMap != null) {
                         currentMap = campReturnMap;
                     }
 
@@ -10768,6 +10910,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	
         	//move only if a unit was selected
         	if (battleUnitSelected && selectedBattleUnit != null) {
+        		
+        		//Movement checker
+        		if (battleUnitSelected &&
+        			    selectedBattleUnit != null &&
+        			    code == KeyEvent.VK_ENTER &&
+        			    battleCursorCol == selectedBattleUnit.getCol() &&
+        			    battleCursorRow == selectedBattleUnit.getRow() &&
+        			    !battleActionMenuOpen &&
+        			    !battleAttackPreviewOpen &&
+        			    !battleTargetSelectOpen &&
+        			    !battleSkillTargetSelectOpen) {
+
+        			    battleActionMenuOpen = true;
+        			    battleMenuIndex = 0;
+        			    repaint();
+        			    return;
+        			}
+        		
         		
         		//Enter confirms movement
         		if (code == KeyEvent.VK_ENTER) {
