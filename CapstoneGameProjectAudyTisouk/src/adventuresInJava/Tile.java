@@ -35,6 +35,17 @@ public class Tile {
 		case LAVA:
 		    passable = false;
 		    break;
+		    
+		case DEAD_FOREST:
+		    passable = false;
+		    break;
+		   
+		case CORRUPTED_WATER:
+		    passable = false;
+		    break;
+		    
+		    
+		
 			
 		default:
 			passable = true;
@@ -215,6 +226,7 @@ public class Tile {
 		    g.fillOval(x + 24, y + 17, 8, 8);
 		}
 		
+		
 		else if (type == TileType.LAVA) {
 		    g.setColor(new Color(190, 50, 20));
 		    g.fillRect(x, y, tileSize, tileSize);
@@ -224,6 +236,43 @@ public class Tile {
 		    g.drawLine(x + 4, y + 30, x + tileSize - 4, y + 24);
 		}
 		
+		else if (type == TileType.DEAD_GRASS) {
+		    g.setColor(new Color(85, 78, 55));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(55, 48, 35));
+		    g.drawLine(x + 8, y + 34, x + 20, y + 20);
+		    g.drawLine(x + 25, y + 38, x + 35, y + 18);
+		}
+		
+		else if (type == TileType.DEAD_FOREST) {
+		    g.setColor(new Color(45, 42, 38));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(70, 62, 55));
+		    g.fillRect(x + 20, y + 12, 8, 28);
+		    g.drawLine(x + 24, y + 18, x + 12, y + 8);
+		    g.drawLine(x + 24, y + 20, x + 36, y + 10);
+		}
+		
+		else if (type == TileType.CRACKED_ROAD) {
+		    g.setColor(new Color(95, 85, 70));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(35, 30, 25));
+		    g.drawLine(x + 8, y + 10, x + 20, y + 22);
+		    g.drawLine(x + 20, y + 22, x + 14, y + 36);
+		    g.drawLine(x + 28, y + 8, x + 34, y + 20);
+		}
+		
+		else if (type == TileType.CORRUPTED_WATER) {
+		    g.setColor(new Color(55, 35, 75));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(95, 65, 130));
+		    g.drawLine(x + 4, y + 16, x + tileSize - 4, y + 12);
+		    g.drawLine(x + 4, y + 30, x + tileSize - 4, y + 34);
+		}
 		
 		
 		

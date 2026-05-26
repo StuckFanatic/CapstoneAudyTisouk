@@ -20,7 +20,12 @@ public enum TileType {
 	QUEST_BOARD,
 	LAUNDRY,
 	FLOWER,
-	LAVA
+	LAVA,
+	
+	DEAD_GRASS,
+    DEAD_FOREST,
+    CRACKED_ROAD,
+    CORRUPTED_WATER
 	
 	
 	

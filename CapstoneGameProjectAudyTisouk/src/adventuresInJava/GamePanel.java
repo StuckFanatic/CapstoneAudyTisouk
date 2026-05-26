@@ -95,6 +95,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     //Over world Map
     Tile[][] worldMap;
+    
+    // Act Two Corrupted Overworld
+    private Tile[][] actTwoWorldMap;
+    private GameMap actTwoWorldGameMap;
       
     //Current Map
     private GameMap currentMap;
@@ -326,6 +330,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean pendingReturnAfterActOne = false;
     
     
+    /*
+     * ACT TWO / CHAPTER 3
+     */
+
+    private int chapterThreeStep = 0;
+
+    private boolean pendingActTwoOpening = false;
+    
+    private boolean pendingMoveToActTwoWorld = false;
+    
+    private boolean pendingChapterThreeOpening = false;
+    private boolean pendingCorruptedRoadMission = false;
+    private boolean pendingSilasTicketScene = false;
+
+    private boolean corruptedRoadCompleted = false;
+    private boolean carnalvalUnlocked = false;
+    
+    
     
 
     	
@@ -528,6 +550,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         generateFlowerFieldMap();
         generateSafehouseMap();
         generateChapterTwoRuinsMap();
+        generateActTwoWorld();
         
        
     }
@@ -605,6 +628,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	//Flowers
     	else if (type == TileType.FLOWER) {
     	    return "Medicinal flowers. Press ENTER to pick them.";
+    	}
+    	
+    	//Dead Grass
+    	else if (type == TileType.DEAD_GRASS) {
+    	    return "Dry, colorless grass. It crunches underfoot like old paper.";
+    	}
+    	//Dead Trees
+    	else if (type == TileType.DEAD_FOREST) {
+    	    return "A dead forest. The trees bend inward like they are listening.";
+    	}
+    	//Old Roads
+    	else if (type == TileType.CRACKED_ROAD) {
+    	    return "A cracked road stained by gray rain.";
+    	}
+    	
+    	//Evil Water
+    	else if (type == TileType.CORRUPTED_WATER) {
+    	    return "Dark water with a violet sheen. Best not to touch it.";
     	}
     	
     	return "";
@@ -694,6 +735,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}	
     	
     }
+    
+    
+    
+    //Act 2 Region Map
+    private void generateActTwoWorld() {
+
+        actTwoWorldMap = new Tile[10][10];
+
+        int[][] layout = {
+            {3,3,3,3,1,1,3,3,3,3},
+            {3,0,0,2,2,2,0,0,4,3},
+            {3,0,1,1,2,0,0,1,0,3},
+            {3,0,0,1,2,2,0,1,0,3},
+            {3,1,0,0,0,2,0,0,0,3},
+            {3,1,1,0,0,2,2,1,0,3},
+            {3,0,0,0,1,1,2,0,0,3},
+            {3,0,1,0,0,0,2,0,1,3},
+            {3,0,0,0,1,0,2,0,0,3},
+            {3,3,3,3,3,3,3,3,3,3}
+        };
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    actTwoWorldMap[col][row] = new Tile(TileType.DEAD_GRASS);
+                }
+                else if (value == 1) {
+                    actTwoWorldMap[col][row] = new Tile(TileType.DEAD_FOREST);
+                }
+                else if (value == 2) {
+                    actTwoWorldMap[col][row] = new Tile(TileType.CRACKED_ROAD);
+                }
+                else if (value == 3) {
+                    actTwoWorldMap[col][row] = new Tile(TileType.CORRUPTED_WATER);
+                }
+                else if (value == 4) {
+                    Tile eventTile = new Tile(TileType.EVENT);
+                    eventTile.setEventId("act2_camp_marker");
+                    actTwoWorldMap[col][row] = eventTile;
+                }
+            }
+        }
+
+        actTwoWorldGameMap = new GameMap(actTwoWorldMap, "The Withered Roads");
+
+        updateActTwoWorldQuestTiles();
+    }
+    
+    
+    
+    
+    
+    
     
     //Map for Town
     private void generateTown() {
@@ -1135,6 +1232,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    
     	    if ("enter_chapter_two_ruins".equals(currentTile.getEventId())) {
     	        enterChapterTwoRuins();
+    	        return;
+    	    }
+    	    
+    	    if ("enter_carnalval_gate".equals(currentTile.getEventId())) {
+    	        enterCarnalvalGate();
     	        return;
     	    }
     	    
@@ -1804,12 +1906,59 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         
         
-        
-        
-        
+    }
+    
+    
+    
+    //Act 2 
+    private void updateActTwoWorldQuestTiles() {
+
+        if (actTwoWorldGameMap == null) {
+            return;
+        }
+
+        Tile[][] tiles = actTwoWorldGameMap.getTiles();
+
+        int witheredRoadCol = 6;
+        int witheredRoadRow = 5;
+
+        int carnalvalGateCol = 8;
+        int carnalvalGateRow = 1;
+
+        // Withered Road mission
+        if (storyChapter == 3 && chapterThreeStep == 2 && !corruptedRoadCompleted) {
+            Tile witheredRoadTile = new Tile(TileType.ENEMY);
+            witheredRoadTile.setScenarioId("withered_road");
+            tiles[witheredRoadCol][witheredRoadRow] = witheredRoadTile;
+        } else {
+            if (tiles[witheredRoadCol][witheredRoadRow] != null &&
+                tiles[witheredRoadCol][witheredRoadRow].getType() == TileType.ENEMY &&
+                "withered_road".equals(tiles[witheredRoadCol][witheredRoadRow].getScenarioId())) {
+
+                tiles[witheredRoadCol][witheredRoadRow] = new Tile(TileType.CRACKED_ROAD);
+            }
+        }
+
+        // Carnalval gate later when unlocked
+        if (carnalvalUnlocked) {
+            Tile carnalvalTile = new Tile(TileType.EVENT);
+            carnalvalTile.setEventId("enter_carnalval_gate");
+            tiles[carnalvalGateCol][carnalvalGateRow] = carnalvalTile;
+        } else {
+            if (tiles[carnalvalGateCol][carnalvalGateRow] != null &&
+                tiles[carnalvalGateCol][carnalvalGateRow].getType() == TileType.EVENT &&
+                "enter_carnalval_gate".equals(tiles[carnalvalGateCol][carnalvalGateRow].getEventId())) {
+
+                tiles[carnalvalGateCol][carnalvalGateRow] = new Tile(TileType.DEAD_GRASS);
+            }
+            
+        }
         
     }
 
+    
+    
+    
     //This is where the tile lines start
     @Override
     public void paintComponent(Graphics g) {
@@ -3351,13 +3500,23 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 	//Transition to next part
 	private void finishStoryTransition() {
 
+		//act 1
 	    if (pendingChapterOneStart) {
 	        pendingChapterOneStart = false;
 	        storyTransitionText = "";
 	        startChapterOne();
 	        return;
 	    }
+	    
+	    //Act 2
+	    if (pendingActTwoOpening) {
+	        pendingActTwoOpening = false;
+	        storyTransitionText = "";
+	        startChapterThreeOpening();
+	        return;
+	    }
 
+	    
 	    if (pendingReturnAfterActOne) {
 	    	pendingReturnAfterActOne = false;
 	        storyTransitionText = "";
@@ -4990,7 +5149,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         if (overworldGameMap == null) return;
 
+        updateTownQuestTiles(); //also added
         updateOverworldQuestTiles();
+        updateActTwoWorldQuestTiles();
 
         // Future story-based world changes will go here below as I see fit
     }
@@ -5300,6 +5461,31 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         if (banditQuestCompleted && !banditQuestRewardClaimed && checkmateStep < 3) {
             return "Bandit Trouble: Report Back";
         }
+        
+        //Chapter 3 Act 2
+        if (storyChapter == 3) {
+
+            if (chapterThreeStep == 1) {
+                return "Chapter 3: The Corruption Trail";
+            }
+
+            if (chapterThreeStep == 2 && !corruptedRoadCompleted) {
+                return "Chapter 3: Withered Road";
+            }
+
+            if (chapterThreeStep == 3 && !carnalvalUnlocked) {
+                return "Chapter 3: The Invitation";
+            }
+
+            if (carnalvalUnlocked) {
+                return "Chapter 3: Carnalval Gates";
+            }
+
+            return "Chapter 3";
+        }
+        
+        
+        
 
         return "";
     }
@@ -5433,6 +5619,30 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (banditQuestCompleted && !banditQuestRewardClaimed && checkmateStep < 3) {
             return "Return to town and report the bandit attack to the Village Elder.";
+        }
+        
+        
+        //Chapter 3
+        
+        if (storyChapter == 3) {
+
+            if (chapterThreeStep == 1) {
+                return "Rest at camp and discuss the trail of corruption.";
+            }
+
+            if (chapterThreeStep == 2 && !corruptedRoadCompleted) {
+                return "Investigate the withered road where travelers have vanished.";
+            }
+
+            if (chapterThreeStep == 3 && !carnalvalUnlocked) {
+                return "Examine Silas's invitation and decide the party's next move.";
+            }
+
+            if (carnalvalUnlocked) {
+                return "Follow the ticket's path to the Carnalval of Desires.";
+            }
+
+            return "Continue following the corruption trail.";
         }
 
         return "No active request.";
@@ -6454,7 +6664,184 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     
+    /*
+     * Start of ACT 2!!
+     * 
+     */
     
+    private void startActTwo() {
+
+        storyChapter = 3;
+        chapterThreeStep = 0;
+
+        pendingActTwoOpening = true;
+
+        startStoryTransition("Several Months Later...");
+        
+    }
+    
+    //Chapter 3
+    private void startChapterThreeOpening() {
+
+        chapterThreeStep = 1;
+
+        openCampWithReturn(GameState.OVERWORLD, overworldGameMap, 3, 5);
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "For months, the party followed every rumor of Silas Vale.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "They guarded caravans, cleared roads, chased false sightings, "
+            		+ "and helped villages that seemed weaker by the week.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "They found wilted fields beneath grey rain. They found animals twisted into things they no longer recognized.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "They found stories of a smiling merchant. But never Silas himself.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Dean", "That makes four caravans saved, two bridges cleared, and one extremely rude weregoat defeated.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "It wasn't a goat.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "It had horns and hated me. Close enough.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("Penelope", "The caravan driver is still shaking when I left. He should be okay within the week.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "He had just been chased by antlered abomination. I would shake too.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "It was more than fear. He kept asking if the rain was watching him.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Art", "We helped them. But we are no closer to Silas.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Roads are getting worse. People are getting desperate. "
+            		+ "That is usually when monsters start wearing more friendly faces.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "A deeply unpleasant image. Also, not inaccurate.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Dean", "So what is the scholarly answer? Ancient curse? Bad weather? Extremely committed mother natures revenge?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "I have a theory.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Is it comforting?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Not really.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("William", "Whatever Silas stole did not create this corruption alone. "
+            		+ "It shaped something already leaking through.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Marrtyme.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Possibly. Or something stirred by the same wound.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Penelope", "Well, we keep arriving after people are already hurt. Is there anything we can do?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "We can keep moving until we arrive sooner.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "That's almost impossible.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Almost is generous.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "...We keep moving.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.CAMP);
+
+        pendingCorruptedRoadMission = true;
+        
+    }
+    
+    
+    private void unlockCorruptedRoadMission() {
+
+    	chapterThreeStep = 2;
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "By morning, another report reached the camp.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Travelers had vanished beyond the eastern border road,"
+            		+ " where the grass had turned gray and the trees no longer carried leaves.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Penelope", "Guys...that is farther than we have gone before.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Good. Means we are finally leaving the same dead ends behind.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "I liked some of those dead ends. One had decent soup.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("William", "The report mentioned music in the rain.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Music?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Possibly. Maybe they misheard.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Tali", "Sounds like bait.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Can we call it a lead instead? Bait makes me feel like the worm.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "If people are missing, we cannot ignore it.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Art", "Then we move east. Carefully.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("", "The party leaves the familiar roads behind and follows the corruption east.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.CAMP);
+
+        pendingMoveToActTwoWorld = true;
+        
+    }
+    
+    
+    private void enterActTwoWorld() {
+
+        currentMap = actTwoWorldGameMap;
+        currentState = GameState.OVERWORLD;
+
+        player.col = 1;
+        player.row = 8;
+
+        movementLeft = maxMovement;
+
+        updateActTwoWorldQuestTiles();
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "The eastern roads stretch beneath a sky the color of old ash.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Dead grass bends without wind. Far ahead, the road cracks into the withered region.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "Well. This place has a welcoming amount of awful.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Keep your weapon close.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "And your expectations low.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "We find the missing travelers first.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY)
+        }, GameState.OVERWORLD);
+        
+    }
+    
+    
+    //Carnival Enter
+    private void enterCarnalvalGate() {
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "The road bends toward lights that should not fit beneath the trees.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Somewhere ahead, music plays without a source.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("Dean", "I know this is bad, but I am a little curious.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "That is how most die if you didn't know.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY)
+        }, GameState.OVERWORLD);
+		
+    }
     
     
     
@@ -8740,6 +9127,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
             writer.write("williamRecruited=" + williamRecruited + "\n");
 
+            /*
+             * ACT 2 CHAPTER 3
+             */
+            
+            writer.write("chapterThreeStep=" + chapterThreeStep + "\n");
+            writer.write("corruptedRoadCompleted=" + corruptedRoadCompleted + "\n");
+            writer.write("carnalvalUnlocked=" + carnalvalUnlocked + "\n");
+            
+            
+            
+            
+
             //Deletes Old Hard code in favor of calling 
             writer.write("partyCount=" + partyMembers.size() + "\n");
 
@@ -8940,6 +9339,16 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("williamRecruited")) {
                     williamRecruited = Boolean.parseBoolean(value);
+                }
+                //Act2Chapter3
+                else if (key.equals("chapterThreeStep")) {
+                    chapterThreeStep = Integer.parseInt(value);
+                }
+                else if (key.equals("corruptedRoadCompleted")) {
+                    corruptedRoadCompleted = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("carnalvalUnlocked")) {
+                    carnalvalUnlocked = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -9383,11 +9792,18 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return;
         }
         
-        //Skip to chapter 1
+        //Skip to Act 1
         if (code == KeyEvent.VK_1) {
         	startChapterOne();
         	repaint();
         	return;
+        }
+        
+        //Skip to Act 2 
+        if (code == KeyEvent.VK_2) {
+            startActTwo();
+            repaint();
+            return;
         }
         
         //open status screen
@@ -9624,6 +10040,24 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	    repaint();
                 	    return;
                 	}
+                	
+                	//ACT 2 Chapter 3
+                	
+                	if (pendingCorruptedRoadMission) {
+                	    pendingCorruptedRoadMission = false;
+                	    unlockCorruptedRoadMission();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	if (pendingMoveToActTwoWorld) {
+                	    pendingMoveToActTwoWorld = false;
+                	    enterActTwoWorld();
+                	    repaint();
+                	    return;
+                	}
+                	
+                	
                 	
                 	
                 	
