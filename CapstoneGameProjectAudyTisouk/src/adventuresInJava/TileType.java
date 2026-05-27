@@ -22,10 +22,20 @@ public enum TileType {
 	FLOWER,
 	LAVA,
 	
+	//Dead Lands
 	DEAD_GRASS,
     DEAD_FOREST,
     CRACKED_ROAD,
-    CORRUPTED_WATER
+    CORRUPTED_WATER,
+    
+    //Carnival
+    CARNIVAL_FLOOR,
+    CARNIVAL_PATH,
+    CARNIVAL_TENT,
+    CARNIVAL_BOOTH,
+    CARNIVAL_GATE,
+    CARNIVAL_STAGE,
+    CARNIVAL_LIGHTS
 	
 	
 	

@@ -44,6 +44,22 @@ public class Tile {
 		    passable = false;
 		    break;
 		    
+		case CARNIVAL_TENT:
+		    passable = false;
+		    break;
+		    
+		case CARNIVAL_BOOTH:
+		    passable = false;
+		    break;
+		    
+		case CARNIVAL_GATE:
+		    passable = false;
+		    break;
+		    
+		case CARNIVAL_STAGE:
+		    passable = false;
+		    break;
+		    
 		    
 		
 			
@@ -272,6 +288,96 @@ public class Tile {
 		    g.setColor(new Color(95, 65, 130));
 		    g.drawLine(x + 4, y + 16, x + tileSize - 4, y + 12);
 		    g.drawLine(x + 4, y + 30, x + tileSize - 4, y + 34);
+		}
+		
+		else if (type == TileType.CARNIVAL_FLOOR) {
+			g.setColor(new Color(115, 70, 155));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    // Whimsical diagonal pattern
+		    g.setColor(new Color(145, 90, 190));
+		    g.drawLine(x, y + tileSize - 8, x + tileSize, y + 8);
+
+		    g.setColor(new Color(205, 155, 80));
+		    g.drawOval(x + 8, y + 8, 8, 8);
+
+		    g.setColor(new Color(220, 95, 150));
+		    g.drawOval(x + 28, y + 26, 7, 7);
+
+		    g.setColor(new Color(75, 35, 105));
+		    g.drawRect(x, y, tileSize, tileSize);
+		}
+		
+		else if (type == TileType.CARNIVAL_PATH) {
+			g.setColor(new Color(185, 125, 55));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(245, 205, 95));
+		    g.drawLine(x + 4, y + 10, x + tileSize - 4, y + 12);
+		    g.drawLine(x + 4, y + 28, x + tileSize - 4, y + 32);
+
+		    g.setColor(new Color(120, 55, 35));
+		    g.drawRect(x, y, tileSize, tileSize);
+		}
+		
+		else if (type == TileType.CARNIVAL_TENT) {
+			g.setColor(new Color(95, 15, 55));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(210, 170, 65));
+		    g.fillPolygon(
+		        new int[] {x + tileSize / 2, x + 6, x + tileSize - 6},
+		        new int[] {y + 4, y + tileSize - 8, y + tileSize - 8},
+		        3
+		    );
+
+		    g.setColor(new Color(35, 10, 25));
+		    g.drawRect(x, y, tileSize, tileSize);
+		}
+		
+		else if (type == TileType.CARNIVAL_BOOTH) {
+			g.setColor(new Color(130, 40, 80));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(235, 190, 75));
+		    g.fillRect(x + 5, y + 5, tileSize - 10, 8);
+
+		    g.setColor(new Color(220, 65, 85));
+		    g.fillRect(x + 8, y + 16, tileSize - 16, tileSize - 22);
+
+		    g.setColor(new Color(35, 10, 25));
+		    g.drawRect(x, y, tileSize, tileSize);
+		}
+		
+		else if (type == TileType.CARNIVAL_GATE) {
+		    g.setColor(new Color(35, 20, 35));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(230, 190, 80));
+		    g.drawRect(x + 6, y + 6, tileSize - 12, tileSize - 12);
+		    g.drawLine(x + 6, y + 6, x + tileSize - 6, y + tileSize - 6);
+		}
+		
+		else if (type == TileType.CARNIVAL_STAGE) {
+		    g.setColor(new Color(60, 20, 25));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(200, 160, 70));
+		    g.drawRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+		}
+		
+		else if (type == TileType.CARNIVAL_LIGHTS) {
+			g.setColor(new Color(45, 20, 70));
+		    g.fillRect(x, y, tileSize, tileSize);
+
+		    g.setColor(new Color(250, 220, 95));
+		    g.fillOval(x + 16, y + 12, 14, 14);
+
+		    g.setColor(new Color(180, 50, 110));
+		    g.fillOval(x + 8, y + 28, 10, 10);
+
+		    g.setColor(new Color(45, 20, 70));
+		    g.drawRect(x, y, tileSize, tileSize);
 		}
 		
 		

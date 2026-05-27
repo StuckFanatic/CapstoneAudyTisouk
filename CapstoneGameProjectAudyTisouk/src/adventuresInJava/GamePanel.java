@@ -74,6 +74,10 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int whiteFlashTimer = 0;
     private final int WHITE_FLASH_DURATION = 60;
     
+    //Map popup timer
+    private int mapTitleTimer = 0;
+    private final int MAP_TITLE_DURATION = 180;
+    
 	// Story transition overlay
 	private String storyTransitionText = ""; //Stores text on screen
 	private int storyTransitionTimer = 0; 
@@ -348,6 +352,41 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean corruptedRoadCompleted = false;
     private boolean carnalvalUnlocked = false;
     
+    //Carnalval Maps
+    private Tile[][] carnalvalMainMap;
+    private Tile[][] laughingLaneMap;
+    private Tile[][] gildedMidwayMap;
+    private Tile[][] performersRowMap;
+    private Tile[][] guestLodgingMap;
+    private Tile[][] mainStageMap;
+
+    private GameMap carnalvalMainGameMap;
+    private GameMap laughingLaneGameMap;
+    private GameMap gildedMidwayGameMap;
+    private GameMap performersRowGameMap;
+    private GameMap guestLodgingGameMap;
+    private GameMap mainStageGameMap;
+    
+    /*
+     * ACT TWO / CHAPTER 4 - CARNALVAL
+     */
+
+    private int chapterFourStep = 0;
+
+    private boolean carnalvalEntered = false;
+    private boolean pipIntroduced = false;
+    private boolean silasWelcomeSeen = false;
+    private boolean carnalvalExitDiscovered = false;
+    private boolean lodgingUnlocked = false;
+    private boolean mainStageUnlocked = false;
+
+    private boolean laughingLaneVisited = false;
+    private boolean gildedMidwayVisited = false;
+    private boolean performersRowVisited = false;
+    private boolean guestLodgingVisited = false;
+    
+    
+    
     
     
     
@@ -559,8 +598,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         generateSafehouseMap();
         generateChapterTwoRuinsMap();
         generateActTwoWorld();
+        generateCarnalvalMaps();
         
        
+    }
+    
+    private void generateCarnalvalMaps() {
+
+        generateCarnalvalMainMap();
+        generateLaughingLaneMap();
+        generateGildedMidwayMap();
+        generatePerformersRowMap();
+        generateGuestLodgingMap();
+        generateMainStageMap();
     }
     
 
@@ -656,6 +706,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    return "Dark water with a violet sheen. Best not to touch it.";
     	}
     	
+    	else if (type == TileType.CARNIVAL_FLOOR) {
+    	    return "Painted carnival ground. The colors seem too bright for the gray sky.";
+    	}
+    	
+    	else if (type == TileType.CARNIVAL_PATH) {
+    	    return "A worn carnival path lined with strange footprints.";
+    	}
+    	
+    	else if (type == TileType.CARNIVAL_TENT) {
+    	    return "A striped tent. Music hums softly from inside.";
+    	}
+    	
+    	else if (type == TileType.CARNIVAL_BOOTH) {
+    	    return "A carnival booth waiting for guests.";
+    	}
+    	
+    	else if (type == TileType.CARNIVAL_GATE) {
+    	    return "A decorative gate painted red and gold.";
+    	}
+    	
+    	else if (type == TileType.CARNIVAL_STAGE) {
+    	    return "A stage entrance. The final performance is not ready.";
+    	}
+    	
+    	else if (type == TileType.CARNIVAL_LIGHTS) {
+    	    return "Lanterns glow without flame.";
+    	}
+    	
     	return "";
     	
     }
@@ -739,6 +817,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		//helper for over world generation after quests
     		updateTownQuestTiles();
     		updateOverworldQuestTiles();
+    		showMapTitle();
     		
     	}	
     	
@@ -1169,7 +1248,296 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     
+    //ACT 2 CHAPTER 4 CARNIVEL MAPS
+    //MAIN AREA
+    private void generateCarnalvalMainMap() {
+
+        carnalvalMainMap = new Tile[10][10];
+
+        int[][] layout = {
+        	    {0,0,0,0,3,3,0,0,0,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,1,2,0,0,0,0,2,1,0},
+        	    {0,1,0,0,6,6,0,0,1,0},
+        	    {4,1,0,6,1,1,6,0,1,5},
+        	    {4,1,0,6,1,1,6,0,1,5},
+        	    {0,1,0,0,6,6,0,0,1,0},
+        	    {0,1,2,0,0,0,0,2,1,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,0,0,0,7,7,0,0,0,0}
+        	};
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    carnalvalMainMap[col][row] = new Tile(TileType.CARNIVAL_FLOOR);
+                }
+                else if (value == 1) {
+                    carnalvalMainMap[col][row] = new Tile(TileType.CARNIVAL_PATH);
+                }
+                else if (value == 2) {
+                    carnalvalMainMap[col][row] = new Tile(TileType.CARNIVAL_LIGHTS);
+                }
+                else if (value == 3) {
+                    carnalvalMainMap[col][row] = createCarnalvalTransitionTile("to_main_stage");
+                }
+                else if (value == 4) {
+                    carnalvalMainMap[col][row] = createCarnalvalTransitionTile("to_laughing_lane");
+                }
+                else if (value == 5) {
+                    carnalvalMainMap[col][row] = createCarnalvalTransitionTile("to_gilded_midway");
+                }
+                else if (value == 6) {
+                    carnalvalMainMap[col][row] = new Tile(TileType.CARNIVAL_BOOTH);
+                }
+                else if (value == 7) {
+                    carnalvalMainMap[col][row] = createCarnalvalTransitionTile("to_guest_lodging");
+                }
+            }
+        }
+
+        carnalvalMainGameMap = new GameMap(carnalvalMainMap, "Main Carnival Grounds");
+        
+    }
     
+    //Laughing Lanes
+    private void generateLaughingLaneMap() {
+
+        laughingLaneMap = new Tile[10][10];
+
+        int[][] layout = {
+        	    {0,0,0,0,0,0,0,0,0,0},
+        	    {0,2,1,1,1,1,1,2,0,0},
+        	    {0,1,3,0,1,0,3,1,0,0},
+        	    {0,1,0,0,1,0,0,1,0,0},
+        	    {0,1,1,1,1,1,1,1,0,4},
+        	    {0,1,3,0,1,0,3,1,0,4},
+        	    {0,1,0,0,1,0,0,1,0,0},
+        	    {0,2,1,1,1,1,1,2,0,0},
+        	    {0,0,0,0,0,0,0,0,0,0},
+        	    {0,0,0,0,5,5,0,0,0,0}
+        	};
+        
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    laughingLaneMap[col][row] = new Tile(TileType.CARNIVAL_FLOOR);
+                }
+                else if (value == 1) {
+                    laughingLaneMap[col][row] = new Tile(TileType.CARNIVAL_PATH);
+                }
+                else if (value == 2) {
+                    laughingLaneMap[col][row] = new Tile(TileType.CARNIVAL_LIGHTS);
+                }
+                else if (value == 3) {
+                    laughingLaneMap[col][row] = new Tile(TileType.CARNIVAL_BOOTH);
+                }
+                else if (value == 4) {
+                    laughingLaneMap[col][row] = createCarnalvalTransitionTile("to_carnalval_main");
+                }
+                else if (value == 5) {
+                    laughingLaneMap[col][row] = createCarnalvalTransitionTile("to_performers_row");
+                }
+            }
+        }
+
+        laughingLaneGameMap = new GameMap(laughingLaneMap, "Laughing Lane");
+        
+    }
+    
+    //Gilded Midway
+    private void generateGildedMidwayMap() {
+
+        gildedMidwayMap = new Tile[10][10];
+
+        int[][] layout = {
+        	    {0,0,0,0,2,2,0,0,0,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,1,3,0,0,0,0,3,1,0},
+        	    {0,1,0,2,1,1,2,0,1,0},
+        	    {4,1,1,1,1,1,1,1,1,0},
+        	    {4,1,1,2,1,1,2,1,1,0},
+        	    {0,1,0,0,0,0,0,0,1,0},
+        	    {0,1,3,0,0,0,0,3,1,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,0,0,0,5,5,0,0,0,0}
+        	};
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    gildedMidwayMap[col][row] = new Tile(TileType.CARNIVAL_FLOOR);
+                }
+                else if (value == 1) {
+                    gildedMidwayMap[col][row] = new Tile(TileType.CARNIVAL_PATH);
+                }
+                else if (value == 2) {
+                    gildedMidwayMap[col][row] = new Tile(TileType.CARNIVAL_LIGHTS);
+                }
+                else if (value == 3) {
+                    gildedMidwayMap[col][row] = new Tile(TileType.CARNIVAL_TENT);
+                }
+                else if (value == 4) {
+                    gildedMidwayMap[col][row] = createCarnalvalTransitionTile("to_carnalval_main");
+                }
+                else if (value == 5) {
+                    gildedMidwayMap[col][row] = createCarnalvalTransitionTile("to_performers_row");
+                }
+            }
+        }
+
+        gildedMidwayGameMap = new GameMap(gildedMidwayMap, "Gilded Midway");
+    }
+    
+    
+    //Performers Row
+    private void generatePerformersRowMap() {
+
+        performersRowMap = new Tile[10][10];
+
+        int[][] layout = {
+        	    {0,0,0,0,0,0,0,0,0,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,1,3,0,0,0,0,3,1,0},
+        	    {0,1,0,0,2,2,0,0,1,0},
+        	    {4,1,0,3,1,1,3,0,1,5},
+        	    {4,1,0,3,1,1,3,0,1,5},
+        	    {0,1,0,0,2,2,0,0,1,0},
+        	    {0,1,3,0,0,0,0,3,1,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,0,0,0,0,0,0,0,0,0}
+        	};
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    performersRowMap[col][row] = new Tile(TileType.CARNIVAL_FLOOR);
+                }
+                else if (value == 1) {
+                    performersRowMap[col][row] = new Tile(TileType.CARNIVAL_PATH);
+                }
+                else if (value == 2) {
+                    performersRowMap[col][row] = new Tile(TileType.CARNIVAL_LIGHTS);
+                }
+                else if (value == 3) {
+                    performersRowMap[col][row] = new Tile(TileType.CARNIVAL_TENT);
+                }
+                else if (value == 4) {
+                    performersRowMap[col][row] = createCarnalvalTransitionTile("to_laughing_lane");
+                }
+                else if (value == 5) {
+                    performersRowMap[col][row] = createCarnalvalTransitionTile("to_gilded_midway");
+                }
+            }
+        }
+
+        performersRowGameMap = new GameMap(performersRowMap, "Performer’s Row");
+        
+    }
+    
+    //Guest Lodging- Camping Area
+    private void generateGuestLodgingMap() {
+
+        guestLodgingMap = new Tile[10][10];
+
+        int[][] layout = {
+        	    {0,0,0,0,4,4,0,0,0,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,1,3,0,0,0,0,3,1,0},
+        	    {0,1,0,0,2,2,0,0,1,0},
+        	    {0,1,0,3,1,1,3,0,1,0},
+        	    {0,1,0,3,1,1,3,0,1,0},
+        	    {0,1,0,0,2,2,0,0,1,0},
+        	    {0,1,3,0,0,0,0,3,1,0},
+        	    {0,1,1,1,1,1,1,1,1,0},
+        	    {0,0,0,0,0,0,0,0,0,0}
+        	};
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    guestLodgingMap[col][row] = new Tile(TileType.CARNIVAL_FLOOR);
+                }
+                else if (value == 1) {
+                    guestLodgingMap[col][row] = new Tile(TileType.CARNIVAL_PATH);
+                }
+                else if (value == 2) {
+                    guestLodgingMap[col][row] = new Tile(TileType.CARNIVAL_LIGHTS);
+                }
+                else if (value == 3) {
+                    guestLodgingMap[col][row] = new Tile(TileType.CARNIVAL_TENT);
+                }
+                else if (value == 4) {
+                    guestLodgingMap[col][row] = createCarnalvalTransitionTile("to_carnalval_main");
+                }
+            }
+        }
+
+        guestLodgingGameMap = new GameMap(guestLodgingMap, "Guest Lodging");
+    }
+    
+    
+    //Final Act Main Stage
+    //Cannot Be accessed until they unnlock the stage area
+    private void generateMainStageMap() {
+
+        mainStageMap = new Tile[10][10];
+
+        int[][] layout = {
+        	    {0,0,0,0,0,0,0,0,0,0},
+        	    {0,3,3,3,3,3,3,3,3,0},
+        	    {0,3,1,1,1,1,1,1,3,0},
+        	    {0,3,1,2,2,2,2,1,3,0},
+        	    {0,3,1,2,2,2,2,1,3,0},
+        	    {0,3,1,2,2,2,2,1,3,0},
+        	    {0,3,1,2,2,2,2,1,3,0},
+        	    {0,3,1,1,1,1,1,1,3,0},
+        	    {0,0,0,0,0,0,0,0,0,0},
+        	    {0,0,0,0,4,4,0,0,0,0}
+        	};
+
+        for (int col = 0; col < 10; col++) {
+            for (int row = 0; row < 10; row++) {
+
+                int value = layout[row][col];
+
+                if (value == 0) {
+                    mainStageMap[col][row] = new Tile(TileType.CARNIVAL_FLOOR);
+                }
+                else if (value == 1) {
+                    mainStageMap[col][row] = new Tile(TileType.CARNIVAL_PATH);
+                }
+                else if (value == 2) {
+                    mainStageMap[col][row] = new Tile(TileType.CARNIVAL_STAGE);
+                }
+                else if (value == 3) {
+                    mainStageMap[col][row] = new Tile(TileType.CARNIVAL_TENT);
+                }
+                else if (value == 4) {
+                    mainStageMap[col][row] = createCarnalvalTransitionTile("to_carnalval_main");
+                }
+            }
+        }
+
+        mainStageGameMap = new GameMap(mainStageMap, "Main Stage");
+    }
+    
+
     
     
     //Explore tiles method- will add more?
@@ -1197,6 +1565,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    return;
     	}
     	
+    	//Enemy
     	else if (tile == TileType.ENEMY) {
     		
     		Tile currentTile = currentMap.getTiles()[player.col][player.row];
@@ -1224,9 +1593,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	}
     	
+    	//Event
     	else if (tile == TileType.EVENT) {
 
     	    Tile currentTile = currentMap.getTiles()[player.col][player.row];
+    	    
+    	    String eventId = currentTile.getEventId();
+
+    	    if (eventId != null && eventId.startsWith("to_")) {
+    	        handleCarnalvalTransition(eventId);
+    	        return;
+    	    }
 
     	    if ("enter_safehouse".equals(currentTile.getEventId())) {
     	        enterSafehouse();
@@ -1243,7 +1620,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	        return;
     	    }
     	    
+    	    
+    	    
     	}
+    	
+    	
+    	
+    	
     
     	
     	endTurn();
@@ -1294,6 +1677,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	if (tile == TileType.EXIT) {
     		currentMap = overworldGameMap;
+    		showMapTitle();
     		currentState = GameState.OVERWORLD;
     		
     		if (movementLeft <= 0) {
@@ -1327,6 +1711,84 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	}
     }
     
+    //Carnivel Only Event Tile to transition
+    private Tile createCarnalvalTransitionTile(String eventId) {
+
+        Tile tile = new Tile(TileType.EVENT);
+        tile.setEventId(eventId);
+
+        return tile;
+    }
+    
+    //Transitions from map to map in the carnivel chapter here
+    private void handleCarnalvalTransition(String eventId) {
+
+    	if (eventId.equals("to_carnalval_main")) {
+    	    currentMap = carnalvalMainGameMap;
+    	    showMapTitle();
+    	    player.col = 5;
+    	    player.row = 8;
+    	}
+        
+        else if (eventId.equals("to_laughing_lane")) {
+            currentMap = laughingLaneGameMap;
+            showMapTitle();
+            player.col = 8;
+            player.row = 4;
+            laughingLaneVisited = true;
+        }
+        
+        else if (eventId.equals("to_gilded_midway")) {
+            currentMap = gildedMidwayGameMap;
+            showMapTitle();
+            player.col = 1;
+            player.row = 4;
+            gildedMidwayVisited = true;
+        }
+        
+        else if (eventId.equals("to_performers_row")) {
+            currentMap = performersRowGameMap;
+            showMapTitle();
+            player.col = 5;
+            player.row = 1;
+            performersRowVisited = true;
+        }
+        
+        else if (eventId.equals("to_guest_lodging")) {
+            currentMap = guestLodgingGameMap;
+            showMapTitle();
+            player.col = 5;
+            player.row = 1;
+            guestLodgingVisited = true;
+        }
+        
+        else if (eventId.equals("to_main_stage")) {
+
+            if (!mainStageUnlocked) {
+                startDialogue(new DialogueLine[] {
+                    new DialogueLine("", "The Main Stage doors are sealed by red-and-gold chains.",
+                            DialogueSide.RIGHT, DialogueFaction.NPC),
+                    new DialogueLine("", "A painted sign reads: \"Final Performance Not Yet Prepared.\"",
+                            DialogueSide.RIGHT, DialogueFaction.NPC),
+                    new DialogueLine("Dean", "That is either good news or extremely bad news.",
+                            DialogueSide.LEFT, DialogueFaction.ALLY),
+                    new DialogueLine("Tali", "Come on Dean, in this place? Bad.",
+                            DialogueSide.RIGHT, DialogueFaction.ALLY)
+                }, GameState.EXPLORATION);
+                return;
+            }
+
+            currentMap = mainStageGameMap;
+            showMapTitle();
+            player.col = 5;
+            player.row = 8;
+        }
+
+        currentState = GameState.EXPLORATION;
+        movementLeft = maxMovement;
+        repaint();
+    }
+    
     //Campsite
     private void openCamp() {
     	campReturnState = currentState;
@@ -1355,6 +1817,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (currentMap == safehouseGameMap) {
                 currentMap = overworldGameMap;
+                showMapTitle();
                 currentState = GameState.OVERWORLD;
                 player.col = 1;
                 player.row = 7;
@@ -1363,6 +1826,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (currentMap == flowerFieldGameMap) {
                 currentMap = townGameMap;
+                showMapTitle();
                 currentState = GameState.TOWN;
                 player.col = 5;
                 player.row = 8;
@@ -1371,6 +1835,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
             if (currentMap == chapterTwoRuinsGameMap) {
                 currentMap = overworldGameMap;
+                showMapTitle();
                 currentState = GameState.OVERWORLD;
                 player.col = 6;
                 player.row = 8;
@@ -1402,8 +1867,21 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         if (tile == TileType.EVENT) {
+
             Tile currentTile = currentMap.getTiles()[player.col][player.row];
-            handleExplorationEvent(currentTile.getEventId());
+            String eventId = currentTile.getEventId();
+
+            if (eventId != null && eventId.startsWith("to_")) {
+                handleCarnalvalTransition(eventId);
+                return;
+            }
+
+            if ("enter_carnalval_gate".equals(eventId)) {
+                enterCarnalvalGate();
+                return;
+            }
+
+            handleExplorationEvent(eventId);
             return;
         }
 
@@ -1727,6 +2205,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    whiteFlashTimer--;
     	}
     	
+    	//Location pop
+    	if (mapTitleTimer > 0) {
+    	    mapTitleTimer--;
+    	}
+    	
     	//Years Later
     	if (storyTransitionTimer > 0) {
     	    storyTransitionTimer--;
@@ -1974,10 +2457,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         case OVERWORLD:
     		drawOverworld(g);
+    		drawMapTitleOverlay(g);
     		break;
     		
     	case TOWN:
     		drawTown(g);
+    		drawMapTitleOverlay(g);
     		break;
     	
     	case BATTLE:
@@ -1994,6 +2479,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     		
     	case EXPLORATION:
     	    drawExploration(g);
+    	    drawMapTitleOverlay(g);
     	    break;
     	    
     	case EQUIPMENT:
@@ -2475,6 +2961,66 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 
         }
     	
+    }
+    
+    //This allows the map to be displayed for players who get confused on where they are
+    private void drawMapTitleOverlay(Graphics g) {
+
+        if (mapTitleTimer <= 0) {
+            return;
+        }
+
+        if (currentMap == null) {
+            return;
+        }
+
+        if (currentState != GameState.OVERWORLD &&
+            currentState != GameState.TOWN &&
+            currentState != GameState.EXPLORATION) {
+            return;
+        }
+
+        String mapName = currentMap.getMapName();
+
+        if (mapName == null || mapName.isEmpty()) {
+            return;
+        }
+
+        Font oldFont = g.getFont();
+
+        g.setFont(oldFont.deriveFont(18f));
+
+        int padding = 10;
+        int textWidth = g.getFontMetrics().stringWidth(mapName);
+        int boxWidth = textWidth + padding * 2;
+        int boxHeight = 30;
+
+        int x = 12;
+        int y = 12;
+
+        int alpha = 170;
+
+        if (mapTitleTimer < 60) {
+            alpha = Math.max(0, mapTitleTimer * 170 / 60);
+        }
+
+        g.setColor(new Color(0, 0, 0, alpha));
+        g.fillRect(x, y, boxWidth, boxHeight);
+
+        g.setColor(new Color(255, 255, 255, Math.min(255, alpha + 60)));
+        g.drawRect(x, y, boxWidth, boxHeight);
+        g.drawString(mapName, x + padding, y + 21);
+
+        g.setFont(oldFont);
+    }
+    
+    private void showMapTitle() {
+
+        if (currentMap == null) {
+            return;
+        }
+
+        mapTitleTimer = MAP_TITLE_DURATION;
     }
     
     //Objective Definer
@@ -3194,6 +3740,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         prologueStep = 0;
 
         currentMap = prologueForestGameMap;
+        showMapTitle();
         currentState = GameState.EXPLORATION;
 
         player.col = 1;
@@ -3242,6 +3789,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         prologueStep = 2;
 
         currentMap = ruinsGameMap;
+        showMapTitle();
         currentState = GameState.EXPLORATION;
 
         player.col = 1;
@@ -3262,6 +3810,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         prologueStep = 4;
 
         currentMap = prologueForestGameMap;
+        showMapTitle();
         currentState = GameState.EXPLORATION;
 
         player.col = 8;
@@ -3311,6 +3860,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         chapterOneStep = 0;
 
         currentMap = overworldGameMap;
+        showMapTitle();
         currentState = GameState.OVERWORLD;
 
         player.col = 1;
@@ -4973,72 +5523,72 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			
     			if (isGolemTrap) {
 
-    			    if (value == 0) {
-    			        battleMap[col][row] = new Tile(TileType.RUINS_FLOOR);
-    			    }
-    			    else if (value == 1) {
-    			        battleMap[col][row] = new Tile(TileType.STONE_WALL);
-    			    }
-    			    else if (value == 6) {
-    			        battleMap[col][row] = new Tile(TileType.LAVA);
-    			    }
+                    if (value == 0) {
+                        battleMap[col][row] = new Tile(TileType.RUINS_FLOOR);
+                    }
+                    else if (value == 1) {
+                        battleMap[col][row] = new Tile(TileType.STONE_WALL);
+                    }
+                    else if (value == 6) {
+                        battleMap[col][row] = new Tile(TileType.LAVA);
+                    }
 
-    			} 
+                } 
     			
-    			if (isWitheredRoad) {
+                else if (isWitheredRoad) {
 
-    			    if (value == 0) {
-    			        battleMap[col][row] = new Tile(TileType.DEAD_GRASS);
-    			    }
-    			    else if (value == 1) {
-    			        battleMap[col][row] = new Tile(TileType.DEAD_FOREST);
-    			    }
-    			    else if (value == 2) {
-    			        battleMap[col][row] = new Tile(TileType.DEAD_GRASS);
-    			    }
-    			    else if (value == 3) {
-    			        battleMap[col][row] = new Tile(TileType.DEAD_FOREST);
-    			    }
-    			    else if (value == 4) {
-    			        battleMap[col][row] = new Tile(TileType.CRACKED_ROAD);
-    			    }
-    			    else if (value == 5) {
-    			        battleMap[col][row] = new Tile(TileType.CORRUPTED_WATER);
-    			    }
+                    if (value == 0) {
+                        battleMap[col][row] = new Tile(TileType.DEAD_GRASS);
+                    }
+                    else if (value == 1) {
+                        battleMap[col][row] = new Tile(TileType.DEAD_FOREST);
+                    }
+                    else if (value == 2) {
+                        battleMap[col][row] = new Tile(TileType.DEAD_GRASS);
+                    }
+                    else if (value == 3) {
+                        battleMap[col][row] = new Tile(TileType.DEAD_FOREST);
+                    }
+                    else if (value == 4) {
+                        battleMap[col][row] = new Tile(TileType.CRACKED_ROAD);
+                    }
+                    else if (value == 5) {
+                        battleMap[col][row] = new Tile(TileType.CORRUPTED_WATER);
+                    }
+                
+                } 
     			
-    			} else {
+                else {
 
-    			    if (value == 0) {
-    			        battleMap[col][row] = new Tile(TileType.GRASS);
-    			    }
-    			    else if (value == 1) {
-    			        battleMap[col][row] = new Tile(TileType.WATER);
-    			    }
-    			    else if (value == 2) {
-    			        battleMap[col][row] = new Tile(TileType.HILL);
-    			    }
-    			    else if (value == 3) {
-    			        battleMap[col][row] = new Tile(TileType.FOREST);
-    			    }
-    			    else if (value == 4) {
-    			        battleMap[col][row] = new Tile(TileType.ROAD);
-    			    }
-    			    else if (value == 5) {
-    			        battleMap[col][row] = new Tile(TileType.SHORE);
-    			    }
-    			    else if (value == 6) {
-    			        battleMap[col][row] = new Tile(TileType.LAVA);
-    			    }
-    			}
-    			
-    			if (battleMap[col][row] == null) {
-    			    battleMap[col][row] = new Tile(TileType.GRASS);
-    			}
-    			
-    		}
-    		
-    		
-    	}
+                    if (value == 0) {
+                        battleMap[col][row] = new Tile(TileType.GRASS);
+                    }
+                    else if (value == 1) {
+                        battleMap[col][row] = new Tile(TileType.WATER);
+                    }
+                    else if (value == 2) {
+                        battleMap[col][row] = new Tile(TileType.HILL);
+                    }
+                    else if (value == 3) {
+                        battleMap[col][row] = new Tile(TileType.FOREST);
+                    }
+                    else if (value == 4) {
+                        battleMap[col][row] = new Tile(TileType.ROAD);
+                    }
+                    else if (value == 5) {
+                        battleMap[col][row] = new Tile(TileType.SHORE);
+                    }
+                    else if (value == 6) {
+                        battleMap[col][row] = new Tile(TileType.LAVA);
+                    }
+                }
+                
+                if (battleMap[col][row] == null) {
+                    battleMap[col][row] = new Tile(TileType.GRASS);
+                }
+                
+            }
+        }
     	
     	
     	
@@ -5554,6 +6104,19 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             return "Chapter 3: The Corruption Trail";
         }
         
+        if (storyChapter == 4) {
+
+            if (chapterFourStep == 1) {
+                return "Chapter 4: Welcome to the Carnalval";
+            }
+
+            if (!mainStageUnlocked) {
+                return "Chapter 4: Explore the Carnalval";
+            }
+
+            return "Chapter 4: Final Performance";
+        }
+        
         
         
 
@@ -5709,6 +6272,37 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             }
 
             return "Continue following the corruption trail.";
+        }
+        
+        //Chapter 4
+        if (storyChapter == 4) {
+        	
+        	
+        	if (currentMap == carnalvalMainGameMap) {
+        	    return "Explore the Main Carnival Grounds and learn the rules of Silas's domain.";
+        	}
+
+        	if (currentMap == laughingLaneGameMap) {
+        	    return "Explore Laughing Lane's games, booths, and strangely cheerful guests.";
+        	}
+
+        	if (currentMap == gildedMidwayGameMap) {
+        	    return "Investigate the Gilded Midway and the desires hidden beneath its attractions.";
+        	}
+
+        	if (currentMap == performersRowGameMap) {
+        	    return "Search Performer’s Row for clues about the Carnalval's bound workers.";
+        	}
+
+        	if (currentMap == guestLodgingGameMap) {
+        	    return "Rest at the Guest Lodging and inspect the rooms prepared for the party.";
+        	}
+
+        	if (currentMap == mainStageGameMap) {
+        	    return "Enter the Main Stage and confront Silas.";
+        	}
+
+           
         }
 
         return "No active request.";
@@ -5941,6 +6535,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void startFlowerPickingMap() {
 
         currentMap = flowerFieldGameMap;
+        showMapTitle();
         currentState = GameState.EXPLORATION;
 
         player.col = 1;
@@ -5985,6 +6580,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void enterSafehouse() {
 
         currentMap = safehouseGameMap;
+        showMapTitle();
         currentState = GameState.EXPLORATION;
 
         player.col = 1;
@@ -6233,6 +6829,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	pendingChapterOneCamp = true;
 
         currentMap = townGameMap;
+        showMapTitle();
         currentState = GameState.TOWN;
 
         player.col = 5;
@@ -6422,6 +7019,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void enterChapterTwoRuins() {
 
         currentMap = chapterTwoRuinsGameMap;
+        showMapTitle();
         currentState = GameState.EXPLORATION;
 
         player.col = 1;
@@ -6866,6 +7464,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void enterActTwoWorld() {
 
         currentMap = actTwoWorldGameMap;
+        showMapTitle();
         currentState = GameState.OVERWORLD;
 
         player.col = 1;
@@ -6973,15 +7572,36 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     
     private void enterCarnalvalGate() {
 
+        storyChapter = 4;
+        chapterFourStep = 1;
+        carnalvalEntered = true;
+
+        currentMap = carnalvalMainGameMap;
+        showMapTitle();
+        currentState = GameState.EXPLORATION;
+
+        player.col = 5;
+        player.row = 8;
+        movementLeft = maxMovement;
+
         startDialogue(new DialogueLine[] {
-            new DialogueLine("", "The road bends toward lights that should not fit beneath the trees.",
+            new DialogueLine("", "The road bends toward lights that should not fit beneath the dead trees.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
-            new DialogueLine("", "Somewhere ahead, music plays without a source.",
+            new DialogueLine("", "One step carries the party beneath a red-and-gold archway. The music swells.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "I know this is bad, but I am a little curious.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "That is how people die by the way.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "The space feels wrong.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "Wrong how?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "There is more carnival inside the gate than there is land outside of it.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Stay close everyone.",
                     DialogueSide.LEFT, DialogueFaction.ALLY)
-        }, GameState.OVERWORLD);
-		
+        }, GameState.EXPLORATION);
     }
     
     
@@ -7756,11 +8376,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         if (battleReturnMap != null) {
             currentMap = battleReturnMap;
+            showMapTitle();
             currentState = battleReturnState;
             player.col = battleReturnCol;
             player.row = battleReturnRow;
         } else {
             currentMap = overworldGameMap;
+            showMapTitle();
             currentState = GameState.OVERWORLD;
             player.col = 2;
             player.row = 5;
@@ -7806,6 +8428,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		currentBattleScenario.getId().equals("golem_seal_trap")) {
 
         		currentMap = overworldGameMap;
+        		showMapTitle();
         		currentState = GameState.OVERWORLD;
         		player.col = 6;
         		player.row = 8;
@@ -9247,6 +9870,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("day=" + day + "\n");
             writer.write("gold=" + gold + "\n");
             writer.write("storyChapter=" + storyChapter + "\n");
+            writer.write("currentMapName=" + getCurrentMapSaveName() + "\n");
             //prologue step
             writer.write("prologueStep=" + prologueStep + "\n");
             writer.write("hasCreationSword=" + hasCreationSword + "\n");
@@ -9310,13 +9934,25 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
             writer.write("williamRecruited=" + williamRecruited + "\n");
 
-            /*
-             * ACT 2 CHAPTER 3
-             */
+
+            //ACT 2 CHAPTER 3
             
             writer.write("chapterThreeStep=" + chapterThreeStep + "\n");
             writer.write("corruptedRoadCompleted=" + corruptedRoadCompleted + "\n");
             writer.write("carnalvalUnlocked=" + carnalvalUnlocked + "\n");
+            
+            //Act 2 Chapter 4
+            writer.write("chapterFourStep=" + chapterFourStep + "\n");
+            writer.write("carnalvalEntered=" + carnalvalEntered + "\n");
+            writer.write("pipIntroduced=" + pipIntroduced + "\n");
+            writer.write("silasWelcomeSeen=" + silasWelcomeSeen + "\n");
+            writer.write("carnalvalExitDiscovered=" + carnalvalExitDiscovered + "\n");
+            writer.write("lodgingUnlocked=" + lodgingUnlocked + "\n");
+            writer.write("mainStageUnlocked=" + mainStageUnlocked + "\n");
+            writer.write("laughingLaneVisited=" + laughingLaneVisited + "\n");
+            writer.write("gildedMidwayVisited=" + gildedMidwayVisited + "\n");
+            writer.write("performersRowVisited=" + performersRowVisited + "\n");
+            writer.write("guestLodgingVisited=" + guestLodgingVisited + "\n");
             
             
             
@@ -9343,6 +9979,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private void loadGame() {
 
         File file = new File(SAVE_FILE);
+        String loadedMapName = "overworld";
 
         if (!file.exists()) {
             System.out.println("No save file found.");
@@ -9403,6 +10040,9 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("storyChapter")) {
                     storyChapter = Integer.parseInt(value);
+                }
+                else if (key.equals("currentMapName")) {
+                    loadedMapName = value;
                 }
                 else if (key.equals("prologueStep")) {
                     prologueStep = Integer.parseInt(value);
@@ -9532,6 +10172,39 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (key.equals("carnalvalUnlocked")) {
                     carnalvalUnlocked = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("chapterFourStep")) { //Chapter 4
+                    chapterFourStep = Integer.parseInt(value);
+                }
+                else if (key.equals("carnalvalEntered")) {
+                    carnalvalEntered = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("pipIntroduced")) {
+                    pipIntroduced = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("silasWelcomeSeen")) {
+                    silasWelcomeSeen = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("carnalvalExitDiscovered")) {
+                    carnalvalExitDiscovered = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("lodgingUnlocked")) {
+                    lodgingUnlocked = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("mainStageUnlocked")) {
+                    mainStageUnlocked = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("laughingLaneVisited")) {
+                    laughingLaneVisited = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("gildedMidwayVisited")) {
+                    gildedMidwayVisited = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("performersRowVisited")) {
+                    performersRowVisited = Boolean.parseBoolean(value);
+                }
+                else if (key.equals("guestLodgingVisited")) {
+                    guestLodgingVisited = Boolean.parseBoolean(value);
                 }
                 
                 
@@ -9776,13 +10449,22 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 recruitWilliam();
             }
             
+            if (isCarnalvalMap(currentMap)) {
+                currentState = GameState.EXPLORATION;
+            }
+            
             currentMap = overworldGameMap;
+            showMapTitle();
             currentState = GameState.OVERWORLD;
+            currentMap = getMapBySaveName(loadedMapName);
+            
+
             
             
             updateStoryWorldState();
             updateTownQuestTiles();
             updateActTwoWorldQuestTiles();
+            
 
             System.out.println("Game loaded.");
 
@@ -9867,6 +10549,130 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("party" + index + "EquippedWeapon=" + member.getEquippedWeapon().getId() + "\n");
         }
         
+    }
+    
+    private boolean isCarnalvalMap(GameMap map) {
+
+        return map == carnalvalMainGameMap ||
+               map == laughingLaneGameMap ||
+               map == gildedMidwayGameMap ||
+               map == performersRowGameMap ||
+               map == guestLodgingGameMap ||
+               map == mainStageGameMap;
+    }
+    
+    private String getCurrentMapSaveName() {
+
+        if (currentMap == overworldGameMap) {
+            return "overworld";
+        }
+
+        if (currentMap == townGameMap) {
+            return "town";
+        }
+
+        if (currentMap == actTwoWorldGameMap) {
+            return "act_two_world";
+        }
+
+        if (currentMap == carnalvalMainGameMap) {
+            return "carnalval_main";
+        }
+
+        if (currentMap == laughingLaneGameMap) {
+            return "laughing_lane";
+        }
+
+        if (currentMap == gildedMidwayGameMap) {
+            return "gilded_midway";
+        }
+
+        if (currentMap == performersRowGameMap) {
+            return "performers_row";
+        }
+
+        if (currentMap == guestLodgingGameMap) {
+            return "guest_lodging";
+        }
+
+        if (currentMap == mainStageGameMap) {
+            return "main_stage";
+        }
+
+        if (currentMap == safehouseGameMap) {
+            return "safehouse";
+        }
+
+        if (currentMap == chapterTwoRuinsGameMap) {
+            return "chapter_two_ruins";
+        }
+
+        if (currentMap == flowerFieldGameMap) {
+            return "flower_field";
+        }
+
+        if (currentMap == prologueForestGameMap) {
+            return "prologue_forest";
+        }
+
+        return "overworld";
+    }
+    
+    private GameMap getMapBySaveName(String mapName) {
+
+        if (mapName.equals("overworld")) {
+            return overworldGameMap;
+        }
+
+        if (mapName.equals("town")) {
+            return townGameMap;
+        }
+
+        if (mapName.equals("act_two_world")) {
+            return actTwoWorldGameMap;
+        }
+
+        if (mapName.equals("carnalval_main")) {
+            return carnalvalMainGameMap;
+        }
+
+        if (mapName.equals("laughing_lane")) {
+            return laughingLaneGameMap;
+        }
+
+        if (mapName.equals("gilded_midway")) {
+            return gildedMidwayGameMap;
+        }
+
+        if (mapName.equals("performers_row")) {
+            return performersRowGameMap;
+        }
+
+        if (mapName.equals("guest_lodging")) {
+            return guestLodgingGameMap;
+        }
+
+        if (mapName.equals("main_stage")) {
+            return mainStageGameMap;
+        }
+
+        if (mapName.equals("safehouse")) {
+            return safehouseGameMap;
+        }
+
+        if (mapName.equals("chapter_two_ruins")) {
+            return chapterTwoRuinsGameMap;
+        }
+
+        if (mapName.equals("flower_field")) {
+            return flowerFieldGameMap;
+        }
+
+        if (mapName.equals("prologue_forest")) {
+            return prologueForestGameMap;
+        }
+
+        return overworldGameMap;
     }
     
     //Debug for act skips
@@ -10034,6 +10840,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Exploration will delete the above later
         if (code == KeyEvent.VK_R) {
             currentMap = ruinsGameMap;
+            showMapTitle();
             currentState = GameState.EXPLORATION;
 
             player.col = 1;
@@ -10783,6 +11590,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
                 if (selected.equals("Return to Overworld")) {
                     currentMap = overworldGameMap;
+                    showMapTitle();
                     currentState = GameState.OVERWORLD;
 
                     player.col = 3;
@@ -10890,6 +11698,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	
         	if (currentState == GameState.EXPLORATION) {
                 currentMap = overworldGameMap;
+                showMapTitle();
                 currentState = GameState.OVERWORLD;
 
                 player.col = 3;
@@ -11566,6 +12375,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         		    }
 
         		    currentMap = overworldGameMap;
+        		    showMapTitle();
         		    currentState = GameState.OVERWORLD;
 
         		    player.col = 3;
