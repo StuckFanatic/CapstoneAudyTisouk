@@ -330,6 +330,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private boolean pendingReturnAfterActOne = false;
     
     
+    
     /*
      * ACT TWO / CHAPTER 3
      */
@@ -346,6 +347,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
     private boolean corruptedRoadCompleted = false;
     private boolean carnalvalUnlocked = false;
+    
+    
     
     
     
@@ -496,6 +499,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private String[] defeatOptions = {"Retry Battle", "Return to Overworld"};
     private int defeatMenuIndex = 0;
     private BattleScenario lastBattleScenario = null;
+    
+    private GameMap battleReturnMap = null;
+    private GameState battleReturnState = GameState.OVERWORLD;
+    private int battleReturnCol = 0;
+    private int battleReturnRow = 0;
     
     
     
@@ -745,7 +753,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         int[][] layout = {
             {3,3,3,3,1,1,3,3,3,3},
-            {3,0,0,2,2,2,0,0,4,3},
+            {3,0,0,2,2,2,0,0,0,3},
             {3,0,1,1,2,0,0,1,0,3},
             {3,0,0,1,2,2,0,1,0,3},
             {3,1,0,0,0,2,0,0,0,3},
@@ -772,11 +780,6 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (value == 3) {
                     actTwoWorldMap[col][row] = new Tile(TileType.CORRUPTED_WATER);
-                }
-                else if (value == 4) {
-                    Tile eventTile = new Tile(TileType.EVENT);
-                    eventTile.setEventId("act2_camp_marker");
-                    actTwoWorldMap[col][row] = eventTile;
                 }
             }
         }
@@ -1945,13 +1948,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             carnalvalTile.setEventId("enter_carnalval_gate");
             tiles[carnalvalGateCol][carnalvalGateRow] = carnalvalTile;
         } else {
-            if (tiles[carnalvalGateCol][carnalvalGateRow] != null &&
-                tiles[carnalvalGateCol][carnalvalGateRow].getType() == TileType.EVENT &&
-                "enter_carnalval_gate".equals(tiles[carnalvalGateCol][carnalvalGateRow].getEventId())) {
-
-                tiles[carnalvalGateCol][carnalvalGateRow] = new Tile(TileType.DEAD_GRASS);
-            }
-            
+            tiles[carnalvalGateCol][carnalvalGateRow] = new Tile(TileType.DEAD_GRASS);
         }
         
     }
@@ -4542,6 +4539,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	Weapon taliSpear = createWeaponById("tali_spear");
     	Weapon caelBlade = createWeaponById("cael_blade");
     	Weapon golemPulse = createWeaponById("golem_pulse");
+    	Weapon claws = createWeaponById("corrupted_claws");
+    	Weapon antlers = createWeaponById("twisted_antlers");
 		
 		//Class Name, Max HP, Armor Class, Movement Range, Weapon Type
 		CharacterClass banditClass = new CharacterClass("Bandit", 10, 10, 4, new WeaponType[] { WeaponType.AXE });
@@ -4550,6 +4549,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		CharacterClass taliClass = new CharacterClass("Bandit King", 17, 13, 5, new WeaponType[] { WeaponType.LANCE });
 		CharacterClass caelClass = new CharacterClass("Usurper", 20, 13, 5,new WeaponType[] { WeaponType.SWORD });
 		CharacterClass golemClass = new CharacterClass("Seal Guardian", 24, 8, 0, new WeaponType[] { WeaponType.AXE });
+		CharacterClass beastClass = new CharacterClass("Corrupted Beast", 12, 8, 5, new WeaponType[] { WeaponType.AXE });
+		CharacterClass stagClass = new CharacterClass("Twisted Beast", 16, 8, 4, new WeaponType[] { WeaponType.AXE });
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance
 		GrowthRates banditGrowth = new GrowthRates(70, 50, 0, 30, 36, 15, 25, 10);
@@ -4558,6 +4559,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		GrowthRates taliGrowths = new GrowthRates(70, 55, 10, 50, 50, 30, 35, 25);
 		GrowthRates caelGrowths = new GrowthRates(70, 55, 10, 55, 55, 25, 30, 20);
 		GrowthRates golemGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
+		GrowthRates beastGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
+		GrowthRates stagGrowths = new GrowthRates(0, 0, 0, 0, 0, 0, 0, 0);
 		
 		//Health, Strength, Magic, Skill, Speed, Luck, Defense, Resistance, Movement
 		UnitStats banditStats = new UnitStats(10, 0, 4, 0, 3, 3, 1, 1, 0, 4);
@@ -4566,6 +4569,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		UnitStats taliStats = new UnitStats(17, 4, 5, 0, 5, 5, 4, 3, 2, 5);
 		UnitStats caelStats = new UnitStats(20, 6, 5, 0, 6, 6, 3, 3, 2, 5);
 		UnitStats golemStats = new UnitStats(35, 0, 7, 0, 2, 0, 0, 28, 0, 0);
+		UnitStats beastStats = new UnitStats(12, 0, 5, 0, 4, 6, 0, 2, 1, 5);
+		UnitStats stagStats = new UnitStats(16, 0, 7, 0, 3, 4, 0, 3, 1, 4);
 		
 
 		if (unitId.equals("bandit")) {
@@ -4592,6 +4597,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 		    return new BattleUnit("Stone Golem", col, row, true, golemPulse, golemClass, golemStats, golemGrowths, "", EnemyRole.STATIONARY);
 		}
 		
+		if (unitId.equals("corrupted_wolf")) {
+			return new BattleUnit("Corrupted Wolf", col, row, true, claws, beastClass, beastStats, beastGrowths, "", EnemyRole.AGGRESSIVE);
+		}
+		
+		if (unitId.equals("twisted_stag")) {
+			return new BattleUnit("Twisted Stag", col, row, true, antlers, stagClass, stagStats, stagGrowths, "", EnemyRole.AGGRESSIVE);
+		}
 		
     	
     	return null;
@@ -4829,7 +4841,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
         
         if (weaponId.equals("william_tome")) {
-            return new Weapon("william_tome", "Arcane Tome", WeaponType.TOME, 1, 3, 5, 2, 8, 4, true);
+            return new Weapon("william_tome", "Arcane Tome", WeaponType.TOME, 1, 2, 5, 1, 6, 4, true);
         }
         
         //Cleric
@@ -4849,6 +4861,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (weaponId.equals("golem_pulse")) {
             return new Weapon("golem_pulse", "Seal Pulse", WeaponType.AXE, 1, 6, 3, 1, 8, 2, false);
+        }
+        
+        if (weaponId.equals("corrupted_claws")) {
+            return new Weapon("corrupted_claws", "Corrupted Claws", WeaponType.AXE, 1, 1, 4, 1, 8, 2, false);
+        }
+
+        if (weaponId.equals("twisted_antlers")) {
+            return new Weapon("twisted_antlers", "Twisted Antlers", WeaponType.AXE, 1, 1, 5, 1, 8, 2, false);
         }
 
         //Art Forger unique
@@ -4908,6 +4928,8 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Loads in the scenario player steps on 
     private void loadBattleScenario(BattleScenario scenario) {
     	
+    	rememberBattleReturnPoint();
+    	
     	lastBattleScenario = scenario;
     	currentBattleScenario = scenario;
     	
@@ -4942,6 +4964,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	
     	//Speical Casing
     	boolean isGolemTrap = scenario.getId().equals("golem_seal_trap");
+    	boolean isWitheredRoad = scenario.getId().equals("withered_road");
     	
     	for (int col = 0; col < maxScreenCol; col++) {
     		for (int row = 0; row < maxScreenRow; row++) {
@@ -4960,6 +4983,29 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     			        battleMap[col][row] = new Tile(TileType.LAVA);
     			    }
 
+    			} 
+    			
+    			if (isWitheredRoad) {
+
+    			    if (value == 0) {
+    			        battleMap[col][row] = new Tile(TileType.DEAD_GRASS);
+    			    }
+    			    else if (value == 1) {
+    			        battleMap[col][row] = new Tile(TileType.DEAD_FOREST);
+    			    }
+    			    else if (value == 2) {
+    			        battleMap[col][row] = new Tile(TileType.DEAD_GRASS);
+    			    }
+    			    else if (value == 3) {
+    			        battleMap[col][row] = new Tile(TileType.DEAD_FOREST);
+    			    }
+    			    else if (value == 4) {
+    			        battleMap[col][row] = new Tile(TileType.CRACKED_ROAD);
+    			    }
+    			    else if (value == 5) {
+    			        battleMap[col][row] = new Tile(TileType.CORRUPTED_WATER);
+    			    }
+    			
     			} else {
 
     			    if (value == 0) {
@@ -5053,6 +5099,34 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	currentState = GameState.BATTLE;
     	
     	
+    }
+    
+    
+    //Remembers last state
+    private void rememberBattleReturnPoint() {
+
+        if (currentState == GameState.BATTLE) {
+            return;
+        }
+
+        if (currentState == GameState.DIALOGUE) {
+            battleReturnState = previousState;
+        } else {
+            battleReturnState = currentState;
+        }
+
+        battleReturnMap = currentMap;
+        battleReturnCol = player.col;
+        battleReturnRow = player.row;
+
+        System.out.println("Battle return saved:");
+        System.out.println("State: " + battleReturnState);
+
+        if (battleReturnMap != null) {
+            System.out.println("Map: " + battleReturnMap.getMapName());
+        }
+
+        System.out.println("Position: " + battleReturnCol + "," + battleReturnRow);
     }
     
     //Reinforcements Spawning
@@ -5465,11 +5539,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         //Chapter 3 Act 2
         if (storyChapter == 3) {
 
-            if (chapterThreeStep == 1) {
-                return "Chapter 3: The Corruption Trail";
-            }
-
-            if (chapterThreeStep == 2 && !corruptedRoadCompleted) {
+        	if (chapterThreeStep == 2 && !corruptedRoadCompleted) {
                 return "Chapter 3: Withered Road";
             }
 
@@ -5477,11 +5547,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return "Chapter 3: The Invitation";
             }
 
-            if (carnalvalUnlocked) {
+            if (chapterThreeStep == 4 && carnalvalUnlocked) {
                 return "Chapter 3: Carnalval Gates";
             }
 
-            return "Chapter 3";
+            return "Chapter 3: The Corruption Trail";
         }
         
         
@@ -5626,19 +5696,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         if (storyChapter == 3) {
 
-            if (chapterThreeStep == 1) {
-                return "Rest at camp and discuss the trail of corruption.";
-            }
-
             if (chapterThreeStep == 2 && !corruptedRoadCompleted) {
                 return "Investigate the withered road where travelers have vanished.";
             }
 
             if (chapterThreeStep == 3 && !carnalvalUnlocked) {
-                return "Examine Silas's invitation and decide the party's next move.";
+                return "Return to camp and examine Silas's invitation.";
             }
 
-            if (carnalvalUnlocked) {
+            if (chapterThreeStep == 4 && carnalvalUnlocked) {
                 return "Follow the ticket's path to the Carnalval of Desires.";
             }
 
@@ -6827,7 +6893,84 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     }
     
     
-    //Carnival Enter
+    
+    //Step 3
+    private void startSilasTicketScene() {
+
+        pendingSilasTicketScene = false;
+
+        chapterThreeStep = 4;
+        carnalvalUnlocked = true;
+
+        updateActTwoWorldQuestTiles();
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", "That night, the campfire burns blue.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "A thin melody drifts through the dead trees, bright and distant, like carnival music played underwater.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Penelope", "Does anyone else hear that?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "Please say no. I was hoping this was only a me problem.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "A black-and-gold ticket unfolds from the smoke and lands in Art's hand without burning.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Art", "It has our names on it.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Of course it does.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "To Art Forger and honored companions:",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Silas Vale welcomes you to the Carnalval of Desires.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Lodging provided. Answers available. Regrets optional. Departure negotiable.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+
+            new DialogueLine("Dean", "Departure negotiable? I hate when that happens",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Burn it.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "I would advise against that.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "Why?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("William", "Because I suspect we have no choice in this.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+
+            new DialogueLine("Penelope", "He knows where we are.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then he wanted us to know he knows.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("Dean", "So we are not going, right?",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "We're absolutely going.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Dean", "I knew that. I just wanted to hear someone else make the bad decision first.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("William", "Silas has the relic. If the ticket is genuine, this is the first direct invitation he has given us.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Penelope", "And if it is a trap?",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Tali", "It is.",
+                    DialogueSide.RIGHT, DialogueFaction.ALLY),
+            new DialogueLine("Art", "Then we walk in knowing it is one.",
+                    DialogueSide.LEFT, DialogueFaction.ALLY),
+
+            new DialogueLine("", "By morning, a road waits where no road had been before.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC),
+            new DialogueLine("", "Far beyond the dead trees, red and gold lights shimmer in the gray mist.",
+                    DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.OVERWORLD);
+        
+    }
+    
+    
     private void enterCarnalvalGate() {
 
         startDialogue(new DialogueLine[] {
@@ -6836,12 +6979,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("", "Somewhere ahead, music plays without a source.",
                     DialogueSide.RIGHT, DialogueFaction.NPC),
             new DialogueLine("Dean", "I know this is bad, but I am a little curious.",
-                    DialogueSide.LEFT, DialogueFaction.ALLY),
-            new DialogueLine("Tali", "That is how most die if you didn't know.",
-                    DialogueSide.RIGHT, DialogueFaction.ALLY)
+                    DialogueSide.LEFT, DialogueFaction.ALLY)
         }, GameState.OVERWORLD);
 		
     }
+    
+    
     
     
     
@@ -7609,14 +7752,38 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     //Helps return player to over world correctly
     private void returnToOverworldAfterBattle() {
 
-        currentMap = overworldGameMap;
-        currentState = GameState.OVERWORLD;
+    	showingRuinsExteriorScene = false;
 
-        player.col = 3;
-        player.row = 1;
+        if (battleReturnMap != null) {
+            currentMap = battleReturnMap;
+            currentState = battleReturnState;
+            player.col = battleReturnCol;
+            player.row = battleReturnRow;
+        } else {
+            currentMap = overworldGameMap;
+            currentState = GameState.OVERWORLD;
+            player.col = 2;
+            player.row = 5;
+        }
 
         pendingReturnToOverworldAfterDialogue = false;
-        pendingReturnToOverworldAfterDialogue = false;
+
+        battleUnitSelected = false;
+        selectedBattleUnit = null;
+        battleActionMenuOpen = false;
+        battleAttackPreviewOpen = false;
+        battleSkillPreviewOpen = false;
+        battleTargetSelectOpen = false;
+        battleSkillTargetSelectOpen = false;
+        battleHealTargetSelectOpen = false;
+        battleHealPreviewOpen = false;
+        battleZoomCombatOpen = false;
+
+        updateStoryWorldState();
+
+        battleReturnMap = null;
+
+        repaint();
     }
     
     //victory logic; if there is a dialogue use it otherwise return to over world
@@ -7636,10 +7803,26 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         
         if (currentBattleScenario != null &&
-                currentBattleScenario.getId().equals("golem_seal_trap")) {
+        		currentBattleScenario.getId().equals("golem_seal_trap")) {
 
+        		currentMap = overworldGameMap;
+        		currentState = GameState.OVERWORLD;
+        		player.col = 6;
+        		player.row = 8;
+        		pendingReturnToOverworldAfterDialogue = false;
                 pendingWilliamRecruitmentScene = true;
             }
+        
+        
+        if (currentBattleScenario != null &&
+        	    currentBattleScenario.getId().equals("withered_road")) {
+
+        	    corruptedRoadCompleted = true;
+        	    chapterThreeStep = 3;
+        	    pendingSilasTicketScene = true;
+
+        	    updateActTwoWorldQuestTiles();
+        	}
 
         
         if (currentBattleScenario != null &&
@@ -9599,6 +9782,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
             updateStoryWorldState();
             updateTownQuestTiles();
+            updateActTwoWorldQuestTiles();
 
             System.out.println("Game loaded.");
 
@@ -9683,6 +9867,73 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.write("party" + index + "EquippedWeapon=" + member.getEquippedWeapon().getId() + "\n");
         }
         
+    }
+    
+    //Debug for act skips
+    private void prepareActTwoDebugStart() {
+
+        // Clear active quest state
+        activeQuestName = "";
+        pendingQuestName = "";
+        questConfirmOpen = false;
+
+        // Prologue complete
+        prologueStep = 5;
+        hasCreationSword = true;
+        creationAwakened = true;
+
+        // Chapter 1 starter jobs complete
+        cellarRatsCompleted = true;
+        laundryCompleted = true;
+        flowersCompleted = true;
+        starterJobsComplete = true;
+
+        // Bandit Trouble complete
+        banditQuestUnlocked = true;
+        banditQuestAccepted = false;
+        banditQuestCompleted = true;
+        banditQuestRewardClaimed = true;
+
+        // Checkmate complete
+        checkmateStep = 8;
+        oldMillRoadCompleted = true;
+        safehouseUnlocked = false;
+        inspectedSafehouseChildren = true;
+        inspectedSafehouseDoctor = true;
+        inspectedSafehouseSupplies = true;
+        inspectedSafehouseOrders = true;
+        inspectedKingTent = true;
+        taliConfrontationCompleted = true;
+        taliTemporaryAlly = false;
+
+        // Recruit Tali if missing
+        recruitTali();
+
+        // Chapter 2 complete enough for Act Two
+        chapterTwoStep = 3;
+        ruinsJobUnlocked = true;
+        silasBetrayalTriggered = true;
+
+        // Recruit William if missing
+        recruitWilliam();
+
+        // Reset Act Two progression
+        chapterThreeStep = 0;
+        corruptedRoadCompleted = false;
+        carnalvalUnlocked = false;
+
+        // Clear Act Two pending flags
+        pendingActTwoOpening = false;
+        pendingChapterThreeOpening = false;
+        pendingCorruptedRoadMission = false;
+        pendingSilasTicketScene = false;
+        pendingMoveToActTwoWorld = false;
+
+        // Rebuild/update maps
+        generateActTwoWorld();
+        updateStoryWorldState();
+
+        System.out.println("Debug: Act Two start prepared.");
     }
     
     
@@ -9801,6 +10052,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         //Skip to Act 2 
         if (code == KeyEvent.VK_2) {
+            prepareActTwoDebugStart();
             startActTwo();
             repaint();
             return;
@@ -10074,7 +10326,12 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 	
                 	//Out
                 	if (pendingReturnToOverworldAfterDialogue) {
-                	    returnToOverworldAfterBattle();
+                		returnToOverworldAfterBattle();
+
+                	    if (pendingSilasTicketScene) {
+                	        startSilasTicketScene();
+                	    }
+
                 	    repaint();
                 	    return;
                 	}

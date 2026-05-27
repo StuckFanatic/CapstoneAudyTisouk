@@ -40,6 +40,10 @@ public class BattleScenarioLibrary {
 		    return createGolemSealTrap();
 		}
 		
+		if (scenarioId.equals("withered_road")) {
+		    return createWitheredRoad();
+		}
+		
 		return createBanditField();
 		
 	}
@@ -559,6 +563,86 @@ public class BattleScenarioLibrary {
 	        introDialogue,
 	        outroDialogue
 	    );
+	    
+	}
+	
+	//Creates Witherd Animals to battle
+	private static BattleScenario createWitheredRoad() {
+
+		int[][] layout = {
+			    {1,1,1,1,1,1,1,1,1,1},
+			    {1,3,3,0,0,4,0,0,3,1},
+			    {1,3,0,0,4,4,4,0,0,1},
+			    {1,0,0,3,0,4,0,3,0,1},
+			    {1,0,3,0,5,4,0,0,0,1},
+			    {1,0,0,0,4,4,5,3,0,1},
+			    {1,3,0,0,4,0,0,0,3,1},
+			    {1,0,0,3,4,0,3,0,0,1},
+			    {1,0,0,0,4,0,0,0,0,1},
+			    {1,1,1,1,1,1,1,1,1,1}
+			};
+
+	    List<UnitSpawn> playerSpawns = new ArrayList<>();
+	    playerSpawns.add(new UnitSpawn("leader", 1, 8, false));
+	    playerSpawns.add(new UnitSpawn("archer_ally", 2, 8, false));
+	    playerSpawns.add(new UnitSpawn("mage", 1, 7, false));
+	    playerSpawns.add(new UnitSpawn("tali", 2, 7, false));
+	    playerSpawns.add(new UnitSpawn("william", 3, 8, false));
+
+	    List<UnitSpawn> enemySpawns = new ArrayList<>();
+	    enemySpawns.add(new UnitSpawn("corrupted_wolf", 7, 2, true));
+	    enemySpawns.add(new UnitSpawn("corrupted_wolf", 8, 5, true));
+	    enemySpawns.add(new UnitSpawn("twisted_stag", 6, 3, true));
+
+	    List<ReinforcementSpawn> reinforcements = new ArrayList<>();
+
+	    DialogueLine[] introDialogue = new DialogueLine[] {
+	        new DialogueLine("", "The withered road lies silent beneath gray rain.",
+	                DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("", "Broken branches twitch without wind. Something moves between the dead trees.",
+	                DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Penelope", "Those look like they were deer once.",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "Were is the important word. Now they are corrupted",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "I miss fighting rats. Rats had standards at least.",
+	                DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("William", "Their bodies are changing, but not naturally. Intresting.",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "Then we stop them before they reach the road.",
+	                DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    DialogueLine[] outroDialogue = new DialogueLine[] {
+	        new DialogueLine("", "The last corrupted beast collapses. The road grows quiet again.",
+	                DialogueSide.RIGHT, DialogueFaction.NPC),
+	        new DialogueLine("Penelope", "Poor animals. They looked like they were in pain.",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Tali", "Everything out here is starting to look like that.",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("William", "This can't be Silas's work alone.",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Art", "Marrtyme?",
+	                DialogueSide.LEFT, DialogueFaction.ALLY),
+	        new DialogueLine("William", "A shadow of him, perhaps. Or something pulled loose when he stirred.",
+	                DialogueSide.RIGHT, DialogueFaction.ALLY),
+	        new DialogueLine("Dean", "Great. So the world is leaking nightmares now.",
+	                DialogueSide.LEFT, DialogueFaction.ALLY)
+	    };
+
+	    return new BattleScenario(
+	        "withered_road",
+	        "Withered Road",
+	        layout,
+	        ObjectiveType.DEFEAT_ALL,
+	        0,
+	        playerSpawns,
+	        enemySpawns,
+	        reinforcements,
+	        introDialogue,
+	        outroDialogue
+	    );
+	    
 	}
 	
 	
