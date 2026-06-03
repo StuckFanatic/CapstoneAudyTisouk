@@ -1258,13 +1258,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         	    {0,0,0,0,3,3,0,0,0,0},
         	    {0,1,1,1,1,1,1,1,1,0},
         	    {0,1,2,0,0,0,0,2,1,0},
-        	    {0,1,0,0,6,6,0,0,1,0},
+        	    {0,1,0,0,8,6,0,0,1,0},
         	    {4,1,0,6,1,1,6,0,1,5},
         	    {4,1,0,6,1,1,6,0,1,5},
         	    {0,1,0,0,6,6,0,0,1,0},
         	    {0,1,2,0,0,0,0,2,1,0},
         	    {0,1,1,1,1,1,1,1,1,0},
-        	    {0,0,0,0,7,7,0,0,0,0}
+        	    {0,0,0,0,9,7,0,0,0,0}
         	};
 
         for (int col = 0; col < 10; col++) {
@@ -1295,6 +1295,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 }
                 else if (value == 7) {
                     carnalvalMainMap[col][row] = createCarnalvalTransitionTile("to_guest_lodging");
+                }
+                
+                else if (value == 8) {
+                    carnalvalMainMap[col][row] = createCarnalvalEventTile("carnalval_rules_sign");
+                }
+                
+                else if (value == 9) {
+                    carnalvalMainMap[col][row] = createCarnalvalEventTile("carnalval_exit_loop");
                 }
             }
         }
@@ -1720,6 +1728,14 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         return tile;
     }
     
+    private Tile createCarnalvalEventTile(String eventId) {
+
+        Tile tile = new Tile(TileType.EVENT);
+        tile.setEventId(eventId);
+
+        return tile;
+    }
+    
     //Transitions from map to map in the carnivel chapter here
     private void handleCarnalvalTransition(String eventId) {
 
@@ -1868,7 +1884,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         if (tile == TileType.EVENT) {
 
-            Tile currentTile = currentMap.getTiles()[player.col][player.row];
+        	Tile currentTile = currentMap.getTiles()[player.col][player.row];
             String eventId = currentTile.getEventId();
 
             if (eventId != null && eventId.startsWith("to_")) {
@@ -1881,7 +1897,17 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 return;
             }
 
+            if (isCarnalvalMap(currentMap)) {
+                handleCarnalvalEvent(eventId);
+                return;
+            }
+
             handleExplorationEvent(eventId);
+            return;
+        }
+
+        if (isCarnalvalMap(currentMap)) {
+            showCarnalvalEmptyInteraction();
             return;
         }
 
@@ -2723,10 +2749,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             	
             case TOWN:
             case EXPLORATION:
-                TileType currentTile = currentMap.getTiles()[player.col][player.row].getType();
-                g.drawString("Tile: " + currentTile, 280, panelY + 25);
-                drawWrappedText(g, getTileDescription(currentTile), 280, panelY + 50, 200, 18);
-                break;
+            	Tile currentTile = currentMap.getTiles()[player.col][player.row];
+
+            	g.drawString("Tile: " + getCurrentTileDisplayName(), 280, panelY + 25);
+            	drawWrappedText(g, getCurrentTileDescription(), 280, panelY + 50, 200, 18);
+            	break;
                 
             case SHOP:
             	
@@ -3106,6 +3133,108 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         dialogueNextRow = nextRow;
 
         dialogueManager.startDialogue(speakerName, lines);
+    }
+    
+    private String getCurrentTileDescription() {
+
+        if (currentMap == null) {
+            return "";
+        }
+
+        Tile tile = currentMap.getTiles()[player.col][player.row];
+
+        if (tile == null) {
+            return "";
+        }
+
+        if (tile.getType() == TileType.EVENT && tile.getEventId() != null) {
+            String eventId = tile.getEventId();
+
+            if (eventId.equals("to_laughing_lane")) {
+                return "Path to Laughing Lane.";
+            }
+
+            if (eventId.equals("to_gilded_midway")) {
+                return "Path to the Gilded Midway.";
+            }
+
+            if (eventId.equals("to_performers_row")) {
+                return "Path to Performer’s Row.";
+            }
+
+            if (eventId.equals("to_guest_lodging")) {
+                return "Path to Guest Lodging.";
+            }
+
+            if (eventId.equals("to_carnalval_main")) {
+                return "Path back to the Main Carnival Grounds.";
+            }
+
+            if (eventId.equals("to_main_stage")) {
+                return "The Main Stage entrance. The final performance is not ready.";
+            }
+
+            if (eventId.equals("carnalval_rules_sign")) {
+                return "A painted rules sign for honored guests.";
+            }
+
+            if (eventId.equals("carnalval_exit_loop")) {
+                return "The entrance gate. The road beyond it bends strangely.";
+            }
+        }
+
+        return getTileDescription(tile.getType());
+    }
+    
+    private String getCurrentTileDisplayName() {
+
+        if (currentMap == null) {
+            return "";
+        }
+
+        Tile tile = currentMap.getTiles()[player.col][player.row];
+
+        if (tile == null) {
+            return "";
+        }
+
+        if (tile.getType() == TileType.EVENT && tile.getEventId() != null) {
+            String eventId = tile.getEventId();
+
+            if (eventId.equals("to_laughing_lane")) {
+                return "Laughing Lane Path";
+            }
+
+            if (eventId.equals("to_gilded_midway")) {
+                return "Gilded Midway Path";
+            }
+
+            if (eventId.equals("to_performers_row")) {
+                return "Performer’s Row Path";
+            }
+
+            if (eventId.equals("to_guest_lodging")) {
+                return "Guest Lodging Path";
+            }
+
+            if (eventId.equals("to_carnalval_main")) {
+                return "Main Grounds Path";
+            }
+
+            if (eventId.equals("to_main_stage")) {
+                return "Main Stage Entrance";
+            }
+
+            if (eventId.equals("carnalval_rules_sign")) {
+                return "Rules Sign";
+            }
+
+            if (eventId.equals("carnalval_exit_loop")) {
+                return "Carnalval Gate";
+            }
+        }
+
+        return tile.getType().toString();
     }
     
     //Campsite
@@ -7333,6 +7462,99 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
      * 
      */
     
+    //Events List and Methods for Act 2 
+    private void handleCarnalvalEvent(String eventId) {
+
+        if (eventId == null) {
+            showCarnalvalEmptyInteraction();
+            return;
+        }
+
+        if (eventId.equals("carnalval_rules_sign")) {
+            startDialogue(new DialogueLine[] {
+                new DialogueLine("Narrator", "A painted sign stands beneath a string of golden lanterns.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Narrator", "WELCOME, HONORED GUESTS!",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Narrator", "Rule One: Enjoy yourself.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Narrator", "Rule Two: Do not damage the attractions.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Narrator", "Rule Three: Do not ask where the exits went.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Narrator", "Rule Four: The Ringmaster is always listening.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Dean", "I liked Rule One. Then it got worse every sentence.",
+                        DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Rule Four is the only honest one.",
+                        DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            return;
+        }
+
+        if (eventId.equals("carnalval_exit_loop")) {
+            startDialogue(new DialogueLine[] {
+            		
+                new DialogueLine("", "The entrance gate still stands behind the party, red and gold beneath the lanterns.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("", "Beyond it should be the withered road.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("", "Instead, the path bends gently back toward the Main Carnival Grounds.",
+                        DialogueSide.RIGHT, DialogueFaction.NPC),
+                new DialogueLine("Penelope", "That road was straight when we came in.",
+                        DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("William", "It still is. It is simply straight in a direction that no longer helps us.",
+                        DialogueSide.RIGHT, DialogueFaction.ALLY),
+                new DialogueLine("Dean", "I hate magic that understands comedy.",
+                        DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Art", "So leaving is not simple.",
+                        DialogueSide.LEFT, DialogueFaction.ALLY),
+                new DialogueLine("Tali", "Good. Means we stop pretending this place is friendly.",
+                        DialogueSide.RIGHT, DialogueFaction.ALLY)
+            }, GameState.EXPLORATION);
+
+            carnalvalExitDiscovered = true;
+            return;
+        }
+
+        showCarnalvalEmptyInteraction();
+    }
+    
+    
+    private void showCarnalvalEmptyInteraction() {
+
+        String message = "The music seems to follow your footsteps.";
+
+        if (currentMap == carnalvalMainGameMap) {
+            message = "Lanterns sway above the Main Grounds, though there is no wind.";
+        }
+        else if (currentMap == laughingLaneGameMap) {
+            message = "Somewhere nearby, a guest laughs one beat too late.";
+        }
+        else if (currentMap == gildedMidwayGameMap) {
+            message = "Gold-painted signs promise prizes no one seems willing to describe.";
+        }
+        else if (currentMap == performersRowGameMap) {
+            message = "Behind the tents, quiet voices stop as soon as you listen.";
+        }
+        else if (currentMap == guestLodgingGameMap) {
+            message = "The lodging tents are warm, clean, and much too prepared.";
+        }
+        else if (currentMap == mainStageGameMap) {
+            message = "The stage lights wait in silence.";
+        }
+
+        startDialogue(new DialogueLine[] {
+            new DialogueLine("", message, DialogueSide.RIGHT, DialogueFaction.NPC)
+        }, GameState.EXPLORATION);
+        
+    }
+    
+    
+    
+    //SKIP End of Events List for Act 2
+    
     private void startActTwo() {
 
         storyChapter = 3;
@@ -7602,6 +7824,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             new DialogueLine("Art", "Stay close everyone.",
                     DialogueSide.LEFT, DialogueFaction.ALLY)
         }, GameState.EXPLORATION);
+        
     }
     
     
