@@ -22,7 +22,7 @@ import java.util.Scanner;
 
 public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyListener {
 
-    // Screen settings for the black box Audy Tisouk After Submitting Tester
+    // Screen settings for the black box Audy Tisouk After Submitting Tester 
     final int tileSize = 48;
     final int maxScreenCol = 10;
     final int maxScreenRow = 10;
