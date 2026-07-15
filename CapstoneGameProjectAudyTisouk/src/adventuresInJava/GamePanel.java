@@ -10672,21 +10672,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                 recruitWilliam();
             }
             
-            if (isCarnalvalMap(currentMap)) {
-                currentState = GameState.EXPLORATION;
-            }
-            
-            currentMap = overworldGameMap;
-            showMapTitle();
-            currentState = GameState.OVERWORLD;
             currentMap = getMapBySaveName(loadedMapName);
-            
+            currentState = getGameStateForMap(currentMap);
+            validateLoadedPlayerPosition();
 
-            
-            
             updateStoryWorldState();
             updateTownQuestTiles();
             updateActTwoWorldQuestTiles();
+
+            showMapTitle();
             
 
             System.out.println("Game loaded.");
@@ -10839,6 +10833,62 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         }
 
         return "overworld";
+    }
+    
+    //This categorizes maps helps the loading phase
+    private GameState getGameStateForMap(GameMap map) {
+
+        if (map == townGameMap) {
+            return GameState.TOWN;
+        }
+
+        if (map == overworldGameMap || map == actTwoWorldGameMap) {
+            return GameState.OVERWORLD;
+        }
+
+        return GameState.EXPLORATION;
+    }
+    
+    //Position Check when loading
+    private void validateLoadedPlayerPosition() {
+
+        Tile[][] tiles = currentMap.getTiles();
+
+        boolean outsideMap =
+                player.col < 0 ||
+                player.col >= tiles.length ||
+                player.row < 0 ||
+                player.row >= tiles[player.col].length;
+
+        if (!outsideMap && tiles[player.col][player.row].isPassable()) {
+            return;
+        }
+
+        for (int row = tiles[0].length - 1; row >= 0; row--) {
+            for (int col = 0; col < tiles.length; col++) {
+
+                if (tiles[col][row].isPassable()) {
+                    player.col = col;
+                    player.row = row;
+
+                    System.out.println(
+                        "Saved player position was invalid. Moved to a safe tile."
+                    );
+
+                    return;
+                }
+            }
+        }
+
+        currentMap = overworldGameMap;
+        currentState = GameState.OVERWORLD;
+
+        player.col = 3;
+        player.row = 1;
+
+        System.out.println(
+            "Loaded map had no passable tile. Returned to the overworld."
+        );
     }
     
     private GameMap getMapBySaveName(String mapName) {
