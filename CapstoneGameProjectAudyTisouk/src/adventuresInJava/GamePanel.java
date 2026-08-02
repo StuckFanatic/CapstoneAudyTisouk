@@ -78,6 +78,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     private int mapTitleTimer = 0;
     private final int MAP_TITLE_DURATION = 180;
     
+    //Temporary save/load feedback message
+    private String systemMessage = "";
+    private int systemMessageTimer = 0;
+    private final int SYSTEM_MESSAGE_DURATION = 180;
+    
 	// Story transition overlay
 	private String storyTransitionText = ""; //Stores text on screen
 	private int storyTransitionTimer = 0; 
@@ -2236,6 +2241,15 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
     	    mapTitleTimer--;
     	}
     	
+    	//Temporary system message
+    	if (systemMessageTimer > 0) {
+    	    systemMessageTimer--;
+
+    	    if (systemMessageTimer == 0) {
+    	        systemMessage = "";
+    	    }
+    	}
+    	
     	//Years Later
     	if (storyTransitionTimer > 0) {
     	    storyTransitionTimer--;
@@ -2556,6 +2570,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         drawWhiteFlash(g);
         drawStoryTransition(g);
+        drawSystemMessage(g);
         
     }
     
@@ -10191,11 +10206,13 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             writer.close();
 
             System.out.println("Game saved.");
+            showSystemMessage("Game saved.");
 
-        } catch (IOException e) {
-            System.out.println("Save failed.");
-            e.printStackTrace();
-        }
+            } catch (IOException e) {
+                System.out.println("Save failed.");
+                showSystemMessage("Save failed.");
+                e.printStackTrace();
+            }
     }
     
     //Load game after Save to give function
@@ -10206,6 +10223,7 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
 
         if (!file.exists()) {
             System.out.println("No save file found.");
+            showSystemMessage("No save file found.");
             return;
         }
 
@@ -10684,9 +10702,11 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
             
 
             System.out.println("Game loaded.");
+            showSystemMessage("Game loaded.");
 
         } catch (IOException e) {
             System.out.println("Load failed.");
+            showSystemMessage("Load failed.");
             e.printStackTrace();
         }
         
@@ -10776,6 +10796,70 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
                map == performersRowGameMap ||
                map == guestLodgingGameMap ||
                map == mainStageGameMap;
+    }
+    
+    private boolean canUseSaveAndLoad() {
+
+        if (currentState == GameState.OVERWORLD ||
+            currentState == GameState.TOWN ||
+            currentState == GameState.EXPLORATION) {
+
+            return true;
+        }
+
+        return currentState == GameState.CAMP && !campBondMenuOpen;
+    }
+
+    private void showSystemMessage(String message) {
+        systemMessage = message;
+        systemMessageTimer = SYSTEM_MESSAGE_DURATION;
+    }
+
+    private void drawSystemMessage(Graphics g) {
+
+        if (systemMessageTimer <= 0 ||
+            systemMessage == null ||
+            systemMessage.isEmpty()) {
+
+            return;
+        }
+
+        Font oldFont = g.getFont();
+        Color oldColor = g.getColor();
+
+        g.setFont(oldFont.deriveFont(Font.BOLD, 16f));
+
+        int padding = 12;
+        int textWidth = g.getFontMetrics().stringWidth(systemMessage);
+        int boxWidth = textWidth + padding * 2;
+        int boxHeight = 34;
+
+        int x = (screenWidth - boxWidth) / 2;
+        int y = 16;
+
+        int alpha = 210;
+
+        if (systemMessageTimer < 45) {
+            alpha = Math.max(0, systemMessageTimer * 210 / 45);
+        }
+
+        g.setColor(new Color(0, 0, 0, alpha));
+        g.fillRoundRect(x, y, boxWidth, boxHeight, 12, 12);
+
+        g.setColor(
+            new Color(
+                255,
+                255,
+                255,
+                Math.min(255, alpha + 40)
+            )
+        );
+
+        g.drawRoundRect(x, y, boxWidth, boxHeight, 12, 12);
+        g.drawString(systemMessage, x + padding, y + 23);
+
+        g.setFont(oldFont);
+        g.setColor(oldColor);
     }
     
     private String getCurrentMapSaveName() {
@@ -11076,14 +11160,30 @@ public class GamePanel extends JPanel implements Runnable, java.awt.event.KeyLis
         
         //Save
         if (code == KeyEvent.VK_S) {
-            saveGame();
+
+            if (canUseSaveAndLoad()) {
+                saveGame();
+            } else {
+                showSystemMessage(
+                    "You cannot save during this screen."
+                );
+            }
+
             repaint();
             return;
         }
 
         //Load
         if (code == KeyEvent.VK_L) {
-            loadGame();
+
+            if (canUseSaveAndLoad()) {
+                loadGame();
+            } else {
+                showSystemMessage(
+                    "You cannot load during this screen."
+                );
+            }
+
             repaint();
             return;
         }
